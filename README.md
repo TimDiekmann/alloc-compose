@@ -10,6 +10,12 @@ Alloc-Compose
 
 Composable allocator structures for plugging together more powerful allocators.
 
+`alloc-compose` currently uses the [`alloc-wg`] crate as backend. As soon as all features
+has landed upstream, this dependency will be dropped. Until `AllocRef` has been
+stabilized, this crate requires a nightly compiler.
+
+[`alloc-wg`]: https://crates.io/crates/alloc-wg
+
 The design of composable allocators is inspired by
 [`std::allocator` Is to Allocation what `std::vector` Is to Vexation][vid] by Andrei
 Alexandrescu and the [Phobos Standard Library][phobos] of the [D Programming Language][D].
