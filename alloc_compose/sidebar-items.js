@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["FallbackAlloc","An allocator equivalent of an \"or\" operator in algebra."],["NullAlloc","An emphatically empty implementation of `AllocRef`."],["SegregateAlloc","Dispatches calls to `AllocRef` between two allocators depending on the size allocated."]],"trait":[["Owns","Trait to determine if a given `MemoryBlock` is owned by an allocator."]]});
