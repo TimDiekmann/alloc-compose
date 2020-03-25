@@ -9,8 +9,6 @@
 //! [D]: https://dlang.org/
 
 #![no_std]
-#![feature(const_generics)]
-#![allow(incomplete_features)]
 
 mod fallback_alloc;
 mod null_alloc;
