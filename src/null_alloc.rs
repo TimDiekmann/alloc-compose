@@ -5,6 +5,32 @@ use core::alloc::Layout;
 /// An emphatically empty implementation of `AllocRef`.
 ///
 /// Although it has no direct use, it is useful as a "terminator" in composite allocators.
+///
+/// # Examples
+///
+/// The `NullAlloc` will always return `Err`:
+///
+/// ```rust
+/// # extern crate alloc;
+/// # use alloc::alloc::{Global, AllocInit, AllocRef, Layout};
+/// use alloc_compose::NullAlloc;
+///
+/// let memory = NullAlloc.alloc(Layout::new::<u32>(), AllocInit::Uninitialized);
+/// assert!(memory.is_err())
+/// ```
+///
+/// Even if a zero-sized allocation is requested:
+///
+/// ```rust
+/// # extern crate alloc;
+/// # use alloc::alloc::{Global, AllocInit, AllocRef, Layout};
+/// use alloc_compose::NullAlloc;
+///
+/// struct ZST;
+///
+/// let memory = NullAlloc.alloc(Layout::new::<ZST>(), AllocInit::Uninitialized);
+/// assert!(memory.is_err())
+/// ```
 #[derive(Debug, Copy, Clone)]
 pub struct NullAlloc;
 
