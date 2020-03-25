@@ -1,0 +1,34 @@
+name: Documentation
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  docs:
+    name: Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Rust
+        run: |
+          rustup set profile minimal
+          rustup default nightly
+
+      - name: Checkout source code
+        uses: actions/checkout@master
+        with:
+          persist-credentials: false
+
+      - name: Build documentation
+        run: |
+          cargo doc --no-deps
+          echo '<meta http-equiv="refresh" content="0; url=alloc_compose">' > target/doc/index.html
+          touch target/doc/.nojekyll
+
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@releases/v3
+        with:
+          ACCESS_TOKEN: ${{ secrets.GH_PAT }}
+          BRANCH: gh-pages
+          FOLDER: target/doc

@@ -1,0 +1,22 @@
+name: Lint
+
+on: [push, pull_request]
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Rust
+        run: |
+          rustup default nightly
+          rustup component add clippy rustfmt
+
+      - name: Checkout source code
+        uses: actions/checkout@master
+
+      - name: Run rustfmt
+        run: cargo fmt -- --check
+
+      - name: Run clippy
+        run: cargo clippy -- -D clippy::all -D clippy::pedantic -D clippy::nursery -D clippy::cargo

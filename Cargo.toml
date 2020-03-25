@@ -1,0 +1,18 @@
+[package]
+name = "alloc-compose"
+version = "0.1.0"
+authors = ["Tim Diekmann <tim.diekmann@3dvision.de>"]
+edition = "2018"
+description = "Composable allocator structures for plugging together more powerful allocators"
+repository = "https://github.com/TimDiekmann/alloc-compose"
+documentation = "https://docs.rs/alloc-compose"
+readme = "README.md"
+keywords = ["alloc"]
+categories = ["no-std"]
+license = "MIT OR Apache-2.0"
+
+[badges]
+maintenance = { status = "experimental" }
+
+[dependencies]
+alloc = { package = "alloc-wg", version = "0.8.0", default-features = false }

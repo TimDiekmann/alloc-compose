@@ -1,0 +1,32 @@
+name: Test
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macOS-latest
+        rust:
+          - nightly
+        cargo_flags:
+          - ""
+    steps:
+      - name: Install Rust
+        uses: hecrj/setup-rust-action@master
+        with:
+          rust-version: ${{ matrix.rust }}
+
+      - name: Checkout source code
+        uses: actions/checkout@master
+
+      - name: Build
+        run: cargo build --all ${{ matrix.cargo_flags }}
+
+      - name: Test
+        run: cargo test --all ${{ matrix.cargo_flags }}
