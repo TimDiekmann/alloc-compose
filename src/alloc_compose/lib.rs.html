@@ -75,8 +75,18 @@
 <span id="75">75</span>
 <span id="76">76</span>
 <span id="77">77</span>
+<span id="78">78</span>
+<span id="79">79</span>
+<span id="80">80</span>
+<span id="81">81</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Composable allocator structures for plugging together more powerful allocators.</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! `alloc-compose` currently uses the [`alloc-wg`] crate as backend. As soon as all features</span>
+<span class="doccomment">//! has landed upstream, this dependency will be dropped. Until `AllocRef` has been stabilized,</span>
+<span class="doccomment">//! this crate requires a nightly compiler.</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! [`alloc-wg`]: https://crates.io/crates/alloc-wg</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! The design of composable allocators is inspired by</span>
 <span class="doccomment">//! [`std::allocator` Is to Allocation what `std::vector` Is to Vexation][vid] by Andrei</span>
@@ -87,8 +97,6 @@
 <span class="doccomment">//! [D]: https://dlang.org/</span>
 
 <span class="attribute">#![<span class="ident">no_std</span>]</span>
-<span class="attribute">#![<span class="ident">feature</span>(<span class="ident">const_generics</span>)]</span>
-<span class="attribute">#![<span class="ident">allow</span>(<span class="ident">incomplete_features</span>)]</span>
 
 <span class="kw">mod</span> <span class="ident">fallback_alloc</span>;
 <span class="kw">mod</span> <span class="ident">null_alloc</span>;

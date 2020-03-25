@@ -42,6 +42,32 @@
 <span id="42">42</span>
 <span id="43">43</span>
 <span id="44">44</span>
+<span id="45">45</span>
+<span id="46">46</span>
+<span id="47">47</span>
+<span id="48">48</span>
+<span id="49">49</span>
+<span id="50">50</span>
+<span id="51">51</span>
+<span id="52">52</span>
+<span id="53">53</span>
+<span id="54">54</span>
+<span id="55">55</span>
+<span id="56">56</span>
+<span id="57">57</span>
+<span id="58">58</span>
+<span id="59">59</span>
+<span id="60">60</span>
+<span id="61">61</span>
+<span id="62">62</span>
+<span id="63">63</span>
+<span id="64">64</span>
+<span id="65">65</span>
+<span id="66">66</span>
+<span id="67">67</span>
+<span id="68">68</span>
+<span id="69">69</span>
+<span id="70">70</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">Owns</span>;
 <span class="kw">use</span> <span class="ident">alloc</span>::<span class="ident">alloc</span>::{<span class="ident">AllocErr</span>, <span class="ident">AllocInit</span>, <span class="ident">AllocRef</span>, <span class="ident">MemoryBlock</span>, <span class="ident">ReallocPlacement</span>};
@@ -50,6 +76,32 @@
 <span class="doccomment">/// An emphatically empty implementation of `AllocRef`.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// Although it has no direct use, it is useful as a &quot;terminator&quot; in composite allocators.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// # Examples</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// The `NullAlloc` will always return `Err`:</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// ```rust</span>
+<span class="doccomment">/// # extern crate alloc;</span>
+<span class="doccomment">/// # use alloc::alloc::{Global, AllocInit, AllocRef, Layout};</span>
+<span class="doccomment">/// use alloc_compose::NullAlloc;</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// let memory = NullAlloc.alloc(Layout::new::&lt;u32&gt;(), AllocInit::Uninitialized);</span>
+<span class="doccomment">/// assert!(memory.is_err())</span>
+<span class="doccomment">/// ```</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// Even if a zero-sized allocation is requested:</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// ```rust</span>
+<span class="doccomment">/// # extern crate alloc;</span>
+<span class="doccomment">/// # use alloc::alloc::{Global, AllocInit, AllocRef, Layout};</span>
+<span class="doccomment">/// use alloc_compose::NullAlloc;</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// struct ZST;</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// let memory = NullAlloc.alloc(Layout::new::&lt;ZST&gt;(), AllocInit::Uninitialized);</span>
+<span class="doccomment">/// assert!(memory.is_err())</span>
+<span class="doccomment">/// ```</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">NullAlloc</span>;
 
