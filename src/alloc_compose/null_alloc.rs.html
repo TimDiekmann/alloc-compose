@@ -68,10 +68,21 @@
 <span id="68">68</span>
 <span id="69">69</span>
 <span id="70">70</span>
+<span id="71">71</span>
+<span id="72">72</span>
+<span id="73">73</span>
+<span id="74">74</span>
+<span id="75">75</span>
+<span id="76">76</span>
+<span id="77">77</span>
+<span id="78">78</span>
+<span id="79">79</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">Owns</span>;
-<span class="kw">use</span> <span class="ident">alloc</span>::<span class="ident">alloc</span>::{<span class="ident">AllocErr</span>, <span class="ident">AllocInit</span>, <span class="ident">AllocRef</span>, <span class="ident">MemoryBlock</span>, <span class="ident">ReallocPlacement</span>};
-<span class="kw">use</span> <span class="ident">core</span>::<span class="ident">alloc</span>::<span class="ident">Layout</span>;
+<span class="kw">use</span> <span class="ident">core</span>::{
+    <span class="ident">alloc</span>::{<span class="ident">AllocErr</span>, <span class="ident">AllocInit</span>, <span class="ident">AllocRef</span>, <span class="ident">Layout</span>, <span class="ident">MemoryBlock</span>, <span class="ident">ReallocPlacement</span>},
+    <span class="ident">ptr</span>::<span class="ident">NonNull</span>,
+};
 
 <span class="doccomment">/// An emphatically empty implementation of `AllocRef`.</span>
 <span class="doccomment">///</span>
@@ -82,9 +93,10 @@
 <span class="doccomment">/// The `NullAlloc` will always return `Err`:</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// ```rust</span>
-<span class="doccomment">/// # extern crate alloc;</span>
-<span class="doccomment">/// # use alloc::alloc::{Global, AllocInit, AllocRef, Layout};</span>
+<span class="doccomment">/// #![feature(allocator_api)]</span>
+<span class="doccomment">///</span>
 <span class="doccomment">/// use alloc_compose::NullAlloc;</span>
+<span class="doccomment">/// use std::alloc::{AllocInit, AllocRef, Global, Layout};</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// let memory = NullAlloc.alloc(Layout::new::&lt;u32&gt;(), AllocInit::Uninitialized);</span>
 <span class="doccomment">/// assert!(memory.is_err())</span>
@@ -93,49 +105,55 @@
 <span class="doccomment">/// Even if a zero-sized allocation is requested:</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// ```rust</span>
-<span class="doccomment">/// # extern crate alloc;</span>
-<span class="doccomment">/// # use alloc::alloc::{Global, AllocInit, AllocRef, Layout};</span>
+<span class="doccomment">/// #![feature(allocator_api)]</span>
+<span class="doccomment">///</span>
 <span class="doccomment">/// use alloc_compose::NullAlloc;</span>
+<span class="doccomment">/// use std::alloc::{AllocInit, AllocRef, Global, Layout};</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// struct ZST;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// let memory = NullAlloc.alloc(Layout::new::&lt;ZST&gt;(), AllocInit::Uninitialized);</span>
+<span class="doccomment">/// let memory = NullAlloc.alloc(Layout::new::&lt;()&gt;(), AllocInit::Uninitialized);</span>
 <span class="doccomment">/// assert!(memory.is_err())</span>
 <span class="doccomment">/// ```</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">NullAlloc</span>;
 
 <span class="kw">unsafe</span> <span class="kw">impl</span> <span class="ident">AllocRef</span> <span class="kw">for</span> <span class="ident">NullAlloc</span> {
-    <span class="kw">fn</span> <span class="ident">alloc</span>(<span class="self">self</span>, <span class="ident">_layout</span>: <span class="ident">Layout</span>, <span class="ident">_init</span>: <span class="ident">AllocInit</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MemoryBlock</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span> {
+    <span class="doccomment">/// Will always return `Err(AllocErr)`.</span>
+    <span class="kw">fn</span> <span class="ident">alloc</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">_layout</span>: <span class="ident">Layout</span>, <span class="ident">_init</span>: <span class="ident">AllocInit</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MemoryBlock</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span> {
         <span class="prelude-val">Err</span>(<span class="ident">AllocErr</span>)
     }
 
-    <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">dealloc</span>(<span class="self">self</span>, <span class="ident">_memory</span>: <span class="ident">MemoryBlock</span>) {
-        <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;NullAlloc::dealloc should never be called as `alloc` always fails&quot;</span>)
+    <span class="doccomment">/// Must not be called, as `alloc` always fails.</span>
+    <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">dealloc</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">_ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">_layout</span>: <span class="ident">Layout</span>) {
+        <span class="macro">unreachable</span><span class="macro">!</span>(<span class="string">&quot;NullAlloc::dealloc must never be called as `alloc` always fails&quot;</span>)
     }
 
+    <span class="doccomment">/// Must not be called, as `alloc` always fails.</span>
     <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">grow</span>(
-        <span class="self">self</span>,
-        <span class="ident">_memory</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">MemoryBlock</span>,
+        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
+        <span class="ident">_ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
+        <span class="ident">_layout</span>: <span class="ident">Layout</span>,
         <span class="ident">_new_size</span>: <span class="ident">usize</span>,
         <span class="ident">_placement</span>: <span class="ident">ReallocPlacement</span>,
         <span class="ident">_init</span>: <span class="ident">AllocInit</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">AllocErr</span><span class="op">&gt;</span> {
-        <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;NullAlloc::grow should never be called as `alloc` always fails&quot;</span>)
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MemoryBlock</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span> {
+        <span class="macro">unreachable</span><span class="macro">!</span>(<span class="string">&quot;NullAlloc::grow must never be called as `alloc` always fails&quot;</span>)
     }
 
+    <span class="doccomment">/// Must not be called, as `alloc` always fails.</span>
     <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">shrink</span>(
-        <span class="self">self</span>,
-        <span class="ident">_memory</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">MemoryBlock</span>,
+        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
+        <span class="ident">_ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
+        <span class="ident">_layout</span>: <span class="ident">Layout</span>,
         <span class="ident">_new_size</span>: <span class="ident">usize</span>,
         <span class="ident">_placement</span>: <span class="ident">ReallocPlacement</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">AllocErr</span><span class="op">&gt;</span> {
-        <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;NullAlloc::shrink should never be called as `alloc` always fails&quot;</span>)
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MemoryBlock</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span> {
+        <span class="macro">unreachable</span><span class="macro">!</span>(<span class="string">&quot;NullAlloc::shrink must never be called as `alloc` always fails&quot;</span>)
     }
 }
 
 <span class="kw">impl</span> <span class="ident">Owns</span> <span class="kw">for</span> <span class="ident">NullAlloc</span> {
-    <span class="kw">fn</span> <span class="ident">owns</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">_memory</span>: <span class="kw-2">&amp;</span><span class="ident">MemoryBlock</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="doccomment">/// Will always return `false.</span>
+    <span class="kw">fn</span> <span class="ident">owns</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">_memory</span>: <span class="ident">MemoryBlock</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
         <span class="bool-val">false</span>
     }
 }
