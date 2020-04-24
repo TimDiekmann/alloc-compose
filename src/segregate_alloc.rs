@@ -1,6 +1,9 @@
 use crate::{grow, shrink, Owns};
-use alloc::alloc::{AllocErr, AllocInit, AllocRef, MemoryBlock, ReallocPlacement};
-use core::alloc::Layout;
+use core::{
+    alloc::{AllocErr, AllocInit, AllocRef, Layout, MemoryBlock, ReallocPlacement},
+    cmp,
+    ptr::NonNull,
+};
 
 /// Dispatches calls to `AllocRef` between two allocators depending on the size allocated.
 ///
@@ -14,14 +17,10 @@ pub struct SegregateAlloc<Small, Large> {
 }
 
 impl<Small: AllocRef, Large: AllocRef> SegregateAlloc<Small, Large> {
-    fn clamp_memory(&self, memory: &mut MemoryBlock) {
-        if memory.size() > self.threshold {
-            unsafe {
-                *memory = MemoryBlock::new(
-                    memory.ptr(),
-                    Layout::from_size_align_unchecked(self.threshold, memory.align()),
-                );
-            }
+    fn clamp_memory(&self, memory: MemoryBlock) -> MemoryBlock {
+        MemoryBlock {
+            ptr: memory.ptr,
+            size: cmp::max(memory.size, self.threshold),
         }
     }
 }
@@ -31,59 +30,75 @@ where
     Small: AllocRef,
     Large: AllocRef,
 {
-    fn alloc(self, layout: Layout, init: AllocInit) -> Result<MemoryBlock, AllocErr> {
+    fn alloc(&mut self, layout: Layout, init: AllocInit) -> Result<MemoryBlock, AllocErr> {
         if layout.size() <= self.threshold {
-            let mut memory = self.small.alloc(layout, init)?;
-            self.clamp_memory(&mut memory);
-            Ok(memory)
+            let memory = self.small.alloc(layout, init)?;
+            Ok(self.clamp_memory(memory))
         } else {
             self.large.alloc(layout, init)
         }
     }
 
-    unsafe fn dealloc(self, memory: MemoryBlock) {
-        if memory.size() <= self.threshold {
-            self.small.dealloc(memory)
+    unsafe fn dealloc(&mut self, ptr: NonNull<u8>, layout: Layout) {
+        if layout.size() <= self.threshold {
+            self.small.dealloc(ptr, layout)
         } else {
-            self.large.dealloc(memory)
+            self.large.dealloc(ptr, layout)
         }
     }
 
     unsafe fn grow(
-        self,
-        memory: &mut MemoryBlock,
+        &mut self,
+        ptr: NonNull<u8>,
+        layout: Layout,
         new_size: usize,
         placement: ReallocPlacement,
         init: AllocInit,
-    ) -> Result<(), AllocErr> {
-        if memory.size() <= self.threshold {
-            if new_size > self.threshold {
-                grow(self.small, self.large, memory, new_size, placement, init)?;
+    ) -> Result<MemoryBlock, AllocErr> {
+        if layout.size() <= self.threshold {
+            let memory = if new_size > self.threshold {
+                grow(
+                    &mut self.small,
+                    &mut self.large,
+                    ptr,
+                    layout,
+                    new_size,
+                    placement,
+                    init,
+                )?
             } else {
-                self.small.grow(memory, new_size, placement, init)?;
-            }
-            self.clamp_memory(memory);
-            Ok(())
+                self.small.grow(ptr, layout, new_size, placement, init)?
+            };
+            Ok(self.clamp_memory(memory))
         } else {
-            self.large.grow(memory, new_size, placement, init)
+            self.large.grow(ptr, layout, new_size, placement, init)
         }
     }
 
     unsafe fn shrink(
-        self,
-        memory: &mut MemoryBlock,
+        &mut self,
+        ptr: NonNull<u8>,
+        layout: Layout,
         new_size: usize,
         placement: ReallocPlacement,
-    ) -> Result<(), AllocErr> {
-        if memory.size() <= self.threshold {
-            self.small.shrink(memory, new_size, placement)?;
+    ) -> Result<MemoryBlock, AllocErr> {
+        if layout.size() <= self.threshold {
+            let memory = self.small.shrink(ptr, layout, new_size, placement)?;
+            Ok(self.clamp_memory(memory))
         } else if new_size <= self.threshold {
-            shrink(self.large, self.small, memory, new_size, placement)?;
+            // Move ownership to `self.small`
+            let memory = shrink(
+                &mut self.large,
+                &mut self.small,
+                ptr,
+                layout,
+                new_size,
+                placement,
+            )?;
+            Ok(self.clamp_memory(memory))
         } else {
-            self.large.shrink(memory, new_size, placement)?;
+            self.large.shrink(ptr, layout, new_size, placement)
         }
-        self.clamp_memory(memory);
-        Ok(())
     }
 }
 
@@ -92,8 +107,8 @@ where
     Small: Owns,
     Large: Owns,
 {
-    fn owns(&self, memory: &MemoryBlock) -> bool {
-        if memory.size() <= self.threshold {
+    fn owns(&self, memory: MemoryBlock) -> bool {
+        if memory.size <= self.threshold {
             self.small.owns(memory)
         } else {
             self.large.owns(memory)

@@ -13,6 +13,3 @@ license = "MIT OR Apache-2.0"
 
 [badges]
 maintenance = { status = "experimental" }
-
-[dependencies]
-alloc = { package = "alloc-wg", version = "0.8.0", default-features = false }

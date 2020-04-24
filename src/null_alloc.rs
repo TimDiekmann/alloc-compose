@@ -1,6 +1,8 @@
 use crate::Owns;
-use alloc::alloc::{AllocErr, AllocInit, AllocRef, MemoryBlock, ReallocPlacement};
-use core::alloc::Layout;
+use core::{
+    alloc::{AllocErr, AllocInit, AllocRef, Layout, MemoryBlock, ReallocPlacement},
+    ptr::NonNull,
+};
 
 /// An emphatically empty implementation of `AllocRef`.
 ///
@@ -11,9 +13,10 @@ use core::alloc::Layout;
 /// The `NullAlloc` will always return `Err`:
 ///
 /// ```rust
-/// # extern crate alloc;
-/// # use alloc::alloc::{Global, AllocInit, AllocRef, Layout};
+/// #![feature(allocator_api)]
+///
 /// use alloc_compose::NullAlloc;
+/// use std::alloc::{AllocInit, AllocRef, Global, Layout};
 ///
 /// let memory = NullAlloc.alloc(Layout::new::<u32>(), AllocInit::Uninitialized);
 /// assert!(memory.is_err())
@@ -22,49 +25,55 @@ use core::alloc::Layout;
 /// Even if a zero-sized allocation is requested:
 ///
 /// ```rust
-/// # extern crate alloc;
-/// # use alloc::alloc::{Global, AllocInit, AllocRef, Layout};
+/// #![feature(allocator_api)]
+///
 /// use alloc_compose::NullAlloc;
+/// use std::alloc::{AllocInit, AllocRef, Global, Layout};
 ///
-/// struct ZST;
-///
-/// let memory = NullAlloc.alloc(Layout::new::<ZST>(), AllocInit::Uninitialized);
+/// let memory = NullAlloc.alloc(Layout::new::<()>(), AllocInit::Uninitialized);
 /// assert!(memory.is_err())
 /// ```
 #[derive(Debug, Copy, Clone)]
 pub struct NullAlloc;
 
 unsafe impl AllocRef for NullAlloc {
-    fn alloc(self, _layout: Layout, _init: AllocInit) -> Result<MemoryBlock, AllocErr> {
+    /// Will always return `Err(AllocErr)`.
+    fn alloc(&mut self, _layout: Layout, _init: AllocInit) -> Result<MemoryBlock, AllocErr> {
         Err(AllocErr)
     }
 
-    unsafe fn dealloc(self, _memory: MemoryBlock) {
-        panic!("NullAlloc::dealloc should never be called as `alloc` always fails")
+    /// Must not be called, as `alloc` always fails.
+    unsafe fn dealloc(&mut self, _ptr: NonNull<u8>, _layout: Layout) {
+        unreachable!("NullAlloc::dealloc must never be called as `alloc` always fails")
     }
 
+    /// Must not be called, as `alloc` always fails.
     unsafe fn grow(
-        self,
-        _memory: &mut MemoryBlock,
+        &mut self,
+        _ptr: NonNull<u8>,
+        _layout: Layout,
         _new_size: usize,
         _placement: ReallocPlacement,
         _init: AllocInit,
-    ) -> Result<(), AllocErr> {
-        panic!("NullAlloc::grow should never be called as `alloc` always fails")
+    ) -> Result<MemoryBlock, AllocErr> {
+        unreachable!("NullAlloc::grow must never be called as `alloc` always fails")
     }
 
+    /// Must not be called, as `alloc` always fails.
     unsafe fn shrink(
-        self,
-        _memory: &mut MemoryBlock,
+        &mut self,
+        _ptr: NonNull<u8>,
+        _layout: Layout,
         _new_size: usize,
         _placement: ReallocPlacement,
-    ) -> Result<(), AllocErr> {
-        panic!("NullAlloc::shrink should never be called as `alloc` always fails")
+    ) -> Result<MemoryBlock, AllocErr> {
+        unreachable!("NullAlloc::shrink must never be called as `alloc` always fails")
     }
 }
 
 impl Owns for NullAlloc {
-    fn owns(&self, _memory: &MemoryBlock) -> bool {
+    /// Will always return `false.
+    fn owns(&self, _memory: MemoryBlock) -> bool {
         false
     }
 }

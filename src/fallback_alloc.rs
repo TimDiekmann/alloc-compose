@@ -1,6 +1,8 @@
 use crate::{grow, Owns};
-use alloc::alloc::{AllocErr, AllocInit, AllocRef, MemoryBlock, ReallocPlacement};
-use core::alloc::Layout;
+use core::{
+    alloc::{AllocErr, AllocInit, AllocRef, Layout, MemoryBlock, ReallocPlacement},
+    ptr::NonNull,
+};
 
 /// An allocator equivalent of an "or" operator in algebra.
 ///
@@ -26,56 +28,68 @@ where
     Primary: AllocRef + Owns,
     Fallback: AllocRef,
 {
-    fn alloc(self, layout: Layout, init: AllocInit) -> Result<MemoryBlock, AllocErr> {
+    fn alloc(&mut self, layout: Layout, init: AllocInit) -> Result<MemoryBlock, AllocErr> {
         match self.primary.alloc(layout, init) {
             primary @ Ok(_) => primary,
             Err(_) => self.fallback.alloc(layout, init),
         }
     }
 
-    unsafe fn dealloc(self, memory: MemoryBlock) {
-        if self.primary.owns(&memory) {
-            self.primary.dealloc(memory)
+    unsafe fn dealloc(&mut self, ptr: NonNull<u8>, layout: Layout) {
+        if self.primary.owns(MemoryBlock {
+            ptr,
+            size: layout.size(),
+        }) {
+            self.primary.dealloc(ptr, layout)
         } else {
-            self.fallback.dealloc(memory)
+            self.fallback.dealloc(ptr, layout)
         }
     }
 
     unsafe fn grow(
-        self,
-        memory: &mut MemoryBlock,
+        &mut self,
+        ptr: NonNull<u8>,
+        layout: Layout,
         new_size: usize,
         placement: ReallocPlacement,
         init: AllocInit,
-    ) -> Result<(), AllocErr> {
-        if self.primary.owns(memory) {
-            if self.primary.grow(memory, new_size, placement, init).is_ok() {
-                Ok(())
+    ) -> Result<MemoryBlock, AllocErr> {
+        if self.primary.owns(MemoryBlock {
+            ptr,
+            size: layout.size(),
+        }) {
+            if let Ok(memory) = self.primary.grow(ptr, layout, new_size, placement, init) {
+                Ok(memory)
             } else {
                 grow(
-                    self.primary,
-                    self.fallback,
-                    memory,
+                    &mut self.primary,
+                    &mut self.fallback,
+                    ptr,
+                    layout,
                     new_size,
                     placement,
                     init,
                 )
             }
         } else {
-            self.fallback.grow(memory, new_size, placement, init)
+            self.fallback.grow(ptr, layout, new_size, placement, init)
         }
     }
 
     unsafe fn shrink(
-        self,
-        memory: &mut MemoryBlock,
+        &mut self,
+        ptr: NonNull<u8>,
+        layout: Layout,
         new_size: usize,
         placement: ReallocPlacement,
-    ) -> Result<(), AllocErr> {
-        if self.primary.owns(memory) {
-            self.primary.shrink(memory, new_size, placement)
+    ) -> Result<MemoryBlock, AllocErr> {
+        if self.primary.owns(MemoryBlock {
+            ptr,
+            size: layout.size(),
+        }) {
+            self.primary.shrink(ptr, layout, new_size, placement)
         } else {
-            self.fallback.shrink(memory, new_size, placement)
+            self.fallback.shrink(ptr, layout, new_size, placement)
         }
     }
 }
@@ -85,7 +99,7 @@ where
     Primary: Owns,
     Fallback: Owns,
 {
-    fn owns(&self, memory: &MemoryBlock) -> bool {
+    fn owns(&self, memory: MemoryBlock) -> bool {
         self.primary.owns(memory) || self.fallback.owns(memory)
     }
 }
