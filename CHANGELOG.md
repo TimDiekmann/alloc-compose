@@ -2,7 +2,9 @@
 
 [Documentation](https://docs.rs/alloc-compose/0.2.0/alloc_compose/)
 
-- Add `Region`
+- **Breaking Change** Use `core::alloc` instead of `alloc_wg`
+- Add `Region`, `CallbackRef`, `Proxy`, and `stats`.
+- Add more tests
 
 # [v0.1](https://github.com/TimDiekmann/alloc-compose/tree/v0.1.0)
 

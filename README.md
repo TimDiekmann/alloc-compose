@@ -1,6 +1,3 @@
-Alloc-Compose
-=============
-
 [![Test Status](https://github.com/TimDiekmann/alloc-compose/workflows/Test/badge.svg?event=push&branch=master)](https://github.com/TimDiekmann/alloc-compose/actions?query=workflow%3ATest+event%3Apush+branch%3Amaster)
 [![Lint Status](https://github.com/TimDiekmann/alloc-compose/workflows/Lint/badge.svg?event=push&branch=master)](https://github.com/TimDiekmann/alloc-compose/actions?query=workflow%3ALint+event%3Apush+branch%3Amaster)
 [![Docs master](https://img.shields.io/static/v1?label=docs&message=master&color=5479ab)](https://timdiekmann.github.io/alloc-compose/alloc_compose/index.html)
@@ -10,16 +7,13 @@ Alloc-Compose
 
 Composable allocator structures for plugging together more powerful allocators.
 
-`alloc-compose` currently uses the [`alloc-wg`] crate as backend. As soon as all features
-has landed upstream, this dependency will be dropped. Until `AllocRef` has been
-stabilized, this crate requires a nightly compiler.
-
-[`alloc-wg`]: https://crates.io/crates/alloc-wg
+`alloc-compose` relies on [`AllocRef`] as allocator trait. Until `AllocRef` has been stabilized, this crate requires a nightly compiler.
 
 The design of composable allocators is inspired by
 [`std::allocator` Is to Allocation what `std::vector` Is to Vexation][vid] by Andrei
 Alexandrescu and the [Phobos Standard Library][phobos] of the [D Programming Language][D].
 
+[`AllocRef`]: https://doc.rust-lang.org/nightly/core/alloc/trait.AllocRef.html
 [vid]: https://www.youtube.com/watch?v=LIb3L4vKZ7U
 [phobos]: https://github.com/dlang/phobos
 [D]: https://dlang.org/

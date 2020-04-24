@@ -217,8 +217,8 @@ impl Owns for Region<'_> {
 mod tests {
     #![allow(clippy::wildcard_imports)]
     use super::*;
-    use alloc::alloc::{Global, Layout};
     use core::slice;
+    use std::alloc::{Global, Layout};
 
     #[test]
     fn alloc_zero() {

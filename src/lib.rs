@@ -1,25 +1,18 @@
-//! Composable allocator structures for plugging together more powerful allocators.
-//!
-//! `alloc-compose` relies on [`AllocRef`] as allocator trait. Until `AllocRef` has been
-//! stabilized, this crate requires a nightly compiler.
-//!
-//! [`AllocRef`]: core::alloc::AllocRef
-//!
-//! The design of composable allocators is inspired by
-//! [`std::allocator` Is to Allocation what `std::vector` Is to Vexation][vid] by Andrei
-//! Alexandrescu and the [Phobos Standard Library][phobos] of the [D Programming Language][D].
-//!
-//! [vid]: https://www.youtube.com/watch?v=LIb3L4vKZ7U
-//! [phobos]: https://github.com/dlang/phobos
-//! [D]: https://dlang.org/
-
-#![no_std]
+#![cfg_attr(not(test), no_std)]
+#![cfg_attr(doc, feature(doc_cfg, external_doc))]
+#![cfg_attr(doc, doc(include = "../README.md"))]
 #![feature(allocator_api)]
 
+#[cfg(any(feature = "alloc", doc))]
+extern crate alloc;
+
+mod callback_ref;
 mod fallback_alloc;
 mod null_alloc;
+mod proxy;
 mod region;
 mod segregate_alloc;
+pub mod stats;
 
 use core::{
     alloc::{AllocErr, AllocInit, AllocRef, Layout, MemoryBlock, ReallocPlacement},
@@ -27,8 +20,10 @@ use core::{
 };
 
 pub use self::{
+    callback_ref::CallbackRef,
     fallback_alloc::FallbackAlloc,
     null_alloc::NullAlloc,
+    proxy::Proxy,
     region::Region,
     segregate_alloc::SegregateAlloc,
 };
