@@ -9,8 +9,8 @@ jobs:
     steps:
       - name: Install Rust
         run: |
+          rustup set profile default
           rustup default nightly
-          rustup component add clippy rustfmt
 
       - name: Checkout source code
         uses: actions/checkout@master
@@ -19,4 +19,4 @@ jobs:
         run: cargo fmt -- --check
 
       - name: Run clippy
-        run: cargo clippy -- -D clippy::all -D clippy::pedantic -D clippy::nursery -D clippy::cargo
+        run: cargo clippy -- -D clippy::all -D clippy::pedantic -D clippy::nursery -D clippy::cargo -A clippy::must-use-candidate
