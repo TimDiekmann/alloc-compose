@@ -15,6 +15,34 @@ use core::{
 ///
 /// [`Global`]: https://doc.rust-lang.org/alloc/alloc/struct.Global.html
 /// [`System`]: https://doc.rust-lang.org/std/alloc/struct.System.html
+///
+/// # Example
+///
+/// ```rust
+/// #![feature(allocator_api)]
+///
+/// use alloc_compose::{FallbackAlloc, Owns, Region};
+/// use std::alloc::{AllocInit, AllocRef, Layout, System};
+///
+/// let mut data = [0; 32];
+/// let mut alloc = FallbackAlloc {
+///     primary: Region::new(&mut data),
+///     fallback: System,
+/// };
+///
+/// let small_memory = alloc.alloc(Layout::new::<u32>(), AllocInit::Uninitialized)?;
+/// let big_memory = alloc.alloc(Layout::new::<[u32; 64]>(), AllocInit::Uninitialized)?;
+///
+/// assert!(alloc.primary.owns(small_memory));
+/// assert!(!alloc.primary.owns(big_memory));
+///
+/// unsafe {
+///     // `big_memory` was allocated from `System`, we can dealloc it directly
+///     System.dealloc(big_memory.ptr, Layout::new::<[u32; 64]>());
+///     alloc.dealloc(small_memory.ptr, Layout::new::<u32>());
+/// };
+/// # Ok::<(), core::alloc::AllocErr>(())
+/// ```
 #[derive(Debug, Copy, Clone)]
 pub struct FallbackAlloc<Primary, Fallback> {
     /// The primary allocator

@@ -1,10 +1,9 @@
 //! Composable allocator structures for plugging together more powerful allocators.
 //!
-//! `alloc-compose` currently uses the [`alloc-wg`] crate as backend. As soon as all features
-//! has landed upstream, this dependency will be dropped. Until `AllocRef` has been stabilized,
-//! this crate requires a nightly compiler.
+//! `alloc-compose` relies on [`AllocRef`] as allocator trait. Until `AllocRef` has been
+//! stabilized, this crate requires a nightly compiler.
 //!
-//! [`alloc-wg`]: https://crates.io/crates/alloc-wg
+//! [`AllocRef`]: core::alloc::AllocRef
 //!
 //! The design of composable allocators is inspired by
 //! [`std::allocator` Is to Allocation what `std::vector` Is to Vexation][vid] by Andrei
@@ -19,6 +18,7 @@
 
 mod fallback_alloc;
 mod null_alloc;
+mod region;
 mod segregate_alloc;
 
 use core::{
@@ -29,6 +29,7 @@ use core::{
 pub use self::{
     fallback_alloc::FallbackAlloc,
     null_alloc::NullAlloc,
+    region::Region,
     segregate_alloc::SegregateAlloc,
 };
 
