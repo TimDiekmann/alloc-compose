@@ -25,11 +25,9 @@ use core::{
 /// Even if a zero-sized allocation is requested:
 ///
 /// ```rust
-/// #![feature(allocator_api)]
-///
-/// use alloc_compose::NullAlloc;
-/// use std::alloc::{AllocInit, AllocRef, Global, Layout};
-///
+/// # #![feature(allocator_api)]
+/// # use alloc_compose::NullAlloc;
+/// # use std::alloc::{AllocInit, AllocRef, Global, Layout};
 /// let memory = NullAlloc.alloc(Layout::new::<()>(), AllocInit::Uninitialized);
 /// assert!(memory.is_err())
 /// ```
