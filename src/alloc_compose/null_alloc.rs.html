@@ -75,8 +75,6 @@
 <span id="75">75</span>
 <span id="76">76</span>
 <span id="77">77</span>
-<span id="78">78</span>
-<span id="79">79</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">Owns</span>;
 <span class="kw">use</span> <span class="ident">core</span>::{
@@ -105,11 +103,9 @@
 <span class="doccomment">/// Even if a zero-sized allocation is requested:</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// ```rust</span>
-<span class="doccomment">/// #![feature(allocator_api)]</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// use alloc_compose::NullAlloc;</span>
-<span class="doccomment">/// use std::alloc::{AllocInit, AllocRef, Global, Layout};</span>
-<span class="doccomment">///</span>
+<span class="doccomment">/// # #![feature(allocator_api)]</span>
+<span class="doccomment">/// # use alloc_compose::NullAlloc;</span>
+<span class="doccomment">/// # use std::alloc::{AllocInit, AllocRef, Global, Layout};</span>
 <span class="doccomment">/// let memory = NullAlloc.alloc(Layout::new::&lt;()&gt;(), AllocInit::Uninitialized);</span>
 <span class="doccomment">/// assert!(memory.is_err())</span>
 <span class="doccomment">/// ```</span>
