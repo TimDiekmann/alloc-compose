@@ -51,8 +51,7 @@ jobs:
               ;;
           esac
           curl -L https://github.com/mozilla/grcov/releases/latest/download/${GRCOV_NAME} | tar jxf -
-          zip -0 ccov.zip `find . \( -name "alloc_compose*.gc*" \) -print`;
-          ./grcov ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore "/*" -o lcov.info;
+          ./grcov ./target/debug/ -s . -t lcov --llvm --branch --ignore-not-existing --ignore "/*" -o lcov.info;
 
       - name: Coveralls
         uses: coverallsapp/github-action@master
