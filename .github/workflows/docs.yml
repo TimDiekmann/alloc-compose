@@ -22,7 +22,7 @@ jobs:
 
       - name: Build documentation
         run: |
-          cargo doc --no-deps
+          cargo doc --no-deps --all-features
           echo '<meta http-equiv="refresh" content="0; url=alloc_compose">' > target/doc/index.html
           touch target/doc/.nojekyll
 

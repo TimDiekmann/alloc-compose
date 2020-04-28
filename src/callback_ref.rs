@@ -113,7 +113,7 @@ unsafe impl<C: CallbackRef> CallbackRef for &C {
 macro_rules! impl_alloc_stats {
     ($tt:tt) => {
         #[cfg(any(doc, feature = "alloc"))]
-        #[doc(cfg(feature = "alloc"))]
+        #[cfg_attr(doc, doc(cfg(feature = "alloc")))]
         /// This is only available with the **"alloc"-feature** enabled.
         unsafe impl<C: CallbackRef> CallbackRef for $tt<C> {
             #[inline]
