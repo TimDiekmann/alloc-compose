@@ -1,0 +1,32 @@
+name: Coverage
+
+on: ["push", "pull_request"]
+
+jobs:
+  lint:
+    name: Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Rust
+        run: |
+          rustup set profile minimal
+          rustup default nightly
+
+      - name: Checkout source code
+        uses: actions/checkout@master
+
+      - name: Test
+        run: |
+          curl -L https://github.com/mozilla/grcov/releases/latest/download/grcov-linux-x86_64.tar.bz2 | tar jxf -
+          export CARGO_INCREMENTAL=0
+          export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads"
+          cargo build --verbose
+          cargo test --verbose
+          zip -0 ccov.zip `find . \( -name "alloc_compose*.gc*" \) -print`;
+          ./grcov ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore "/*" -o lcov.info;
+
+      - name: Coveralls
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: lcov.info
