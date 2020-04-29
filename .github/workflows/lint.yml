@@ -35,32 +35,32 @@ jobs:
           command: fmt
           args: --all -- --check --verbose
 
-  tomlfmt:
-    name: Tomlfmt
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout source code
-        uses: actions/checkout@master
+  # tomlfmt:
+  #   name: Tomlfmt
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout source code
+  #       uses: actions/checkout@master
 
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: nightly
-          override: true
+  #     - name: Install Rust
+  #       uses: actions-rs/toolchain@v1
+  #       with:
+  #         profile: minimal
+  #         toolchain: nightly
+  #         override: true
 
-      - name: Install Tomlfmt
-        uses: actions-rs/install@v0.1
-        with:
-          crate: cargo-tomlfmt
-          version: latest
-          use-tool-cache: true
+  #     - name: Install Tomlfmt
+  #       uses: actions-rs/install@v0.1
+  #       with:
+  #         crate: cargo-tomlfmt
+  #         version: latest
+  #         use-tool-cache: true
 
-      - name: Run Tomlfmt
-        uses: actions-rs/cargo@v1
-        with:
-          command: tomlfmt
-          args: --dryrun
+  #     - name: Run Tomlfmt
+  #       uses: actions-rs/cargo@v1
+  #       with:
+  #         command: tomlfmt
+  #         args: --dryrun
 
   clippy:
     name: Clippy
