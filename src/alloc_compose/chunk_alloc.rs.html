@@ -291,11 +291,11 @@
 <span class="doccomment">/// ```rust</span>
 <span class="doccomment">/// #![feature(allocator_api)]</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// use alloc_compose::{ChunkAlloc, Region};</span>
-<span class="doccomment">/// use std::alloc::{AllocInit, AllocRef, Global, Layout};</span>
+<span class="doccomment">/// use alloc_compose::ChunkAlloc;</span>
+<span class="doccomment">/// use std::alloc::{AllocInit, AllocRef, Layout, System};</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// let mut data = [0; 64];</span>
-<span class="doccomment">/// let mut alloc = ChunkAlloc::&lt;_, 64&gt;(Region::new(&amp;mut data));</span>
+<span class="doccomment">/// let mut alloc = ChunkAlloc::&lt;_, 64&gt;(System);</span>
 <span class="doccomment">/// let memory = alloc.alloc(Layout::new::&lt;[u8; 16]&gt;(), AllocInit::Uninitialized)?;</span>
 <span class="doccomment">/// assert_eq!(memory.size % 32, 0);</span>
 <span class="doccomment">/// assert!(memory.size &gt;= 32);</span>
@@ -307,10 +307,10 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// ```rust</span>
 <span class="doccomment">/// # #![feature(allocator_api)]</span>
-<span class="doccomment">/// # use alloc_compose::{ChunkAlloc, Region};</span>
-<span class="doccomment">/// # use std::alloc::{AllocInit, AllocRef, Global, Layout};</span>
+<span class="doccomment">/// # use alloc_compose::ChunkAlloc;</span>
+<span class="doccomment">/// # use std::alloc::{AllocInit, AllocRef, System, Layout};</span>
 <span class="doccomment">/// # let mut data = [0; 64];</span>
-<span class="doccomment">/// # let mut alloc = ChunkAlloc::&lt;_, 64&gt;(Region::new(&amp;mut data));</span>
+<span class="doccomment">/// # let mut alloc = ChunkAlloc::&lt;_, 64&gt;(System);</span>
 <span class="doccomment">/// # let memory = alloc.alloc(Layout::new::&lt;[u8; 16]&gt;(), AllocInit::Uninitialized)?;</span>
 <span class="doccomment">/// use std::alloc::ReallocPlacement;</span>
 <span class="doccomment">/// let memory = unsafe {</span>

@@ -3,11 +3,11 @@
 <div class="example-wrap"><pre class="rust rust-example-rendered">
 <span class="attribute">#![<span class="ident">feature</span>(<span class="ident">allocator_api</span>)]</span>
 
-<span class="kw">use</span> <span class="ident">alloc_compose</span>::{<span class="ident">ChunkAlloc</span>, <span class="ident">Region</span>};
-<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">alloc</span>::{<span class="ident">AllocInit</span>, <span class="ident">AllocRef</span>, <span class="ident">Global</span>, <span class="ident">Layout</span>};
+<span class="kw">use</span> <span class="ident">alloc_compose</span>::<span class="ident">ChunkAlloc</span>;
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">alloc</span>::{<span class="ident">AllocInit</span>, <span class="ident">AllocRef</span>, <span class="ident">Layout</span>, <span class="ident">System</span>};
 
 <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">data</span> <span class="op">=</span> [<span class="number">0</span>; <span class="number">64</span>];
-<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">alloc</span> <span class="op">=</span> <span class="ident">ChunkAlloc</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="number">64</span><span class="op">&gt;</span>(<span class="ident">Region</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">data</span>));
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">alloc</span> <span class="op">=</span> <span class="ident">ChunkAlloc</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="number">64</span><span class="op">&gt;</span>(<span class="ident">System</span>);
 <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>.<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">16</span>]<span class="op">&gt;</span>(), <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>)<span class="question-mark">?</span>;
 <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">memory</span>.<span class="ident">size</span> <span class="op">%</span> <span class="number">32</span>, <span class="number">0</span>);
 <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">memory</span>.<span class="ident">size</span> <span class="op">&gt;</span><span class="op">=</span> <span class="number">32</span>);</pre></div>
