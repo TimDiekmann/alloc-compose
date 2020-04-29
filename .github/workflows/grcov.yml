@@ -1,0 +1,66 @@
+name: Coverage
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - "*"
+  pull_request:
+
+jobs:
+  grcov:
+    name: Coverage
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macOS-latest
+        toolchain:
+          - nightly
+        cargo_flags:
+          - "--all-features"
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.toolchain }}
+          override: true
+
+      - name: Test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --all --no-fail-fast ${{ matrix.cargo_flags }}
+        env:
+          CARGO_INCREMENTAL: "0"
+          RUSTFLAGS: "-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads"
+
+      - name: Generate coverage data
+        id: grcov
+        uses: actions-rs/grcov@v0.1
+
+      - name: Collect coverage data
+        uses: coverallsapp/github-action@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: ${{ steps.grcov.outputs.report }}
+          flag-name: ${{ matrix.os }}
+          parallel: true
+
+  finish:
+    name: Upload coverage report
+    needs: grcov
+    runs-on: ubuntu-latest
+    steps:
+      - name: Upload
+        uses: coverallsapp/github-action@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          parallel-finished: true
