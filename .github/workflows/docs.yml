@@ -24,11 +24,18 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Build documentation
+      - name: Build
         run: |
-          cargo doc --no-deps --all-features
-          echo '<meta http-equiv="refresh" content="0; url=alloc_compose">' > target/doc/index.html
+          cargo doc --verbose --no-deps --all-features
+          CRATE_TEST=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]' | cut -f2 -d"/")
+          echo "<meta http-equiv=\"refresh\" content=\"0; url=${CRATE_TEST/-/_}\">" > target/doc/index.html
           touch target/doc/.nojekyll
+
+      - name: Upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: Documentation
+          path: target/doc
 
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@releases/v3

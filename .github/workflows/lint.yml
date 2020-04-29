@@ -10,6 +10,9 @@ defaults:
   run:
     shell: bash
 
+env:
+  CLIPPY_PARAMS: -D clippy::all -D clippy::pedantic -D clippy::nursery -D clippy::cargo
+
 jobs:
   lint:
     name: Lint
@@ -24,7 +27,7 @@ jobs:
         uses: actions/checkout@master
 
       - name: Run rustfmt
-        run: cargo fmt -- --check
+        run: cargo fmt -- --verbose --check
 
       - name: Run clippy
-        run: cargo clippy --all-features -- -D clippy::all -D clippy::pedantic -D clippy::nursery -D clippy::cargo -A clippy::must-use-candidate
+        run: cargo clippy --verbose --all-features -- ${{ env.CLIPPY_PARAMS }}
