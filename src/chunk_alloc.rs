@@ -11,11 +11,11 @@ use core::{
 /// ```rust
 /// #![feature(allocator_api)]
 ///
-/// use alloc_compose::{ChunkAlloc, Region};
-/// use std::alloc::{AllocInit, AllocRef, Global, Layout};
+/// use alloc_compose::ChunkAlloc;
+/// use std::alloc::{AllocInit, AllocRef, Layout, System};
 ///
 /// let mut data = [0; 64];
-/// let mut alloc = ChunkAlloc::<_, 64>(Region::new(&mut data));
+/// let mut alloc = ChunkAlloc::<_, 64>(System);
 /// let memory = alloc.alloc(Layout::new::<[u8; 16]>(), AllocInit::Uninitialized)?;
 /// assert_eq!(memory.size % 32, 0);
 /// assert!(memory.size >= 32);
@@ -27,10 +27,10 @@ use core::{
 ///
 /// ```rust
 /// # #![feature(allocator_api)]
-/// # use alloc_compose::{ChunkAlloc, Region};
-/// # use std::alloc::{AllocInit, AllocRef, Global, Layout};
+/// # use alloc_compose::ChunkAlloc;
+/// # use std::alloc::{AllocInit, AllocRef, System, Layout};
 /// # let mut data = [0; 64];
-/// # let mut alloc = ChunkAlloc::<_, 64>(Region::new(&mut data));
+/// # let mut alloc = ChunkAlloc::<_, 64>(System);
 /// # let memory = alloc.alloc(Layout::new::<[u8; 16]>(), AllocInit::Uninitialized)?;
 /// use std::alloc::ReallocPlacement;
 /// let memory = unsafe {

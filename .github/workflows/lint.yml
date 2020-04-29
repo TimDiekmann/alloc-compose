@@ -11,23 +11,46 @@ defaults:
     shell: bash
 
 env:
-  CLIPPY_PARAMS: -D clippy::all -D clippy::pedantic -D clippy::nursery -D clippy::cargo
+  CLIPPY_PARAMS: -W clippy::all -W clippy::pedantic -W clippy::nursery -W clippy::cargo
 
 jobs:
-  lint:
-    name: Lint
+  rustfmt:
+    name: Rustfmt
     runs-on: ubuntu-latest
     steps:
-      - name: Install Rust
-        run: |
-          rustup set profile default
-          rustup default nightly
-
       - name: Checkout source code
         uses: actions/checkout@master
 
-      - name: Run rustfmt
-        run: cargo fmt -- --verbose --check
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+          components: rustfmt
+
+      - uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check --verbose
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@master
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+          components: clippy
 
       - name: Run clippy
-        run: cargo clippy --verbose --all-features -- ${{ env.CLIPPY_PARAMS }}
+        uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --all-features -- ${{ env.CLIPPY_PARAMS }}
