@@ -62,7 +62,7 @@ impl<A, const SIZE: usize> ChunkAlloc<A, SIZE> {
 unsafe impl<A: AllocRef, const SIZE: usize> AllocRef for ChunkAlloc<A, SIZE> {
     fn alloc(&mut self, layout: Layout, init: AllocInit) -> Result<MemoryBlock, AllocErr> {
         Self::assert_alignment();
-        self.0.alloc(
+        let memory = self.0.alloc(
             unsafe {
                 Layout::from_size_align_unchecked(
                     Self::next_multiple(layout.size()),
@@ -70,7 +70,11 @@ unsafe impl<A: AllocRef, const SIZE: usize> AllocRef for ChunkAlloc<A, SIZE> {
                 )
             },
             init,
-        )
+        )?;
+        Ok(MemoryBlock {
+            ptr: memory.ptr,
+            size: memory.size - (memory.size % SIZE),
+        })
     }
     unsafe fn dealloc(&mut self, ptr: NonNull<u8>, layout: Layout) {
         self.0.dealloc(
@@ -94,13 +98,17 @@ unsafe impl<A: AllocRef, const SIZE: usize> AllocRef for ChunkAlloc<A, SIZE> {
             });
         }
 
-        self.0.grow(
+        let memory = self.0.grow(
             ptr,
             Layout::from_size_align_unchecked(next_multiple, layout.align()),
             Self::next_multiple(new_size),
             placement,
             init,
-        )
+        )?;
+        Ok(MemoryBlock {
+            ptr: memory.ptr,
+            size: memory.size - (memory.size % SIZE),
+        })
     }
     unsafe fn shrink(
         &mut self,
@@ -118,12 +126,16 @@ unsafe impl<A: AllocRef, const SIZE: usize> AllocRef for ChunkAlloc<A, SIZE> {
             });
         }
 
-        self.0.shrink(
+        let memory = self.0.shrink(
             ptr,
             Layout::from_size_align_unchecked(next_multiple, layout.align()),
             Self::next_multiple(new_size),
             placement,
-        )
+        )?;
+        Ok(MemoryBlock {
+            ptr: memory.ptr,
+            size: memory.size - (memory.size % SIZE),
+        })
     }
 }
 
