@@ -168,6 +168,7 @@ where
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::wildcard_imports)]
     use super::*;
     use crate::{helper::Tracker, Proxy};
     use core::{fmt, slice};
@@ -242,9 +243,7 @@ mod tests {
                     layout.size(),
                     ReallocPlacement::MayMove,
                 )
-                .unwrap_or_else(|_| {
-                    panic!("Could not shrink allocation to {} bytes", layout.size())
-                });
+                .expect("Could not shrink allocation");
 
             assert_eq!(
                 Affix::<System, Prefix, Suffix>::prefix(memory.ptr, layout).as_ref(),
@@ -295,13 +294,13 @@ mod tests {
 
     #[test]
     fn test_alloc_a1024_u64_zst() {
-        test_alloc::<AlignTo1024, ()>(AlignTo1024 { a: 0xDEDEDEDE }, Layout::new::<u64>(), ())
+        test_alloc::<AlignTo1024, ()>(AlignTo1024 { a: 0xDEDE_DEDE }, Layout::new::<u64>(), ())
     }
 
     #[test]
     fn test_alloc_u32_u64_a1024() {
-        test_alloc::<u32, AlignTo1024>(0xDEDEDEDE, Layout::new::<u64>(), AlignTo1024 {
-            a: 0xDEDEDEDE,
+        test_alloc::<u32, AlignTo1024>(0xDEDE_DEDE, Layout::new::<u64>(), AlignTo1024 {
+            a: 0xDEDE_DEDE,
         })
     }
 
@@ -312,6 +311,6 @@ mod tests {
 
     #[test]
     fn test_alloc_u32_u64_a16() {
-        test_alloc::<u32, AlignTo16>(0xDEDEDEDE, Layout::new::<u64>(), AlignTo16)
+        test_alloc::<u32, AlignTo16>(0xDEDE_DEDE, Layout::new::<u64>(), AlignTo16)
     }
 }

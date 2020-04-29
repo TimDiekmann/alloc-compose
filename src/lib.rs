@@ -224,33 +224,33 @@ pub(crate) mod helper {
         fn owns(&self, _success: bool) {}
     }
 
-    // impl Drop for Tracker {
-    //     fn drop(&mut self) {
-    //         let map = self.map.get_mut().unwrap_or_else(PoisonError::into_inner);
-    //         if !map.is_empty() {
-    //             let mut error = String::from("Not all allocations has been freed:");
-    //             for (ptr, (size, layout)) in map {
-    //                 if *size == layout.size() {
-    //                     error.push_str(&format!(
-    //                         "\n- {:?}: Layout {{ size: {}, align: {} }}",
-    //                         ptr,
-    //                         size,
-    //                         layout.align()
-    //                     ));
-    //                 } else {
-    //                     error.push_str(&format!(
-    //                         "\n- {:?}: Layout {{ size: {}..={}, align: {} }}",
-    //                         ptr,
-    //                         layout.size(),
-    //                         size,
-    //                         layout.align()
-    //                     ));
-    //                 }
-    //             }
-    //             panic!("{}", error);
-    //         }
-    //     }
-    // }
+    impl Drop for Tracker {
+        fn drop(&mut self) {
+            let map = self.map.get_mut().unwrap_or_else(PoisonError::into_inner);
+            if !map.is_empty() {
+                let mut error = String::from("Not all allocations has been freed:");
+                for (ptr, (size, layout)) in map {
+                    if *size == layout.size() {
+                        error.push_str(&format!(
+                            "\n- {:?}: Layout {{ size: {}, align: {} }}",
+                            ptr,
+                            size,
+                            layout.align()
+                        ));
+                    } else {
+                        error.push_str(&format!(
+                            "\n- {:?}: Layout {{ size: {}..={}, align: {} }}",
+                            ptr,
+                            layout.size(),
+                            size,
+                            layout.align()
+                        ));
+                    }
+                }
+                panic!("{}", error);
+            }
+        }
+    }
 
     pub fn tracker<A: AllocRef>(alloc: A) -> impl AllocRef {
         Proxy {
