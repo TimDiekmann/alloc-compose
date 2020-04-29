@@ -277,6 +277,18 @@
 <span id="277">277</span>
 <span id="278">278</span>
 <span id="279">279</span>
+<span id="280">280</span>
+<span id="281">281</span>
+<span id="282">282</span>
+<span id="283">283</span>
+<span id="284">284</span>
+<span id="285">285</span>
+<span id="286">286</span>
+<span id="287">287</span>
+<span id="288">288</span>
+<span id="289">289</span>
+<span id="290">290</span>
+<span id="291">291</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">Owns</span>;
 <span class="kw">use</span> <span class="ident">core</span>::{
@@ -342,7 +354,7 @@
 <span class="kw">unsafe</span> <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">AllocRef</span>, <span class="kw">const</span> <span class="ident">SIZE</span>: <span class="ident">usize</span><span class="op">&gt;</span> <span class="ident">AllocRef</span> <span class="kw">for</span> <span class="ident">ChunkAlloc</span><span class="op">&lt;</span><span class="ident">A</span>, <span class="ident">SIZE</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">alloc</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>, <span class="ident">init</span>: <span class="ident">AllocInit</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MemoryBlock</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span> {
         <span class="self">Self</span>::<span class="ident">assert_alignment</span>();
-        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">alloc</span>(
+        <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">alloc</span>(
             <span class="kw">unsafe</span> {
                 <span class="ident">Layout</span>::<span class="ident">from_size_align_unchecked</span>(
                     <span class="self">Self</span>::<span class="ident">next_multiple</span>(<span class="ident">layout</span>.<span class="ident">size</span>()),
@@ -350,7 +362,11 @@
                 )
             },
             <span class="ident">init</span>,
-        )
+        )<span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(<span class="ident">MemoryBlock</span> {
+            <span class="ident">ptr</span>: <span class="ident">memory</span>.<span class="ident">ptr</span>,
+            <span class="ident">size</span>: <span class="ident">memory</span>.<span class="ident">size</span> <span class="op">-</span> (<span class="ident">memory</span>.<span class="ident">size</span> <span class="op">%</span> <span class="ident">SIZE</span>),
+        })
     }
     <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">dealloc</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>) {
         <span class="self">self</span>.<span class="number">0</span>.<span class="ident">dealloc</span>(
@@ -374,13 +390,17 @@
             });
         }
 
-        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">grow</span>(
+        <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">grow</span>(
             <span class="ident">ptr</span>,
             <span class="ident">Layout</span>::<span class="ident">from_size_align_unchecked</span>(<span class="ident">next_multiple</span>, <span class="ident">layout</span>.<span class="ident">align</span>()),
             <span class="self">Self</span>::<span class="ident">next_multiple</span>(<span class="ident">new_size</span>),
             <span class="ident">placement</span>,
             <span class="ident">init</span>,
-        )
+        )<span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(<span class="ident">MemoryBlock</span> {
+            <span class="ident">ptr</span>: <span class="ident">memory</span>.<span class="ident">ptr</span>,
+            <span class="ident">size</span>: <span class="ident">memory</span>.<span class="ident">size</span> <span class="op">-</span> (<span class="ident">memory</span>.<span class="ident">size</span> <span class="op">%</span> <span class="ident">SIZE</span>),
+        })
     }
     <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">shrink</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
@@ -398,12 +418,16 @@
             });
         }
 
-        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">shrink</span>(
+        <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">shrink</span>(
             <span class="ident">ptr</span>,
             <span class="ident">Layout</span>::<span class="ident">from_size_align_unchecked</span>(<span class="ident">next_multiple</span>, <span class="ident">layout</span>.<span class="ident">align</span>()),
             <span class="self">Self</span>::<span class="ident">next_multiple</span>(<span class="ident">new_size</span>),
             <span class="ident">placement</span>,
-        )
+        )<span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(<span class="ident">MemoryBlock</span> {
+            <span class="ident">ptr</span>: <span class="ident">memory</span>.<span class="ident">ptr</span>,
+            <span class="ident">size</span>: <span class="ident">memory</span>.<span class="ident">size</span> <span class="op">-</span> (<span class="ident">memory</span>.<span class="ident">size</span> <span class="op">%</span> <span class="ident">SIZE</span>),
+        })
     }
 }
 
