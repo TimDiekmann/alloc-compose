@@ -5,6 +5,10 @@ on:
     branches:
       - master
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   docs:
     name: Documentation

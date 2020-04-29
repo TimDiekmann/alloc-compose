@@ -1,0 +1,27 @@
+name: Publish
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Rust
+        run: |
+          rustup set profile minimal
+          rustup default nightly
+
+      - name: Checkout source code
+        uses: actions/checkout@master
+
+      - name: Publish
+        run: cargo publish --verbose --dry-run --all-features --token ${{ secrets.CARGO_TOKEN }}

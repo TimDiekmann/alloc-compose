@@ -4,16 +4,18 @@ on:
   push:
     branches:
       - master
-  pull_request:
 
-env:
-  CARGO_INCREMENTAL: 0
-  RUSTFLAGS: -Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads
+defaults:
+  run:
+    shell: bash
 
 jobs:
   test:
     name: Test
     runs-on: ${{ matrix.os }}
+    env:
+      CARGO_INCREMENTAL: 0
+      RUSTFLAGS: -Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads
     strategy:
       matrix:
         os:
@@ -27,9 +29,9 @@ jobs:
           - "--all-features"
     steps:
       - name: Install Rust
-        uses: hecrj/setup-rust-action@master
-        with:
-          rust-version: ${{ matrix.rust }}
+        run: |
+          rustup set profile minimal
+          rustup default ${{ matrix.rust }}
 
       - name: Checkout source code
         uses: actions/checkout@master
@@ -40,8 +42,7 @@ jobs:
       - name: Test
         run: cargo test --verbose --all ${{ matrix.cargo_flags }}
 
-      - name: Collect coverage data
-        shell: bash
+      - name: Install grcov
         run: |
           case "${{ matrix.os }}" in
             ubuntu-latest)
@@ -55,9 +56,11 @@ jobs:
               ;;
           esac
           curl -L https://github.com/mozilla/grcov/releases/latest/download/${GRCOV_NAME} | tar jxf -
-          ./grcov ./target/debug/ -s . -t lcov --llvm --branch --ignore-not-existing --ignore "/*" -o lcov.info;
 
-      - name: Coveralls
+      - name: Generate coverage data
+        run: ./grcov ./target/debug/ -s . -t lcov --llvm --branch --ignore-not-existing --ignore "/*" -o lcov.info;
+
+      - name: Collect coverage data
         uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -66,6 +69,7 @@ jobs:
           parallel: true
 
   finish:
+    name: Upload coverage report
     needs: test
     runs-on: ubuntu-latest
     steps:

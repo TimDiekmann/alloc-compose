@@ -6,6 +6,10 @@ on:
       - master
   pull_request:
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   lint:
     name: Lint
