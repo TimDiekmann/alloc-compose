@@ -115,6 +115,8 @@
 <span id="115">115</span>
 <span id="116">116</span>
 <span id="117">117</span>
+<span id="118">118</span>
+<span id="119">119</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">grow</span>, <span class="ident">shrink</span>, <span class="ident">Owns</span>};
 <span class="kw">use</span> <span class="ident">core</span>::{
@@ -128,37 +130,39 @@
 <span class="doccomment">/// All allocations smaller than or equal to `threshold` will be dispatched to `Small`. The others</span>
 <span class="doccomment">/// will go to `Large`.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SegregateAlloc</span><span class="op">&lt;</span><span class="ident">Small</span>, <span class="ident">Large</span><span class="op">&gt;</span> {
-    <span class="ident">threshold</span>: <span class="ident">usize</span>,
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SegregateAlloc</span><span class="op">&lt;</span><span class="ident">Small</span>, <span class="ident">Large</span>, <span class="kw">const</span> <span class="ident">THRESHOLD</span>: <span class="ident">usize</span><span class="op">&gt;</span> {
     <span class="kw">pub</span> <span class="ident">small</span>: <span class="ident">Small</span>,
     <span class="kw">pub</span> <span class="ident">large</span>: <span class="ident">Large</span>,
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Small</span>: <span class="ident">AllocRef</span>, <span class="ident">Large</span>: <span class="ident">AllocRef</span><span class="op">&gt;</span> <span class="ident">SegregateAlloc</span><span class="op">&lt;</span><span class="ident">Small</span>, <span class="ident">Large</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">clamp_memory</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">memory</span>: <span class="ident">MemoryBlock</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">MemoryBlock</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Small</span>: <span class="ident">AllocRef</span>, <span class="ident">Large</span>: <span class="ident">AllocRef</span>, <span class="kw">const</span> <span class="ident">THRESHOLD</span>: <span class="ident">usize</span><span class="op">&gt;</span>
+    <span class="ident">SegregateAlloc</span><span class="op">&lt;</span><span class="ident">Small</span>, <span class="ident">Large</span>, <span class="ident">THRESHOLD</span><span class="op">&gt;</span>
+{
+    <span class="kw">fn</span> <span class="ident">clamp_memory</span>(<span class="ident">memory</span>: <span class="ident">MemoryBlock</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">MemoryBlock</span> {
         <span class="ident">MemoryBlock</span> {
             <span class="ident">ptr</span>: <span class="ident">memory</span>.<span class="ident">ptr</span>,
-            <span class="ident">size</span>: <span class="ident">cmp</span>::<span class="ident">max</span>(<span class="ident">memory</span>.<span class="ident">size</span>, <span class="self">self</span>.<span class="ident">threshold</span>),
+            <span class="ident">size</span>: <span class="ident">cmp</span>::<span class="ident">max</span>(<span class="ident">memory</span>.<span class="ident">size</span>, <span class="ident">THRESHOLD</span>),
         }
     }
 }
 
-<span class="kw">unsafe</span> <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Small</span>, <span class="ident">Large</span><span class="op">&gt;</span> <span class="ident">AllocRef</span> <span class="kw">for</span> <span class="ident">SegregateAlloc</span><span class="op">&lt;</span><span class="ident">Small</span>, <span class="ident">Large</span><span class="op">&gt;</span>
+<span class="kw">unsafe</span> <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Small</span>, <span class="ident">Large</span>, <span class="kw">const</span> <span class="ident">THRESHOLD</span>: <span class="ident">usize</span><span class="op">&gt;</span> <span class="ident">AllocRef</span>
+    <span class="kw">for</span> <span class="ident">SegregateAlloc</span><span class="op">&lt;</span><span class="ident">Small</span>, <span class="ident">Large</span>, <span class="ident">THRESHOLD</span><span class="op">&gt;</span>
 <span class="kw">where</span>
     <span class="ident">Small</span>: <span class="ident">AllocRef</span>,
     <span class="ident">Large</span>: <span class="ident">AllocRef</span>,
 {
     <span class="kw">fn</span> <span class="ident">alloc</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>, <span class="ident">init</span>: <span class="ident">AllocInit</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MemoryBlock</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="ident">layout</span>.<span class="ident">size</span>() <span class="op">&lt;</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">threshold</span> {
+        <span class="kw">if</span> <span class="ident">layout</span>.<span class="ident">size</span>() <span class="op">&lt;</span><span class="op">=</span> <span class="ident">THRESHOLD</span> {
             <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">small</span>.<span class="ident">alloc</span>(<span class="ident">layout</span>, <span class="ident">init</span>)<span class="question-mark">?</span>;
-            <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">clamp_memory</span>(<span class="ident">memory</span>))
+            <span class="prelude-val">Ok</span>(<span class="self">Self</span>::<span class="ident">clamp_memory</span>(<span class="ident">memory</span>))
         } <span class="kw">else</span> {
             <span class="self">self</span>.<span class="ident">large</span>.<span class="ident">alloc</span>(<span class="ident">layout</span>, <span class="ident">init</span>)
         }
     }
 
     <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">dealloc</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>) {
-        <span class="kw">if</span> <span class="ident">layout</span>.<span class="ident">size</span>() <span class="op">&lt;</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">threshold</span> {
+        <span class="kw">if</span> <span class="ident">layout</span>.<span class="ident">size</span>() <span class="op">&lt;</span><span class="op">=</span> <span class="ident">THRESHOLD</span> {
             <span class="self">self</span>.<span class="ident">small</span>.<span class="ident">dealloc</span>(<span class="ident">ptr</span>, <span class="ident">layout</span>)
         } <span class="kw">else</span> {
             <span class="self">self</span>.<span class="ident">large</span>.<span class="ident">dealloc</span>(<span class="ident">ptr</span>, <span class="ident">layout</span>)
@@ -173,8 +177,8 @@
         <span class="ident">placement</span>: <span class="ident">ReallocPlacement</span>,
         <span class="ident">init</span>: <span class="ident">AllocInit</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MemoryBlock</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="ident">layout</span>.<span class="ident">size</span>() <span class="op">&lt;</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">threshold</span> {
-            <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">new_size</span> <span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">threshold</span> {
+        <span class="kw">if</span> <span class="ident">layout</span>.<span class="ident">size</span>() <span class="op">&lt;</span><span class="op">=</span> <span class="ident">THRESHOLD</span> {
+            <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">new_size</span> <span class="op">&gt;</span> <span class="ident">THRESHOLD</span> {
                 <span class="ident">grow</span>(
                     <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">small</span>,
                     <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">large</span>,
@@ -187,7 +191,7 @@
             } <span class="kw">else</span> {
                 <span class="self">self</span>.<span class="ident">small</span>.<span class="ident">grow</span>(<span class="ident">ptr</span>, <span class="ident">layout</span>, <span class="ident">new_size</span>, <span class="ident">placement</span>, <span class="ident">init</span>)<span class="question-mark">?</span>
             };
-            <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">clamp_memory</span>(<span class="ident">memory</span>))
+            <span class="prelude-val">Ok</span>(<span class="self">Self</span>::<span class="ident">clamp_memory</span>(<span class="ident">memory</span>))
         } <span class="kw">else</span> {
             <span class="self">self</span>.<span class="ident">large</span>.<span class="ident">grow</span>(<span class="ident">ptr</span>, <span class="ident">layout</span>, <span class="ident">new_size</span>, <span class="ident">placement</span>, <span class="ident">init</span>)
         }
@@ -200,10 +204,10 @@
         <span class="ident">new_size</span>: <span class="ident">usize</span>,
         <span class="ident">placement</span>: <span class="ident">ReallocPlacement</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MemoryBlock</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="ident">layout</span>.<span class="ident">size</span>() <span class="op">&lt;</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">threshold</span> {
+        <span class="kw">if</span> <span class="ident">layout</span>.<span class="ident">size</span>() <span class="op">&lt;</span><span class="op">=</span> <span class="ident">THRESHOLD</span> {
             <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">small</span>.<span class="ident">shrink</span>(<span class="ident">ptr</span>, <span class="ident">layout</span>, <span class="ident">new_size</span>, <span class="ident">placement</span>)<span class="question-mark">?</span>;
-            <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">clamp_memory</span>(<span class="ident">memory</span>))
-        } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">new_size</span> <span class="op">&lt;</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">threshold</span> {
+            <span class="prelude-val">Ok</span>(<span class="self">Self</span>::<span class="ident">clamp_memory</span>(<span class="ident">memory</span>))
+        } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">new_size</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">THRESHOLD</span> {
             <span class="comment">// Move ownership to `self.small`</span>
             <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">shrink</span>(
                 <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">large</span>,
@@ -213,20 +217,20 @@
                 <span class="ident">new_size</span>,
                 <span class="ident">placement</span>,
             )<span class="question-mark">?</span>;
-            <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">clamp_memory</span>(<span class="ident">memory</span>))
+            <span class="prelude-val">Ok</span>(<span class="self">Self</span>::<span class="ident">clamp_memory</span>(<span class="ident">memory</span>))
         } <span class="kw">else</span> {
             <span class="self">self</span>.<span class="ident">large</span>.<span class="ident">shrink</span>(<span class="ident">ptr</span>, <span class="ident">layout</span>, <span class="ident">new_size</span>, <span class="ident">placement</span>)
         }
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Small</span>, <span class="ident">Large</span><span class="op">&gt;</span> <span class="ident">Owns</span> <span class="kw">for</span> <span class="ident">SegregateAlloc</span><span class="op">&lt;</span><span class="ident">Small</span>, <span class="ident">Large</span><span class="op">&gt;</span>
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Small</span>, <span class="ident">Large</span>, <span class="kw">const</span> <span class="ident">THRESHOLD</span>: <span class="ident">usize</span><span class="op">&gt;</span> <span class="ident">Owns</span> <span class="kw">for</span> <span class="ident">SegregateAlloc</span><span class="op">&lt;</span><span class="ident">Small</span>, <span class="ident">Large</span>, <span class="ident">THRESHOLD</span><span class="op">&gt;</span>
 <span class="kw">where</span>
     <span class="ident">Small</span>: <span class="ident">Owns</span>,
     <span class="ident">Large</span>: <span class="ident">Owns</span>,
 {
     <span class="kw">fn</span> <span class="ident">owns</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">memory</span>: <span class="ident">MemoryBlock</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
-        <span class="kw">if</span> <span class="ident">memory</span>.<span class="ident">size</span> <span class="op">&lt;</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">threshold</span> {
+        <span class="kw">if</span> <span class="ident">memory</span>.<span class="ident">size</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">THRESHOLD</span> {
             <span class="self">self</span>.<span class="ident">small</span>.<span class="ident">owns</span>(<span class="ident">memory</span>)
         } <span class="kw">else</span> {
             <span class="self">self</span>.<span class="ident">large</span>.<span class="ident">owns</span>(<span class="ident">memory</span>)
