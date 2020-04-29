@@ -245,6 +245,38 @@
 <span id="245">245</span>
 <span id="246">246</span>
 <span id="247">247</span>
+<span id="248">248</span>
+<span id="249">249</span>
+<span id="250">250</span>
+<span id="251">251</span>
+<span id="252">252</span>
+<span id="253">253</span>
+<span id="254">254</span>
+<span id="255">255</span>
+<span id="256">256</span>
+<span id="257">257</span>
+<span id="258">258</span>
+<span id="259">259</span>
+<span id="260">260</span>
+<span id="261">261</span>
+<span id="262">262</span>
+<span id="263">263</span>
+<span id="264">264</span>
+<span id="265">265</span>
+<span id="266">266</span>
+<span id="267">267</span>
+<span id="268">268</span>
+<span id="269">269</span>
+<span id="270">270</span>
+<span id="271">271</span>
+<span id="272">272</span>
+<span id="273">273</span>
+<span id="274">274</span>
+<span id="275">275</span>
+<span id="276">276</span>
+<span id="277">277</span>
+<span id="278">278</span>
+<span id="279">279</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">Owns</span>;
 <span class="kw">use</span> <span class="ident">core</span>::{
@@ -252,16 +284,48 @@
     <span class="ident">ptr</span>::<span class="ident">NonNull</span>,
 };
 
-<span class="doccomment">/// Marks newly allocated and deallocated memory with a byte pattern.</span>
+<span class="doccomment">/// Allocate memory with a multiple size of the provided chunk size.</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// When allocating unintitialized memory, the block is set to `0xCD`. Before deallocating,</span>
-<span class="doccomment">/// the memory is set `0xDD`.</span>
-<span class="doccomment">/// Those values are choosed according to [Magic Debug Values] to match the Visual</span>
-<span class="doccomment">/// Studio Debug Heap implementation.</span>
+<span class="doccomment">/// # Examples</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// Once, `const_generics` allows default implementations, the values may be alterd with a parameter.</span>
+<span class="doccomment">/// ```rust</span>
+<span class="doccomment">/// #![feature(allocator_api)]</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// [Magic Debug Values]: https://en.wikipedia.org/wiki/Magic_number_%28programming%29#Magic_debug_values</span>
+<span class="doccomment">/// use alloc_compose::{ChunkAlloc, Region};</span>
+<span class="doccomment">/// use std::alloc::{AllocInit, AllocRef, Global, Layout};</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// let mut data = [0; 64];</span>
+<span class="doccomment">/// let mut alloc = ChunkAlloc::&lt;_, 64&gt;(Region::new(&amp;mut data));</span>
+<span class="doccomment">/// let memory = alloc.alloc(Layout::new::&lt;[u8; 16]&gt;(), AllocInit::Uninitialized)?;</span>
+<span class="doccomment">/// assert_eq!(memory.size % 32, 0);</span>
+<span class="doccomment">/// assert!(memory.size &gt;= 32);</span>
+<span class="doccomment">/// # Ok::&lt;(), core::alloc::AllocErr&gt;(())</span>
+<span class="doccomment">/// ```</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// When growing or shrinking the memory, `ChunkAlloc` will try to alter</span>
+<span class="doccomment">/// the memory in place before delegating to the underlying allocator.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// ```rust</span>
+<span class="doccomment">/// # #![feature(allocator_api)]</span>
+<span class="doccomment">/// # use alloc_compose::{ChunkAlloc, Region};</span>
+<span class="doccomment">/// # use std::alloc::{AllocInit, AllocRef, Global, Layout};</span>
+<span class="doccomment">/// # let mut data = [0; 64];</span>
+<span class="doccomment">/// # let mut alloc = ChunkAlloc::&lt;_, 64&gt;(Region::new(&amp;mut data));</span>
+<span class="doccomment">/// # let memory = alloc.alloc(Layout::new::&lt;[u8; 16]&gt;(), AllocInit::Uninitialized)?;</span>
+<span class="doccomment">/// use std::alloc::ReallocPlacement;</span>
+<span class="doccomment">/// let memory = unsafe {</span>
+<span class="doccomment">///     alloc.grow(</span>
+<span class="doccomment">///         memory.ptr,</span>
+<span class="doccomment">///         Layout::new::&lt;[u8; 16]&gt;(),</span>
+<span class="doccomment">///         24,</span>
+<span class="doccomment">///         ReallocPlacement::InPlace,</span>
+<span class="doccomment">///         AllocInit::Uninitialized,</span>
+<span class="doccomment">///     )?</span>
+<span class="doccomment">/// };</span>
+<span class="doccomment">/// assert_eq!(memory.size % 32, 0);</span>
+<span class="doccomment">/// assert!(memory.size &gt;= 32);</span>
+<span class="doccomment">/// # Ok::&lt;(), core::alloc::AllocErr&gt;(())</span>
+<span class="doccomment">/// ```</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Default</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ChunkAlloc</span><span class="op">&lt;</span><span class="ident">A</span>, <span class="kw">const</span> <span class="ident">SIZE</span>: <span class="ident">usize</span><span class="op">&gt;</span>(<span class="kw">pub</span> <span class="ident">A</span>);
 
