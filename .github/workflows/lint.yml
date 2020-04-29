@@ -15,7 +15,7 @@ env:
 
 jobs:
   rustfmt:
-    name: Rustfmt
+    name: rustfmt
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source code
@@ -29,14 +29,14 @@ jobs:
           override: true
           components: rustfmt
 
-      - name: Run Rustfmt
+      - name: Run rustfmt
         uses: actions-rs/cargo@v1
         with:
           command: fmt
           args: --all -- --check --verbose
 
   # tomlfmt:
-  #   name: Tomlfmt
+  #   name: tomlfmt
   #   runs-on: ubuntu-latest
   #   steps:
   #     - name: Checkout source code
@@ -49,7 +49,7 @@ jobs:
   #         toolchain: nightly
   #         override: true
 
-  #     - name: Install Tomlfmt
+  #     - name: Install tomlfmt
   #       uses: actions-rs/install@v0.1
   #       with:
   #         crate: cargo-tomlfmt
@@ -63,7 +63,7 @@ jobs:
   #         args: --dryrun
 
   clippy:
-    name: Clippy
+    name: clippy
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source code
