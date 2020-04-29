@@ -10,37 +10,39 @@ use core::{
 /// All allocations smaller than or equal to `threshold` will be dispatched to `Small`. The others
 /// will go to `Large`.
 #[derive(Debug, Copy, Clone)]
-pub struct SegregateAlloc<Small, Large> {
-    threshold: usize,
+pub struct SegregateAlloc<Small, Large, const THRESHOLD: usize> {
     pub small: Small,
     pub large: Large,
 }
 
-impl<Small: AllocRef, Large: AllocRef> SegregateAlloc<Small, Large> {
-    fn clamp_memory(&self, memory: MemoryBlock) -> MemoryBlock {
+impl<Small: AllocRef, Large: AllocRef, const THRESHOLD: usize>
+    SegregateAlloc<Small, Large, THRESHOLD>
+{
+    fn clamp_memory(memory: MemoryBlock) -> MemoryBlock {
         MemoryBlock {
             ptr: memory.ptr,
-            size: cmp::max(memory.size, self.threshold),
+            size: cmp::max(memory.size, THRESHOLD),
         }
     }
 }
 
-unsafe impl<Small, Large> AllocRef for SegregateAlloc<Small, Large>
+unsafe impl<Small, Large, const THRESHOLD: usize> AllocRef
+    for SegregateAlloc<Small, Large, THRESHOLD>
 where
     Small: AllocRef,
     Large: AllocRef,
 {
     fn alloc(&mut self, layout: Layout, init: AllocInit) -> Result<MemoryBlock, AllocErr> {
-        if layout.size() <= self.threshold {
+        if layout.size() <= THRESHOLD {
             let memory = self.small.alloc(layout, init)?;
-            Ok(self.clamp_memory(memory))
+            Ok(Self::clamp_memory(memory))
         } else {
             self.large.alloc(layout, init)
         }
     }
 
     unsafe fn dealloc(&mut self, ptr: NonNull<u8>, layout: Layout) {
-        if layout.size() <= self.threshold {
+        if layout.size() <= THRESHOLD {
             self.small.dealloc(ptr, layout)
         } else {
             self.large.dealloc(ptr, layout)
@@ -55,8 +57,8 @@ where
         placement: ReallocPlacement,
         init: AllocInit,
     ) -> Result<MemoryBlock, AllocErr> {
-        if layout.size() <= self.threshold {
-            let memory = if new_size > self.threshold {
+        if layout.size() <= THRESHOLD {
+            let memory = if new_size > THRESHOLD {
                 grow(
                     &mut self.small,
                     &mut self.large,
@@ -69,7 +71,7 @@ where
             } else {
                 self.small.grow(ptr, layout, new_size, placement, init)?
             };
-            Ok(self.clamp_memory(memory))
+            Ok(Self::clamp_memory(memory))
         } else {
             self.large.grow(ptr, layout, new_size, placement, init)
         }
@@ -82,10 +84,10 @@ where
         new_size: usize,
         placement: ReallocPlacement,
     ) -> Result<MemoryBlock, AllocErr> {
-        if layout.size() <= self.threshold {
+        if layout.size() <= THRESHOLD {
             let memory = self.small.shrink(ptr, layout, new_size, placement)?;
-            Ok(self.clamp_memory(memory))
-        } else if new_size <= self.threshold {
+            Ok(Self::clamp_memory(memory))
+        } else if new_size <= THRESHOLD {
             // Move ownership to `self.small`
             let memory = shrink(
                 &mut self.large,
@@ -95,20 +97,20 @@ where
                 new_size,
                 placement,
             )?;
-            Ok(self.clamp_memory(memory))
+            Ok(Self::clamp_memory(memory))
         } else {
             self.large.shrink(ptr, layout, new_size, placement)
         }
     }
 }
 
-impl<Small, Large> Owns for SegregateAlloc<Small, Large>
+impl<Small, Large, const THRESHOLD: usize> Owns for SegregateAlloc<Small, Large, THRESHOLD>
 where
     Small: Owns,
     Large: Owns,
 {
     fn owns(&self, memory: MemoryBlock) -> bool {
-        if memory.size <= self.threshold {
+        if memory.size <= THRESHOLD {
             self.small.owns(memory)
         } else {
             self.large.owns(memory)

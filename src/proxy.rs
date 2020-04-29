@@ -85,11 +85,13 @@ unsafe impl<A: AllocRef, C: CallbackRef> AllocRef for Proxy<A, C> {
         result
     }
 
+    #[track_caller]
     unsafe fn dealloc(&mut self, ptr: NonNull<u8>, layout: Layout) {
         self.callbacks.dealloc(ptr, layout);
         self.alloc.dealloc(ptr, layout)
     }
 
+    #[track_caller]
     unsafe fn grow(
         &mut self,
         ptr: NonNull<u8>,
@@ -104,6 +106,7 @@ unsafe impl<A: AllocRef, C: CallbackRef> AllocRef for Proxy<A, C> {
         result
     }
 
+    #[track_caller]
     unsafe fn shrink(
         &mut self,
         ptr: NonNull<u8>,
