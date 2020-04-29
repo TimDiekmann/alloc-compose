@@ -4,16 +4,48 @@ use core::{
     ptr::NonNull,
 };
 
-/// Marks newly allocated and deallocated memory with a byte pattern.
+/// Allocate memory with a multiple size of the provided chunk size.
 ///
-/// When allocating unintitialized memory, the block is set to `0xCD`. Before deallocating,
-/// the memory is set `0xDD`.
-/// Those values are choosed according to [Magic Debug Values] to match the Visual
-/// Studio Debug Heap implementation.
+/// # Examples
 ///
-/// Once, `const_generics` allows default implementations, the values may be alterd with a parameter.
+/// ```rust
+/// #![feature(allocator_api)]
 ///
-/// [Magic Debug Values]: https://en.wikipedia.org/wiki/Magic_number_%28programming%29#Magic_debug_values
+/// use alloc_compose::{ChunkAlloc, Region};
+/// use std::alloc::{AllocInit, AllocRef, Global, Layout};
+///
+/// let mut data = [0; 64];
+/// let mut alloc = ChunkAlloc::<_, 64>(Region::new(&mut data));
+/// let memory = alloc.alloc(Layout::new::<[u8; 16]>(), AllocInit::Uninitialized)?;
+/// assert_eq!(memory.size % 32, 0);
+/// assert!(memory.size >= 32);
+/// # Ok::<(), core::alloc::AllocErr>(())
+/// ```
+///
+/// When growing or shrinking the memory, `ChunkAlloc` will try to alter
+/// the memory in place before delegating to the underlying allocator.
+///
+/// ```rust
+/// # #![feature(allocator_api)]
+/// # use alloc_compose::{ChunkAlloc, Region};
+/// # use std::alloc::{AllocInit, AllocRef, Global, Layout};
+/// # let mut data = [0; 64];
+/// # let mut alloc = ChunkAlloc::<_, 64>(Region::new(&mut data));
+/// # let memory = alloc.alloc(Layout::new::<[u8; 16]>(), AllocInit::Uninitialized)?;
+/// use std::alloc::ReallocPlacement;
+/// let memory = unsafe {
+///     alloc.grow(
+///         memory.ptr,
+///         Layout::new::<[u8; 16]>(),
+///         24,
+///         ReallocPlacement::InPlace,
+///         AllocInit::Uninitialized,
+///     )?
+/// };
+/// assert_eq!(memory.size % 32, 0);
+/// assert!(memory.size >= 32);
+/// # Ok::<(), core::alloc::AllocErr>(())
+/// ```
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
 pub struct ChunkAlloc<A, const SIZE: usize>(pub A);
 

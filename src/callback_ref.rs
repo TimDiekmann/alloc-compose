@@ -17,7 +17,6 @@ use core::{
 /// [`Proxy`]: crate::Proxy
 ///
 /// # Safety
-///
 ///   * `Clone` must not be implemented on types, which don't have a shared state.
 pub unsafe trait CallbackRef {
     /// Called when [`alloc`] was invoked.
