@@ -217,7 +217,7 @@ impl Owns for Region<'_> {
 mod tests {
     #![allow(clippy::wildcard_imports)]
     use super::*;
-    use core::slice;
+    use crate::helper::AsSlice;
     use std::alloc::{Global, Layout};
 
     #[test]
@@ -300,7 +300,7 @@ mod tests {
             )
             .expect("Could not allocate 1024 Bytes");
         assert_eq!(memory.ptr.as_ptr() as usize % 64, 0);
-        let data = unsafe { slice::from_raw_parts_mut(memory.ptr.as_ptr(), memory.size) };
+        let data = unsafe { memory.as_slice_mut() };
         let mut region = Region::new(data);
 
         region

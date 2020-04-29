@@ -170,8 +170,11 @@ where
 mod tests {
     #![allow(clippy::wildcard_imports)]
     use super::*;
-    use crate::{helper::Tracker, Proxy};
-    use core::{fmt, slice};
+    use crate::{
+        helper::{AsSlice, Tracker},
+        Proxy,
+    };
+    use core::fmt;
     use std::alloc::System;
 
     #[allow(clippy::too_many_lines)]
@@ -200,10 +203,7 @@ mod tests {
                 Affix::<System, Prefix, Suffix>::prefix(memory.ptr, layout).as_ref(),
                 &prefix
             );
-            assert_eq!(
-                slice::from_raw_parts(memory.ptr.as_ptr(), memory.size),
-                &vec![0_u8; memory.size][..]
-            );
+            assert_eq!(memory.as_slice(), &vec![0_u8; memory.size][..]);
             assert_eq!(
                 Affix::<System, Prefix, Suffix>::suffix(memory.ptr, layout).as_ref(),
                 &suffix
@@ -217,9 +217,7 @@ mod tests {
                     ReallocPlacement::MayMove,
                     AllocInit::Zeroed,
                 )
-                .unwrap_or_else(|_| {
-                    panic!("Could not grow allocation to {} bytes", memory.size * 2)
-                });
+                .expect("Could not grow allocation");
             let new_layout =
                 Layout::from_size_align(memory.size * 2, layout.align()).expect("Invalid layout");
 
@@ -228,7 +226,7 @@ mod tests {
                 &prefix
             );
             assert_eq!(
-                slice::from_raw_parts(growed_memory.ptr.as_ptr(), growed_memory.size),
+                growed_memory.as_slice(),
                 &vec![0_u8; growed_memory.size][..]
             );
             assert_eq!(
@@ -249,10 +247,7 @@ mod tests {
                 Affix::<System, Prefix, Suffix>::prefix(memory.ptr, layout).as_ref(),
                 &prefix
             );
-            assert_eq!(
-                slice::from_raw_parts(memory.ptr.as_ptr(), memory.size),
-                &vec![0_u8; memory.size][..]
-            );
+            assert_eq!(memory.as_slice(), &vec![0_u8; memory.size][..]);
             assert_eq!(
                 Affix::<System, Prefix, Suffix>::suffix(memory.ptr, layout).as_ref(),
                 &suffix
