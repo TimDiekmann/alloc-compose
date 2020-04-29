@@ -661,7 +661,7 @@
 <span class="kw">mod</span> <span class="ident">tests</span> {
     <span class="attribute">#![<span class="ident">allow</span>(<span class="ident">clippy</span>::<span class="ident">wildcard_imports</span>)]</span>
     <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
-    <span class="kw">use</span> <span class="ident">core</span>::<span class="ident">slice</span>;
+    <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">helper</span>::<span class="ident">AsSlice</span>;
     <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">alloc</span>::{<span class="ident">Global</span>, <span class="ident">Layout</span>};
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
@@ -744,7 +744,7 @@
             )
             .<span class="ident">expect</span>(<span class="string">&quot;Could not allocate 1024 Bytes&quot;</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">memory</span>.<span class="ident">ptr</span>.<span class="ident">as_ptr</span>() <span class="kw">as</span> <span class="ident">usize</span> <span class="op">%</span> <span class="number">64</span>, <span class="number">0</span>);
-        <span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">slice</span>::<span class="ident">from_raw_parts_mut</span>(<span class="ident">memory</span>.<span class="ident">ptr</span>.<span class="ident">as_ptr</span>(), <span class="ident">memory</span>.<span class="ident">size</span>) };
+        <span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">memory</span>.<span class="ident">as_slice_mut</span>() };
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">region</span> <span class="op">=</span> <span class="ident">Region</span>::<span class="ident">new</span>(<span class="ident">data</span>);
 
         <span class="ident">region</span>
