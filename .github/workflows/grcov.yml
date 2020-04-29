@@ -33,6 +33,13 @@ jobs:
           toolchain: ${{ matrix.toolchain }}
           override: true
 
+      - name: Install grcov
+        uses: actions-rs/install@v0.1
+        with:
+          crate: grcov
+          version: latest
+          use-tool-cache: true
+
       - name: Test
         uses: actions-rs/cargo@v1
         with:
