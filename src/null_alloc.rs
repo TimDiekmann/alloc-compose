@@ -75,3 +75,55 @@ impl Owns for NullAlloc {
         false
     }
 }
+
+#[cfg(test)]
+mod tests {
+    #![allow(clippy::wildcard_imports)]
+    use super::*;
+
+    #[test]
+    #[should_panic(expected = "unreachable")]
+    fn dealloc() {
+        unsafe { NullAlloc.dealloc(NonNull::dangling(), Layout::new::<()>()) };
+    }
+
+    #[test]
+    #[should_panic(expected = "unreachable")]
+    fn grow() {
+        unsafe {
+            let _ = NullAlloc.grow(
+                NonNull::dangling(),
+                Layout::new::<()>(),
+                0,
+                ReallocPlacement::MayMove,
+                AllocInit::Uninitialized,
+            );
+        };
+    }
+
+    #[test]
+    #[should_panic(expected = "unreachable")]
+    fn shrink() {
+        unsafe {
+            let _ = NullAlloc.shrink(
+                NonNull::dangling(),
+                Layout::new::<()>(),
+                0,
+                ReallocPlacement::MayMove,
+            );
+        };
+    }
+
+    #[test]
+    fn owns() {
+        assert!(!NullAlloc.owns(MemoryBlock {
+            ptr: NonNull::dangling(),
+            size: 0
+        }));
+    }
+
+    #[test]
+    fn debug() {
+        assert_eq!(format!("{:?}", NullAlloc), "NullAlloc");
+    }
+}
