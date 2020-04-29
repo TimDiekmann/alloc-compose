@@ -11,7 +11,7 @@
     const_panic,
     track_caller
 )]
-#![allow(incomplete_features)]
+#![allow(incomplete_features, clippy::must_use_candidate)]
 
 #[cfg(any(feature = "alloc", doc))]
 extern crate alloc;
