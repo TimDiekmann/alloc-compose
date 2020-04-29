@@ -287,7 +287,7 @@
     <span class="ident">const_panic</span>,
     <span class="ident">track_caller</span>
 )]</span>
-<span class="attribute">#![<span class="ident">allow</span>(<span class="ident">incomplete_features</span>)]</span>
+<span class="attribute">#![<span class="ident">allow</span>(<span class="ident">incomplete_features</span>, <span class="ident">clippy</span>::<span class="ident">must_use_candidate</span>)]</span>
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;alloc&quot;</span>, <span class="ident">doc</span>))]</span>
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">alloc</span>;
