@@ -12,6 +12,7 @@ categories = ["no-std"]
 license = "MIT OR Apache-2.0"
 
 [features]
+default = ["alloc"]
 alloc = []
 
 [badges]
