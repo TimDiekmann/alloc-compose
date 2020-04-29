@@ -1,10 +1,9 @@
 name: Publish
 
 on:
-  push:
-    branches:
-      - master
-  pull_request:
+  release:
+    types:
+      - published
 
 defaults:
   run:
