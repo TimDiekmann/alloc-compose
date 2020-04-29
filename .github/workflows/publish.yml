@@ -1,9 +1,9 @@
 name: Publish
 
 on:
-  release:
-    types:
-      - published
+  push:
+    tags:
+      - v*.*.*
 
 defaults:
   run:
@@ -23,4 +23,4 @@ jobs:
         uses: actions/checkout@master
 
       - name: Publish
-        run: cargo publish --verbose --dry-run --all-features --token ${{ secrets.CARGO_TOKEN }}
+        run: cargo publish --verbose --all-features --token ${{ secrets.CARGO_TOKEN }}
