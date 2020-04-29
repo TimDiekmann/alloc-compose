@@ -3,24 +3,25 @@ name: Publish
 on:
   push:
     tags:
-      - v*.*.*
-
-defaults:
-  run:
-    shell: bash
+      - "*"
 
 jobs:
   test:
     name: Publish
     runs-on: ubuntu-latest
     steps:
-      - name: Install Rust
-        run: |
-          rustup set profile minimal
-          rustup default nightly
-
       - name: Checkout source code
-        uses: actions/checkout@master
+        uses: actions/checkout@v2
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
 
       - name: Publish
-        run: cargo publish --verbose --all-features --token ${{ secrets.CARGO_TOKEN }}
+        uses: actions-rs/cargo@v1
+        with:
+          command: publish
+          args: --verbose --all-features --token ${{ secrets.CARGO_TOKEN }}

@@ -25,59 +25,30 @@ jobs:
           - ubuntu-latest
           - windows-latest
           - macOS-latest
-        rust:
+        toolchain:
           - nightly
         cargo_flags:
           - "--no-default-features"
           - "--all-features"
     steps:
-      - name: Install Rust
-        run: |
-          rustup set profile minimal
-          rustup default ${{ matrix.rust }}
-
       - name: Checkout source code
-        uses: actions/checkout@master
+        uses: actions/checkout@v2
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.toolchain }}
+          components: rustfmt, clippy
 
       - name: Build
-        run: cargo build --verbose --all ${{ matrix.cargo_flags }}
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --all ${{ matrix.cargo_flags }}
 
       - name: Test
-        run: cargo test --verbose --all ${{ matrix.cargo_flags }}
-
-      - name: Install grcov
-        run: |
-          case "${{ matrix.os }}" in
-            ubuntu-latest)
-              GRCOV_NAME=grcov-linux-x86_64.tar.bz2
-              ;;
-            windows-latest)
-              GRCOV_NAME=grcov-win-x86_64.tar.bz2
-              ;;
-            macOS-latest)
-              GRCOV_NAME=grcov-osx-x86_64.tar.bz2
-              ;;
-          esac
-          curl -L https://github.com/mozilla/grcov/releases/latest/download/${GRCOV_NAME} | tar jxf -
-
-      - name: Generate coverage data
-        run: ./grcov ./target/debug/ -s . -t lcov --llvm --branch --ignore-not-existing --ignore "/*" -o lcov.info;
-
-      - name: Collect coverage data
-        uses: coverallsapp/github-action@master
+        uses: actions-rs/cargo@v1
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          flag-name: ${{ matrix.os }}${{ matrix.cargo_flags }}
-          path-to-lcov: lcov.info
-          parallel: true
-
-  finish:
-    name: Upload coverage report
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Coveralls Finished
-        uses: coverallsapp/github-action@master
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          parallel-finished: true
+          command: test
+          args: --all ${{ matrix.cargo_flags }}
