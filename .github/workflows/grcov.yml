@@ -16,8 +16,9 @@ jobs:
       matrix:
         os:
           - ubuntu-latest
-          - windows-latest
-          - macOS-latest
+          # We don't have branches on OS currently
+          # - macOS-latest
+          # - windows-latest
         toolchain:
           - nightly
         cargo_flags:
