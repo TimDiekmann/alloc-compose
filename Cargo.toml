@@ -13,8 +13,8 @@ license = "MIT OR Apache-2.0"
 exclude = [".github/**"]
 
 [features]
-default = ["alloc"]
 alloc = []
+default = ["alloc"]
 
 [badges]
 coveralls = { repository = "TimDiekmann/alloc-compose" }
