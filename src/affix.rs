@@ -1,4 +1,3 @@
-use crate::Result;
 use core::{
     alloc::{AllocErr, AllocInit, AllocRef, Layout, LayoutErr, MemoryBlock, ReallocPlacement},
     marker::PhantomData,
@@ -64,7 +63,7 @@ unsafe impl<Alloc, Prefix, Suffix> AllocRef for Affix<Alloc, Prefix, Suffix>
 where
     Alloc: AllocRef,
 {
-    fn alloc(&mut self, layout: Layout, init: AllocInit) -> Result {
+    fn alloc(&mut self, layout: Layout, init: AllocInit) -> Result<MemoryBlock, AllocErr> {
         let (layout, offset_prefix, offset_suffix) =
             Self::extend_layout(layout).map_err(|_| AllocErr)?;
 
@@ -93,7 +92,7 @@ where
         new_size: usize,
         placement: ReallocPlacement,
         init: AllocInit,
-    ) -> Result {
+    ) -> Result<MemoryBlock, AllocErr> {
         let (old_alloc_layout, old_offset_prefix, old_offset_suffix) =
             Self::extend_layout(old_layout).unwrap();
         let ptr = ptr.as_ptr().sub(old_offset_prefix);
@@ -136,7 +135,7 @@ where
         old_layout: Layout,
         new_size: usize,
         placement: ReallocPlacement,
-    ) -> Result {
+    ) -> Result<MemoryBlock, AllocErr> {
         let (old_alloc_layout, old_offset_prefix, old_offset_suffix) =
             Self::extend_layout(old_layout).unwrap();
         let ptr = ptr.as_ptr().sub(old_offset_prefix);
