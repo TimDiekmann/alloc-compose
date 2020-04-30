@@ -81,7 +81,7 @@ pub struct Proxy<A, C> {
 unsafe impl<A: AllocRef, C: CallbackRef> AllocRef for Proxy<A, C> {
     fn alloc(&mut self, layout: Layout, init: AllocInit) -> Result<MemoryBlock, AllocErr> {
         let result = self.alloc.alloc(layout, init);
-        self.callbacks.alloc(layout, init, result.clone());
+        self.callbacks.alloc(layout, init, result);
         result
     }
 
@@ -102,7 +102,7 @@ unsafe impl<A: AllocRef, C: CallbackRef> AllocRef for Proxy<A, C> {
     ) -> Result<MemoryBlock, AllocErr> {
         let result = self.alloc.grow(ptr, layout, new_size, placement, init);
         self.callbacks
-            .grow(ptr, layout, new_size, placement, init, result.clone());
+            .grow(ptr, layout, new_size, placement, init, result);
         result
     }
 
@@ -116,7 +116,7 @@ unsafe impl<A: AllocRef, C: CallbackRef> AllocRef for Proxy<A, C> {
     ) -> Result<MemoryBlock, AllocErr> {
         let result = self.alloc.shrink(ptr, layout, new_size, placement);
         self.callbacks
-            .shrink(ptr, layout, new_size, placement, result.clone());
+            .shrink(ptr, layout, new_size, placement, result);
         result
     }
 }
