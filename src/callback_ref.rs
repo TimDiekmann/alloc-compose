@@ -19,20 +19,49 @@ use core::{
 /// # Safety
 ///   * `Clone` must not be implemented on types, which don't have a shared state.
 pub unsafe trait CallbackRef {
-    /// Called when [`alloc`] was invoked.
+    /// Called before [`alloc`] was invoked.
     ///
     /// [`alloc`]: core::alloc::AllocRef::alloc
-    fn alloc(&self, layout: Layout, init: AllocInit, result: Result<MemoryBlock, AllocErr>);
+    #[inline]
+    fn before_alloc(&self, layout: Layout, init: AllocInit) {}
 
-    /// Called when [`dealloc`] was invoked.
+    /// Called after [`alloc`] was invoked.
+    ///
+    /// [`alloc`]: core::alloc::AllocRef::alloc
+    #[inline]
+    fn after_alloc(&self, layout: Layout, init: AllocInit, result: Result<MemoryBlock, AllocErr>) {}
+
+    /// Called before [`dealloc`] was invoked.
     ///
     /// [`dealloc`]: core::alloc::AllocRef::dealloc
-    fn dealloc(&self, ptr: NonNull<u8>, layout: Layout);
+    #[inline]
+    fn before_dealloc(&self, ptr: NonNull<u8>, layout: Layout) {}
 
-    /// Called when [`grow`] was invoked.
+    /// Called after [`dealloc`] was invoked.
+    ///
+    /// [`dealloc`]: core::alloc::AllocRef::dealloc
+    #[inline]
+    fn after_dealloc(&self, ptr: NonNull<u8>, layout: Layout) {}
+
+    /// Called before [`grow`] was invoked.
     ///
     /// [`grow`]: core::alloc::AllocRef::grow
-    fn grow(
+    #[inline]
+    fn before_grow(
+        &self,
+        ptr: NonNull<u8>,
+        layout: Layout,
+        new_size: usize,
+        placement: ReallocPlacement,
+        init: AllocInit,
+    ) {
+    }
+
+    /// Called after [`grow`] was invoked.
+    ///
+    /// [`grow`]: core::alloc::AllocRef::grow
+    #[inline]
+    fn after_grow(
         &self,
         ptr: NonNull<u8>,
         layout: Layout,
@@ -40,24 +69,47 @@ pub unsafe trait CallbackRef {
         placement: ReallocPlacement,
         init: AllocInit,
         result: Result<MemoryBlock, AllocErr>,
-    );
+    ) {
+    }
 
-    /// Called when [`shrink`] was invoked.
+    /// Called before [`shrink`] was invoked.
     ///
     /// [`shrink`]: core::alloc::AllocRef::shrink
-    fn shrink(
+    #[inline]
+    fn before_shrink(
+        &self,
+        ptr: NonNull<u8>,
+        layout: Layout,
+        new_size: usize,
+        placement: ReallocPlacement,
+    ) {
+    }
+
+    /// Called after [`shrink`] was invoked.
+    ///
+    /// [`shrink`]: core::alloc::AllocRef::shrink
+    #[inline]
+    fn after_shrink(
         &self,
         ptr: NonNull<u8>,
         layout: Layout,
         new_size: usize,
         placement: ReallocPlacement,
         result: Result<MemoryBlock, AllocErr>,
-    );
+    ) {
+    }
 
-    /// Called when [`owns`] was invoked.
+    /// Called before [`owns`] was invoked.
     ///
     /// [`owns`]: crate::Owns::owns
-    fn owns(&self, success: bool);
+    #[inline]
+    fn before_owns(&self) {}
+
+    /// Called after [`owns`] was invoked.
+    ///
+    /// [`owns`]: crate::Owns::owns
+    #[inline]
+    fn after_owns(&self, success: bool) {}
 
     /// Creates a "by reference" adaptor for this instance of `CallbackRef`.
     ///
@@ -70,17 +122,62 @@ pub unsafe trait CallbackRef {
 
 unsafe impl<C: CallbackRef> CallbackRef for &C {
     #[inline]
-    fn alloc(&self, layout: Layout, init: AllocInit, result: Result<MemoryBlock, AllocErr>) {
-        (**self).alloc(layout, init, result)
+    fn before_alloc(&self, layout: Layout, init: AllocInit) {
+        (**self).before_alloc(layout, init)
     }
 
     #[inline]
-    fn dealloc(&self, ptr: NonNull<u8>, layout: Layout) {
-        (**self).dealloc(ptr, layout)
+    fn after_alloc(&self, layout: Layout, init: AllocInit, result: Result<MemoryBlock, AllocErr>) {
+        (**self).after_alloc(layout, init, result)
     }
 
     #[inline]
-    fn grow(
+    fn before_dealloc(&self, ptr: NonNull<u8>, layout: Layout) {
+        (**self).before_dealloc(ptr, layout)
+    }
+
+    #[inline]
+    fn after_dealloc(&self, ptr: NonNull<u8>, layout: Layout) {
+        (**self).after_dealloc(ptr, layout)
+    }
+
+    #[inline]
+    fn before_shrink(
+        &self,
+        ptr: NonNull<u8>,
+        layout: Layout,
+        new_size: usize,
+        placement: ReallocPlacement,
+    ) {
+        (**self).before_shrink(ptr, layout, new_size, placement)
+    }
+
+    #[inline]
+    fn after_shrink(
+        &self,
+        ptr: NonNull<u8>,
+        layout: Layout,
+        new_size: usize,
+        placement: ReallocPlacement,
+        result: Result<MemoryBlock, AllocErr>,
+    ) {
+        (**self).after_shrink(ptr, layout, new_size, placement, result)
+    }
+
+    #[inline]
+    fn before_grow(
+        &self,
+        ptr: NonNull<u8>,
+        layout: Layout,
+        new_size: usize,
+        placement: ReallocPlacement,
+        init: AllocInit,
+    ) {
+        (**self).before_grow(ptr, layout, new_size, placement, init)
+    }
+
+    #[inline]
+    fn after_grow(
         &self,
         ptr: NonNull<u8>,
         layout: Layout,
@@ -89,23 +186,17 @@ unsafe impl<C: CallbackRef> CallbackRef for &C {
         init: AllocInit,
         result: Result<MemoryBlock, AllocErr>,
     ) {
-        (**self).grow(ptr, layout, new_size, placement, init, result)
+        (**self).after_grow(ptr, layout, new_size, placement, init, result)
     }
 
     #[inline]
-    fn shrink(
-        &self,
-        ptr: NonNull<u8>,
-        layout: Layout,
-        new_size: usize,
-        placement: ReallocPlacement,
-        result: Result<MemoryBlock, AllocErr>,
-    ) {
-        (**self).shrink(ptr, layout, new_size, placement, result)
+    fn before_owns(&self) {
+        (**self).before_owns()
     }
+
     #[inline]
-    fn owns(&self, success: bool) {
-        (**self).owns(success)
+    fn after_owns(&self, success: bool) {
+        (**self).after_owns(success)
     }
 }
 
@@ -116,22 +207,67 @@ macro_rules! impl_alloc_stats {
         /// This is only available with the **"alloc"-feature** enabled.
         unsafe impl<C: CallbackRef> CallbackRef for $tt<C> {
             #[inline]
-            fn alloc(
+            fn before_alloc(&self, layout: Layout, init: AllocInit) {
+                (**self).before_alloc(layout, init)
+            }
+
+            #[inline]
+            fn after_alloc(
                 &self,
                 layout: Layout,
                 init: AllocInit,
                 result: Result<MemoryBlock, AllocErr>,
             ) {
-                (**self).alloc(layout, init, result)
+                (**self).after_alloc(layout, init, result)
             }
 
             #[inline]
-            fn dealloc(&self, ptr: NonNull<u8>, layout: Layout) {
-                (**self).dealloc(ptr, layout)
+            fn before_dealloc(&self, ptr: NonNull<u8>, layout: Layout) {
+                (**self).before_dealloc(ptr, layout)
             }
 
             #[inline]
-            fn grow(
+            fn after_dealloc(&self, ptr: NonNull<u8>, layout: Layout) {
+                (**self).after_dealloc(ptr, layout)
+            }
+
+            #[inline]
+            fn before_shrink(
+                &self,
+                ptr: NonNull<u8>,
+                layout: Layout,
+                new_size: usize,
+                placement: ReallocPlacement,
+            ) {
+                (**self).before_shrink(ptr, layout, new_size, placement)
+            }
+
+            #[inline]
+            fn after_shrink(
+                &self,
+                ptr: NonNull<u8>,
+                layout: Layout,
+                new_size: usize,
+                placement: ReallocPlacement,
+                result: Result<MemoryBlock, AllocErr>,
+            ) {
+                (**self).after_shrink(ptr, layout, new_size, placement, result)
+            }
+
+            #[inline]
+            fn before_grow(
+                &self,
+                ptr: NonNull<u8>,
+                layout: Layout,
+                new_size: usize,
+                placement: ReallocPlacement,
+                init: AllocInit,
+            ) {
+                (**self).before_grow(ptr, layout, new_size, placement, init)
+            }
+
+            #[inline]
+            fn after_grow(
                 &self,
                 ptr: NonNull<u8>,
                 layout: Layout,
@@ -140,24 +276,17 @@ macro_rules! impl_alloc_stats {
                 init: AllocInit,
                 result: Result<MemoryBlock, AllocErr>,
             ) {
-                (**self).grow(ptr, layout, new_size, placement, init, result)
+                (**self).after_grow(ptr, layout, new_size, placement, init, result)
             }
 
             #[inline]
-            fn shrink(
-                &self,
-                ptr: NonNull<u8>,
-                layout: Layout,
-                new_size: usize,
-                placement: ReallocPlacement,
-                result: Result<MemoryBlock, AllocErr>,
-            ) {
-                (**self).shrink(ptr, layout, new_size, placement, result)
+            fn before_owns(&self) {
+                (**self).before_owns()
             }
 
             #[inline]
-            fn owns(&self, success: bool) {
-                (**self).owns(success)
+            fn after_owns(&self, success: bool) {
+                (**self).after_owns(success)
             }
         }
     };

@@ -80,15 +80,17 @@ pub struct Proxy<A, C> {
 
 unsafe impl<A: AllocRef, C: CallbackRef> AllocRef for Proxy<A, C> {
     fn alloc(&mut self, layout: Layout, init: AllocInit) -> Result<MemoryBlock, AllocErr> {
+        self.callbacks.before_alloc(layout, init);
         let result = self.alloc.alloc(layout, init);
-        self.callbacks.alloc(layout, init, result);
+        self.callbacks.after_alloc(layout, init, result);
         result
     }
 
     #[track_caller]
     unsafe fn dealloc(&mut self, ptr: NonNull<u8>, layout: Layout) {
-        self.callbacks.dealloc(ptr, layout);
-        self.alloc.dealloc(ptr, layout)
+        self.callbacks.before_dealloc(ptr, layout);
+        self.alloc.dealloc(ptr, layout);
+        self.callbacks.after_dealloc(ptr, layout);
     }
 
     #[track_caller]
@@ -100,9 +102,11 @@ unsafe impl<A: AllocRef, C: CallbackRef> AllocRef for Proxy<A, C> {
         placement: ReallocPlacement,
         init: AllocInit,
     ) -> Result<MemoryBlock, AllocErr> {
+        self.callbacks
+            .before_grow(ptr, layout, new_size, placement, init);
         let result = self.alloc.grow(ptr, layout, new_size, placement, init);
         self.callbacks
-            .grow(ptr, layout, new_size, placement, init, result);
+            .after_grow(ptr, layout, new_size, placement, init, result);
         result
     }
 
@@ -114,17 +118,20 @@ unsafe impl<A: AllocRef, C: CallbackRef> AllocRef for Proxy<A, C> {
         new_size: usize,
         placement: ReallocPlacement,
     ) -> Result<MemoryBlock, AllocErr> {
+        self.callbacks
+            .before_shrink(ptr, layout, new_size, placement);
         let result = self.alloc.shrink(ptr, layout, new_size, placement);
         self.callbacks
-            .shrink(ptr, layout, new_size, placement, result);
+            .after_shrink(ptr, layout, new_size, placement, result);
         result
     }
 }
 
 impl<A: Owns, C: CallbackRef> Owns for Proxy<A, C> {
     fn owns(&self, memory: MemoryBlock) -> bool {
+        self.callbacks.before_owns();
         let owns = self.alloc.owns(memory);
-        self.callbacks.owns(owns);
+        self.callbacks.after_owns(owns);
         owns
     }
 }
