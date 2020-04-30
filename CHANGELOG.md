@@ -1,3 +1,10 @@
+### [v0.3.1](https://github.com/TimDiekmann/alloc-compose/tree/v0.3.1)
+
+[Documentation](https://docs.rs/alloc-compose/0.3.1/alloc_compose/)
+
+- Add more documentation
+- Add more tests
+
 # [v0.3](https://github.com/TimDiekmann/alloc-compose/tree/v0.3.0)
 
 [Documentation](https://docs.rs/alloc-compose/0.3.0/alloc_compose/)
