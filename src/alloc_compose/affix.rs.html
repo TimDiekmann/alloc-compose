@@ -308,9 +308,7 @@
 <span id="308">308</span>
 <span id="309">309</span>
 <span id="310">310</span>
-<span id="311">311</span>
 </pre><div class="example-wrap"><pre class="rust ">
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="prelude-ty">Result</span>;
 <span class="kw">use</span> <span class="ident">core</span>::{
     <span class="ident">alloc</span>::{<span class="ident">AllocErr</span>, <span class="ident">AllocInit</span>, <span class="ident">AllocRef</span>, <span class="ident">Layout</span>, <span class="ident">LayoutErr</span>, <span class="ident">MemoryBlock</span>, <span class="ident">ReallocPlacement</span>},
     <span class="ident">marker</span>::<span class="ident">PhantomData</span>,
@@ -376,7 +374,7 @@
 <span class="kw">where</span>
     <span class="ident">Alloc</span>: <span class="ident">AllocRef</span>,
 {
-    <span class="kw">fn</span> <span class="ident">alloc</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>, <span class="ident">init</span>: <span class="ident">AllocInit</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span> {
+    <span class="kw">fn</span> <span class="ident">alloc</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>, <span class="ident">init</span>: <span class="ident">AllocInit</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MemoryBlock</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span> {
         <span class="kw">let</span> (<span class="ident">layout</span>, <span class="ident">offset_prefix</span>, <span class="ident">offset_suffix</span>) <span class="op">=</span>
             <span class="self">Self</span>::<span class="ident">extend_layout</span>(<span class="ident">layout</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">AllocErr</span>)<span class="question-mark">?</span>;
 
@@ -405,7 +403,7 @@
         <span class="ident">new_size</span>: <span class="ident">usize</span>,
         <span class="ident">placement</span>: <span class="ident">ReallocPlacement</span>,
         <span class="ident">init</span>: <span class="ident">AllocInit</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MemoryBlock</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span> {
         <span class="kw">let</span> (<span class="ident">old_alloc_layout</span>, <span class="ident">old_offset_prefix</span>, <span class="ident">old_offset_suffix</span>) <span class="op">=</span>
             <span class="self">Self</span>::<span class="ident">extend_layout</span>(<span class="ident">old_layout</span>).<span class="ident">unwrap</span>();
         <span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="ident">ptr</span>.<span class="ident">as_ptr</span>().<span class="ident">sub</span>(<span class="ident">old_offset_prefix</span>);
@@ -448,7 +446,7 @@
         <span class="ident">old_layout</span>: <span class="ident">Layout</span>,
         <span class="ident">new_size</span>: <span class="ident">usize</span>,
         <span class="ident">placement</span>: <span class="ident">ReallocPlacement</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MemoryBlock</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span> {
         <span class="kw">let</span> (<span class="ident">old_alloc_layout</span>, <span class="ident">old_offset_prefix</span>, <span class="ident">old_offset_suffix</span>) <span class="op">=</span>
             <span class="self">Self</span>::<span class="ident">extend_layout</span>(<span class="ident">old_layout</span>).<span class="ident">unwrap</span>();
         <span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="ident">ptr</span>.<span class="ident">as_ptr</span>().<span class="ident">sub</span>(<span class="ident">old_offset_prefix</span>);
