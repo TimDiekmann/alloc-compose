@@ -1,4 +1,4 @@
-// #![cfg_attr(not(test), no_std)]
+#![cfg_attr(not(test), no_std)]
 #![cfg_attr(doc, feature(doc_cfg, external_doc))]
 #![cfg_attr(doc, doc(include = "../README.md"))]
 #![feature(
@@ -45,8 +45,6 @@ pub use self::{
     segregate_alloc::SegregateAlloc,
 };
 
-type Result<T = MemoryBlock, E = AllocErr> = core::result::Result<T, E>;
-
 /// Trait to determine if a given `MemoryBlock` is owned by an allocator.
 pub trait Owns {
     /// Returns if the allocator *owns* the passed `MemoryBlock`.
@@ -61,7 +59,7 @@ unsafe fn grow<A1: AllocRef, A2: AllocRef>(
     new_size: usize,
     placement: ReallocPlacement,
     init: AllocInit,
-) -> Result {
+) -> Result<MemoryBlock, AllocErr> {
     if placement == ReallocPlacement::MayMove {
         let new_layout = Layout::from_size_align_unchecked(new_size, layout.align());
         let new_memory = a2.alloc(new_layout, init)?;
@@ -80,7 +78,7 @@ unsafe fn shrink<A1: AllocRef, A2: AllocRef>(
     layout: Layout,
     new_size: usize,
     placement: ReallocPlacement,
-) -> Result {
+) -> Result<MemoryBlock, AllocErr> {
     if placement == ReallocPlacement::MayMove {
         let new_layout = Layout::from_size_align_unchecked(new_size, layout.align());
         let new_memory = a2.alloc(new_layout, AllocInit::Uninitialized)?;
@@ -94,9 +92,9 @@ unsafe fn shrink<A1: AllocRef, A2: AllocRef>(
 
 #[cfg(test)]
 pub(crate) mod helper {
-    use crate::{CallbackRef, Proxy, Result};
+    use crate::{CallbackRef, Proxy};
     use std::{
-        alloc::{AllocInit, AllocRef, Layout, MemoryBlock, ReallocPlacement},
+        alloc::{AllocErr, AllocInit, AllocRef, Layout, MemoryBlock, ReallocPlacement},
         collections::HashMap,
         ptr::NonNull,
         slice,
@@ -156,7 +154,7 @@ pub(crate) mod helper {
     }
 
     unsafe impl CallbackRef for Tracker {
-        fn alloc(&self, layout: Layout, _init: AllocInit, result: Result) {
+        fn alloc(&self, layout: Layout, _init: AllocInit, result: Result<MemoryBlock, AllocErr>) {
             if let Ok(memory) = result {
                 self.insert(memory, layout)
             }
@@ -175,7 +173,7 @@ pub(crate) mod helper {
             new_size: usize,
             _placement: ReallocPlacement,
             _init: AllocInit,
-            result: Result,
+            result: Result<MemoryBlock, AllocErr>,
         ) {
             assert!(
                 new_size >= layout.size(),
@@ -206,7 +204,7 @@ pub(crate) mod helper {
             layout: Layout,
             new_size: usize,
             _placement: ReallocPlacement,
-            result: Result,
+            result: Result<MemoryBlock, AllocErr>,
         ) {
             assert!(
                 new_size <= layout.size(),
@@ -252,7 +250,7 @@ pub(crate) mod helper {
         }
     }
 
-    pub fn tracker<A: AllocRef>(alloc: A) -> impl AllocRef {
+    pub fn tracker<A: AllocRef>(alloc: A) -> Proxy<A, impl CallbackRef> {
         Proxy {
             alloc,
             callbacks: Tracker::default(),
