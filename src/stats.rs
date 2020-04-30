@@ -21,7 +21,7 @@ enum Stat {
     Shrinks = 3,
     Owns = 4,
 }
-const STAT_COUNT: usize = 4;
+const STAT_COUNT: usize = 5;
 
 /// A primitive counter for collectiong statistics.
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -248,6 +248,12 @@ pub enum ResultFilter {
     Err,
 }
 
+impl From<bool> for ResultFilter {
+    fn from(success: bool) -> Self {
+        if success { Self::Ok } else { Self::Err }
+    }
+}
+
 /// A counter for collectiong and filtering statistics.
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct FilteredCounter {
@@ -318,9 +324,9 @@ macro_rules! impl_filtered_callback_ref {
             pub fn num_allocs_filter(
                 &self,
                 init: impl Into<AllocInitFilter>,
-                result: ResultFilter,
+                result: impl Into<ResultFilter>,
             ) -> u64 {
-                match (init.into(), result) {
+                match (init.into(), result.into()) {
                     (AllocInitFilter::Uninitialized, ResultFilter::Ok) => {
                         self.get(FilteredStat::AllocsUninitializedOk)
                     }
@@ -333,7 +339,7 @@ macro_rules! impl_filtered_callback_ref {
                     (AllocInitFilter::Zeroed, ResultFilter::Err) => {
                         self.get(FilteredStat::AllocsZeroedErr)
                     }
-                    (AllocInitFilter::None, _) => {
+                    (AllocInitFilter::None, result) => {
                         self.num_allocs_filter(AllocInitFilter::Uninitialized, result)
                             + self.num_allocs_filter(AllocInitFilter::Zeroed, result)
                     }
@@ -365,9 +371,9 @@ macro_rules! impl_filtered_callback_ref {
                 &self,
                 placement: impl Into<ReallocPlacementFilter>,
                 init: impl Into<AllocInitFilter>,
-                result: ResultFilter,
+                result: impl Into<ResultFilter>,
             ) -> u64 {
-                match (placement.into(), init.into(), result) {
+                match (placement.into(), init.into(), result.into()) {
                     (
                         ReallocPlacementFilter::MayMove,
                         AllocInitFilter::Uninitialized,
@@ -408,11 +414,11 @@ macro_rules! impl_filtered_callback_ref {
                         AllocInitFilter::Zeroed,
                         ResultFilter::Err,
                     ) => self.get(FilteredStat::GrowsInPlaceZeroedErr),
-                    (ReallocPlacementFilter::None, i, _) => {
+                    (ReallocPlacementFilter::None, i, result) => {
                         self.num_grows_filter(ReallocPlacementFilter::MayMove, i, result)
                             + self.num_grows_filter(ReallocPlacementFilter::InPlace, i, result)
                     }
-                    (p, AllocInitFilter::None, _) => {
+                    (p, AllocInitFilter::None, result) => {
                         self.num_grows_filter(p, AllocInitFilter::Uninitialized, result)
                             + self.num_grows_filter(p, AllocInitFilter::Zeroed, result)
                     }
@@ -433,9 +439,9 @@ macro_rules! impl_filtered_callback_ref {
             pub fn num_shrinks_filter(
                 &self,
                 placement: impl Into<ReallocPlacementFilter>,
-                result: ResultFilter,
+                result: impl Into<ResultFilter>,
             ) -> u64 {
-                match (placement.into(), result) {
+                match (placement.into(), result.into()) {
                     (ReallocPlacementFilter::MayMove, ResultFilter::Ok) => {
                         self.get(FilteredStat::ShrinksMayMoveOk)
                     }
@@ -448,7 +454,7 @@ macro_rules! impl_filtered_callback_ref {
                     (ReallocPlacementFilter::InPlace, ResultFilter::Err) => {
                         self.get(FilteredStat::ShrinksInPlaceErr)
                     }
-                    (ReallocPlacementFilter::None, _) => {
+                    (ReallocPlacementFilter::None, result) => {
                         self.num_shrinks_filter(ReallocPlacementFilter::MayMove, result)
                             + self.num_shrinks_filter(ReallocPlacementFilter::InPlace, result)
                     }
@@ -579,3 +585,250 @@ macro_rules! impl_filtered_callback_ref {
 }
 impl_filtered_callback_ref!(FilteredCounter);
 impl_filtered_callback_ref!(FilteredAtomicCounter);
+
+#[cfg(test)]
+mod tests {
+    use super::{AtomicCounter, Counter, FilteredAtomicCounter, FilteredCounter};
+    use crate::{helper, CallbackRef, Owns, Proxy, Region};
+    use std::alloc::{AllocInit, AllocRef, Layout, ReallocPlacement};
+
+    #[allow(clippy::too_many_lines)]
+    fn run_suite(callbacks: impl CallbackRef) {
+        let mut region = [0; 32];
+        let mut alloc = Proxy {
+            alloc: helper::tracker(Region::new(&mut region)),
+            callbacks,
+        };
+
+        assert!(
+            alloc
+                .alloc(Layout::new::<[u8; 64]>(), AllocInit::Uninitialized)
+                .is_err()
+        );
+        assert!(
+            alloc
+                .alloc(Layout::new::<[u8; 64]>(), AllocInit::Zeroed)
+                .is_err()
+        );
+
+        unsafe {
+            let memory = alloc
+                .alloc(Layout::new::<[u8; 4]>(), AllocInit::Uninitialized)
+                .unwrap();
+            let memory_tmp = alloc
+                .alloc(Layout::new::<[u8; 28]>(), AllocInit::Zeroed)
+                .unwrap();
+            assert!(
+                alloc
+                    .shrink(
+                        memory.ptr,
+                        Layout::new::<[u8; 4]>(),
+                        2,
+                        ReallocPlacement::InPlace
+                    )
+                    .is_err()
+            );
+            assert!(
+                alloc
+                    .shrink(
+                        memory.ptr,
+                        Layout::new::<[u8; 4]>(),
+                        2,
+                        ReallocPlacement::MayMove
+                    )
+                    .is_err()
+            );
+            alloc.dealloc(memory_tmp.ptr, Layout::new::<[u8; 28]>());
+
+            assert!(
+                alloc
+                    .grow(
+                        memory.ptr,
+                        Layout::new::<[u8; 4]>(),
+                        80,
+                        ReallocPlacement::MayMove,
+                        AllocInit::Zeroed,
+                    )
+                    .is_err()
+            );
+            assert!(
+                alloc
+                    .grow(
+                        memory.ptr,
+                        Layout::new::<[u8; 4]>(),
+                        80,
+                        ReallocPlacement::InPlace,
+                        AllocInit::Zeroed,
+                    )
+                    .is_err()
+            );
+            assert!(
+                alloc
+                    .grow(
+                        memory.ptr,
+                        Layout::new::<[u8; 4]>(),
+                        80,
+                        ReallocPlacement::MayMove,
+                        AllocInit::Uninitialized,
+                    )
+                    .is_err()
+            );
+            assert!(
+                alloc
+                    .grow(
+                        memory.ptr,
+                        Layout::new::<[u8; 4]>(),
+                        80,
+                        ReallocPlacement::InPlace,
+                        AllocInit::Uninitialized,
+                    )
+                    .is_err()
+            );
+            let memory = alloc
+                .grow(
+                    memory.ptr,
+                    Layout::new::<[u8; 4]>(),
+                    8,
+                    ReallocPlacement::MayMove,
+                    AllocInit::Zeroed,
+                )
+                .unwrap();
+            let memory = alloc
+                .grow(
+                    memory.ptr,
+                    Layout::new::<[u8; 8]>(),
+                    16,
+                    ReallocPlacement::MayMove,
+                    AllocInit::Uninitialized,
+                )
+                .unwrap();
+            let memory = alloc
+                .shrink(
+                    memory.ptr,
+                    Layout::new::<[u8; 16]>(),
+                    4,
+                    ReallocPlacement::MayMove,
+                )
+                .unwrap();
+
+            let memory = alloc
+                .grow(
+                    memory.ptr,
+                    Layout::new::<[u8; 4]>(),
+                    8,
+                    ReallocPlacement::InPlace,
+                    AllocInit::Zeroed,
+                )
+                .unwrap();
+            let memory = alloc
+                .grow(
+                    memory.ptr,
+                    Layout::new::<[u8; 8]>(),
+                    16,
+                    ReallocPlacement::InPlace,
+                    AllocInit::Uninitialized,
+                )
+                .unwrap();
+            let memory = alloc
+                .shrink(
+                    memory.ptr,
+                    Layout::new::<[u8; 16]>(),
+                    4,
+                    ReallocPlacement::InPlace,
+                )
+                .unwrap();
+
+            assert!(alloc.owns(memory));
+            alloc.dealloc(memory.ptr, Layout::new::<[u8; 4]>());
+            assert!(!alloc.owns(memory));
+        }
+    }
+
+    #[test]
+    #[rustfmt::skip]
+    fn counter() {
+        let counter = Counter::default();
+        run_suite(counter.by_ref());
+
+        assert_eq!(counter.num_allocs(), 4);
+        assert_eq!(counter.num_grows(), 8);
+        assert_eq!(counter.num_shrinks(), 4);
+        assert_eq!(counter.num_owns(), 2);
+        assert_eq!(counter.num_deallocs(), 2);
+    }
+
+    #[test]
+    #[rustfmt::skip]
+    fn atomic_counter() {
+        let counter = AtomicCounter::default();
+        run_suite(counter.by_ref());
+
+        assert_eq!(counter.num_allocs(), 4);
+        assert_eq!(counter.num_grows(), 8);
+        assert_eq!(counter.num_shrinks(), 4);
+        assert_eq!(counter.num_owns(), 2);
+        assert_eq!(counter.num_deallocs(), 2);
+    }
+
+    #[test]
+    #[rustfmt::skip]
+    fn filtered_counter() {
+        let counter = FilteredCounter::default();
+        run_suite(counter.by_ref());
+
+        assert_eq!(counter.num_allocs_filter(AllocInit::Uninitialized, false), 1);
+        assert_eq!(counter.num_allocs_filter(AllocInit::Zeroed, false), 1);
+        assert_eq!(counter.num_allocs_filter(AllocInit::Uninitialized, true), 1);
+        assert_eq!(counter.num_allocs_filter(AllocInit::Zeroed, true), 1);
+        assert_eq!(counter.num_allocs(), 4);
+        assert_eq!(counter.num_grows_filter(ReallocPlacement::MayMove, AllocInit::Uninitialized, false), 1);
+        assert_eq!(counter.num_grows_filter(ReallocPlacement::MayMove, AllocInit::Uninitialized, true), 1);
+        assert_eq!(counter.num_grows_filter(ReallocPlacement::MayMove, AllocInit::Zeroed, false), 1);
+        assert_eq!(counter.num_grows_filter(ReallocPlacement::MayMove, AllocInit::Zeroed, true), 1);
+        assert_eq!(counter.num_grows_filter(ReallocPlacement::InPlace, AllocInit::Uninitialized, false), 1);
+        assert_eq!(counter.num_grows_filter(ReallocPlacement::InPlace, AllocInit::Uninitialized, true), 1);
+        assert_eq!(counter.num_grows_filter(ReallocPlacement::InPlace, AllocInit::Zeroed, false), 1);
+        assert_eq!(counter.num_grows_filter(ReallocPlacement::InPlace, AllocInit::Zeroed, true), 1);
+        assert_eq!(counter.num_grows(), 8);
+        assert_eq!(counter.num_shrinks_filter(ReallocPlacement::MayMove, false), 1);
+        assert_eq!(counter.num_shrinks_filter(ReallocPlacement::MayMove, true), 1);
+        assert_eq!(counter.num_shrinks_filter(ReallocPlacement::InPlace, false), 1);
+        assert_eq!(counter.num_shrinks_filter(ReallocPlacement::InPlace, true), 1);
+        assert_eq!(counter.num_shrinks(), 4);
+        assert_eq!(counter.num_owns_filter(true), 1);
+        assert_eq!(counter.num_owns_filter(false), 1);
+        assert_eq!(counter.num_owns(), 2);
+        assert_eq!(counter.num_deallocs(), 2);
+    }
+
+    #[test]
+    #[rustfmt::skip]
+    fn filtered_atomic_counter() {
+        let counter = FilteredAtomicCounter::default();
+        run_suite(counter.by_ref());
+
+        assert_eq!(counter.num_allocs_filter(AllocInit::Uninitialized, false), 1);
+        assert_eq!(counter.num_allocs_filter(AllocInit::Zeroed, false), 1);
+        assert_eq!(counter.num_allocs_filter(AllocInit::Uninitialized, true), 1);
+        assert_eq!(counter.num_allocs_filter(AllocInit::Zeroed, true), 1);
+        assert_eq!(counter.num_allocs(), 4);
+        assert_eq!(counter.num_grows_filter(ReallocPlacement::MayMove, AllocInit::Uninitialized, false), 1);
+        assert_eq!(counter.num_grows_filter(ReallocPlacement::MayMove, AllocInit::Uninitialized, true), 1);
+        assert_eq!(counter.num_grows_filter(ReallocPlacement::MayMove, AllocInit::Zeroed, false), 1);
+        assert_eq!(counter.num_grows_filter(ReallocPlacement::MayMove, AllocInit::Zeroed, true), 1);
+        assert_eq!(counter.num_grows_filter(ReallocPlacement::InPlace, AllocInit::Uninitialized, false), 1);
+        assert_eq!(counter.num_grows_filter(ReallocPlacement::InPlace, AllocInit::Uninitialized, true), 1);
+        assert_eq!(counter.num_grows_filter(ReallocPlacement::InPlace, AllocInit::Zeroed, false), 1);
+        assert_eq!(counter.num_grows_filter(ReallocPlacement::InPlace, AllocInit::Zeroed, true), 1);
+        assert_eq!(counter.num_grows(), 8);
+        assert_eq!(counter.num_shrinks_filter(ReallocPlacement::MayMove, false), 1);
+        assert_eq!(counter.num_shrinks_filter(ReallocPlacement::MayMove, true), 1);
+        assert_eq!(counter.num_shrinks_filter(ReallocPlacement::InPlace, false), 1);
+        assert_eq!(counter.num_shrinks_filter(ReallocPlacement::InPlace, true), 1);
+        assert_eq!(counter.num_shrinks(), 4);
+        assert_eq!(counter.num_owns_filter(true), 1);
+        assert_eq!(counter.num_owns_filter(false), 1);
+        assert_eq!(counter.num_owns(), 2);
+        assert_eq!(counter.num_deallocs(), 2);
+    }
+}
