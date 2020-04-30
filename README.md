@@ -1,5 +1,5 @@
 [![Test Status](https://github.com/TimDiekmann/alloc-compose/workflows/Test/badge.svg?event=push&branch=master)](https://github.com/TimDiekmann/alloc-compose/actions?query=workflow%3ATest+event%3Apush+branch%3Amaster)
-[![Coverage Status](https://coveralls.io/repos/github/TimDiekmann/alloc-compose/badge.svg?branch=master)](https://coveralls.io/github/TimDiekmann/alloc-compose?branch=master)
+[![Coverage Status](https://codecov.io/gh/TimDiekmann/alloc-compose/branch/master/graph/badge.svg)](https://codecov.io/gh/TimDiekmann/alloc-compose)
 [![Docs master](https://img.shields.io/static/v1?label=docs&message=master&color=5479ab)](https://timdiekmann.github.io/alloc-compose/alloc_compose/index.html)
 [![Docs.rs](https://docs.rs/alloc-compose/badge.svg)](https://docs.rs/alloc-compose)
 [![Crates.io](https://img.shields.io/crates/v/alloc-compose)](https://crates.io/crates/alloc-compose)
