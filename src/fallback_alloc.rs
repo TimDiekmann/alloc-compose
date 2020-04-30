@@ -135,7 +135,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::FallbackAlloc;
-    use crate::{helper, ChunkAlloc, Owns, Region};
+    use crate::{helper, Owns, Region};
     use std::alloc::{AllocInit, AllocRef, Layout, ReallocPlacement, System};
 
     #[test]
