@@ -54,21 +54,26 @@ jobs:
         id: grcov
         uses: actions-rs/grcov@v0.1
 
-      - name: Collect coverage data
+      - name: Upload coverage to coveralls.io
         uses: coverallsapp/github-action@v1.1.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path-to-lcov: ${{ steps.grcov.outputs.report }}
-          flag-name: ${{ matrix.os }}
-          parallel: true
 
-  finish:
-    name: Upload coverage report
-    needs: grcov
-    runs-on: ubuntu-latest
-    steps:
-      - name: Upload
-        uses: coverallsapp/github-action@v1.1.0
+      - name: Upload coverage to codecov.io
+        uses: codecov/codecov-action@v1
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          parallel-finished: true
+          file: ${{ steps.grcov.outputs.report }}
+          fail_ci_if_error: true
+  #         flag-name: ${{ matrix.os }}
+  #         parallel: true
+  # finish:
+  #   name: Upload coverage report
+  #   needs: grcov
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Upload
+  #       uses: coverallsapp/github-action@v1.1.0
+  #       with:
+  #         github-token: ${{ secrets.GITHUB_TOKEN }}
+  #         parallel-finished: true
