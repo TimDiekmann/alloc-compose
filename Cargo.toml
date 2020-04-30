@@ -17,7 +17,7 @@ alloc = []
 default = ["alloc"]
 
 [badges]
-coveralls = { repository = "TimDiekmann/alloc-compose" }
-is-it-maintained-issue-resolution = { repository = "TimDiekmann/alloc-compose" }
-is-it-maintained-open-issues = { repository = "TimDiekmann/alloc-compose" }
+codecov = { repository = "TimDiekmann/alloc-compose" }
+is-it-maintained-issue-resolution = { repository = "timdiekmann/alloc-compose" }
+is-it-maintained-open-issues = { repository = "timdiekmann/alloc-compose" }
 maintenance = { status = "actively-developed" }
