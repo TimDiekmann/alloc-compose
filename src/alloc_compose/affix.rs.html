@@ -308,6 +308,7 @@
 <span id="308">308</span>
 <span id="309">309</span>
 <span id="310">310</span>
+<span id="311">311</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">core</span>::{
     <span class="ident">alloc</span>::{<span class="ident">AllocErr</span>, <span class="ident">AllocInit</span>, <span class="ident">AllocRef</span>, <span class="ident">Layout</span>, <span class="ident">LayoutErr</span>, <span class="ident">MemoryBlock</span>, <span class="ident">ReallocPlacement</span>},
@@ -316,6 +317,7 @@
     <span class="ident">ptr</span>::{<span class="self">self</span>, <span class="ident">NonNull</span>},
 };
 
+<span class="doccomment">/// Allocator which can add a prefix and a suffix to a requested memory block.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Affix</span><span class="op">&lt;</span><span class="ident">Alloc</span>, <span class="ident">Prefix</span> <span class="op">=</span> (), <span class="ident">Suffix</span> <span class="op">=</span> ()<span class="op">&gt;</span> {
     <span class="kw">pub</span> <span class="ident">alloc</span>: <span class="ident">Alloc</span>,
