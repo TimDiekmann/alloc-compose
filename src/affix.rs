@@ -5,6 +5,7 @@ use core::{
     ptr::{self, NonNull},
 };
 
+/// Allocator which can add a prefix and a suffix to a requested memory block.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Affix<Alloc, Prefix = (), Suffix = ()> {
     pub alloc: Alloc,
