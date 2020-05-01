@@ -1,3 +1,9 @@
+### [v0.4.0](https://github.com/TimDiekmann/alloc-compose/tree/v0.4.0) (Unreleased)
+
+[Documentation](https://docs.rs/alloc-compose/0.4.0/alloc_compose/)
+
+- **Breaking Change** Change `CallbackRef` to listen on `before_` and `after_` events
+
 ### [v0.3.1](https://github.com/TimDiekmann/alloc-compose/tree/v0.3.1)
 
 [Documentation](https://docs.rs/alloc-compose/0.3.1/alloc_compose/)

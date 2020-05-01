@@ -115,7 +115,7 @@ macro_rules! impl_callback_ref {
 
         unsafe impl CallbackRef for $tt {
             #[inline]
-            fn alloc(
+            fn after_alloc(
                 &self,
                 _layout: Layout,
                 _init: AllocInit,
@@ -125,11 +125,11 @@ macro_rules! impl_callback_ref {
             }
 
             #[inline]
-            fn dealloc(&self, _ptr: NonNull<u8>, _layout: Layout) {
+            fn before_dealloc(&self, _ptr: NonNull<u8>, _layout: Layout) {
                 self.increment_stat(Stat::Deallocs, 1);
             }
 
-            fn grow(
+            fn after_grow(
                 &self,
                 _ptr: NonNull<u8>,
                 _layout: Layout,
@@ -142,7 +142,7 @@ macro_rules! impl_callback_ref {
             }
 
             #[inline]
-            fn shrink(
+            fn after_shrink(
                 &self,
                 _ptr: NonNull<u8>,
                 _layout: Layout,
@@ -154,7 +154,7 @@ macro_rules! impl_callback_ref {
             }
 
             #[inline]
-            fn owns(&self, _success: bool) {
+            fn after_owns(&self, _success: bool) {
                 self.increment_stat(Stat::Owns, 1)
             }
         }
@@ -483,7 +483,7 @@ macro_rules! impl_filtered_callback_ref {
 
         unsafe impl CallbackRef for $tt {
             #[inline]
-            fn alloc(
+            fn after_alloc(
                 &self,
                 _layout: Layout,
                 init: AllocInit,
@@ -506,11 +506,11 @@ macro_rules! impl_filtered_callback_ref {
             }
 
             #[inline]
-            fn dealloc(&self, _ptr: NonNull<u8>, _layout: Layout) {
+            fn before_dealloc(&self, _ptr: NonNull<u8>, _layout: Layout) {
                 self.increment_stat(FilteredStat::Deallocs, 1);
             }
 
-            fn grow(
+            fn after_grow(
                 &self,
                 _ptr: NonNull<u8>,
                 _layout: Layout,
@@ -548,7 +548,7 @@ macro_rules! impl_filtered_callback_ref {
             }
 
             #[inline]
-            fn shrink(
+            fn after_shrink(
                 &self,
                 _ptr: NonNull<u8>,
                 _layout: Layout,
@@ -573,7 +573,7 @@ macro_rules! impl_filtered_callback_ref {
             }
 
             #[inline]
-            fn owns(&self, success: bool) {
+            fn after_owns(&self, success: bool) {
                 if success {
                     self.increment_stat(FilteredStat::OwnsTrue, 1)
                 } else {
