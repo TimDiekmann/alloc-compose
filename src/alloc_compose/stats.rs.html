@@ -935,7 +935,7 @@
 
         <span class="kw">unsafe</span> <span class="kw">impl</span> <span class="ident">CallbackRef</span> <span class="kw">for</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">tt</span> {
             <span class="attribute">#[<span class="ident">inline</span>]</span>
-            <span class="kw">fn</span> <span class="ident">alloc</span>(
+            <span class="kw">fn</span> <span class="ident">after_alloc</span>(
                 <span class="kw-2">&amp;</span><span class="self">self</span>,
                 <span class="ident">_layout</span>: <span class="ident">Layout</span>,
                 <span class="ident">_init</span>: <span class="ident">AllocInit</span>,
@@ -945,11 +945,11 @@
             }
 
             <span class="attribute">#[<span class="ident">inline</span>]</span>
-            <span class="kw">fn</span> <span class="ident">dealloc</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">_ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">_layout</span>: <span class="ident">Layout</span>) {
+            <span class="kw">fn</span> <span class="ident">before_dealloc</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">_ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">_layout</span>: <span class="ident">Layout</span>) {
                 <span class="self">self</span>.<span class="ident">increment_stat</span>(<span class="ident">Stat</span>::<span class="ident">Deallocs</span>, <span class="number">1</span>);
             }
 
-            <span class="kw">fn</span> <span class="ident">grow</span>(
+            <span class="kw">fn</span> <span class="ident">after_grow</span>(
                 <span class="kw-2">&amp;</span><span class="self">self</span>,
                 <span class="ident">_ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
                 <span class="ident">_layout</span>: <span class="ident">Layout</span>,
@@ -962,7 +962,7 @@
             }
 
             <span class="attribute">#[<span class="ident">inline</span>]</span>
-            <span class="kw">fn</span> <span class="ident">shrink</span>(
+            <span class="kw">fn</span> <span class="ident">after_shrink</span>(
                 <span class="kw-2">&amp;</span><span class="self">self</span>,
                 <span class="ident">_ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
                 <span class="ident">_layout</span>: <span class="ident">Layout</span>,
@@ -974,7 +974,7 @@
             }
 
             <span class="attribute">#[<span class="ident">inline</span>]</span>
-            <span class="kw">fn</span> <span class="ident">owns</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">_success</span>: <span class="ident">bool</span>) {
+            <span class="kw">fn</span> <span class="ident">after_owns</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">_success</span>: <span class="ident">bool</span>) {
                 <span class="self">self</span>.<span class="ident">increment_stat</span>(<span class="ident">Stat</span>::<span class="ident">Owns</span>, <span class="number">1</span>)
             }
         }
@@ -1303,7 +1303,7 @@
 
         <span class="kw">unsafe</span> <span class="kw">impl</span> <span class="ident">CallbackRef</span> <span class="kw">for</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">tt</span> {
             <span class="attribute">#[<span class="ident">inline</span>]</span>
-            <span class="kw">fn</span> <span class="ident">alloc</span>(
+            <span class="kw">fn</span> <span class="ident">after_alloc</span>(
                 <span class="kw-2">&amp;</span><span class="self">self</span>,
                 <span class="ident">_layout</span>: <span class="ident">Layout</span>,
                 <span class="ident">init</span>: <span class="ident">AllocInit</span>,
@@ -1326,11 +1326,11 @@
             }
 
             <span class="attribute">#[<span class="ident">inline</span>]</span>
-            <span class="kw">fn</span> <span class="ident">dealloc</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">_ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">_layout</span>: <span class="ident">Layout</span>) {
+            <span class="kw">fn</span> <span class="ident">before_dealloc</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">_ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">_layout</span>: <span class="ident">Layout</span>) {
                 <span class="self">self</span>.<span class="ident">increment_stat</span>(<span class="ident">FilteredStat</span>::<span class="ident">Deallocs</span>, <span class="number">1</span>);
             }
 
-            <span class="kw">fn</span> <span class="ident">grow</span>(
+            <span class="kw">fn</span> <span class="ident">after_grow</span>(
                 <span class="kw-2">&amp;</span><span class="self">self</span>,
                 <span class="ident">_ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
                 <span class="ident">_layout</span>: <span class="ident">Layout</span>,
@@ -1368,7 +1368,7 @@
             }
 
             <span class="attribute">#[<span class="ident">inline</span>]</span>
-            <span class="kw">fn</span> <span class="ident">shrink</span>(
+            <span class="kw">fn</span> <span class="ident">after_shrink</span>(
                 <span class="kw-2">&amp;</span><span class="self">self</span>,
                 <span class="ident">_ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
                 <span class="ident">_layout</span>: <span class="ident">Layout</span>,
@@ -1393,7 +1393,7 @@
             }
 
             <span class="attribute">#[<span class="ident">inline</span>]</span>
-            <span class="kw">fn</span> <span class="ident">owns</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">success</span>: <span class="ident">bool</span>) {
+            <span class="kw">fn</span> <span class="ident">after_owns</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">success</span>: <span class="ident">bool</span>) {
                 <span class="kw">if</span> <span class="ident">success</span> {
                     <span class="self">self</span>.<span class="ident">increment_stat</span>(<span class="ident">FilteredStat</span>::<span class="ident">OwnsTrue</span>, <span class="number">1</span>)
                 } <span class="kw">else</span> {
