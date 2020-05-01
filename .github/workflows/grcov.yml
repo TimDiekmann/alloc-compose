@@ -33,11 +33,20 @@ jobs:
           override: true
 
       - name: Install grcov
-        uses: actions-rs/install@v0.1
-        with:
-          crate: grcov
-          version: latest
-          use-tool-cache: true
+        shell: bash
+        run: |
+          case "${{ matrix.os }}" in
+            ubuntu-latest)
+              GRCOV_NAME=grcov-linux-x86_64.tar.bz2
+              ;;
+            windows-latest)
+              GRCOV_NAME=grcov-win-x86_64.tar.bz2
+              ;;
+            macOS-latest)
+              GRCOV_NAME=grcov-osx-x86_64.tar.bz2
+              ;;
+          esac
+          curl -L https://github.com/mozilla/grcov/releases/latest/download/${GRCOV_NAME} | tar jxf -
 
       - name: Test
         uses: actions-rs/cargo@v1
@@ -49,11 +58,24 @@ jobs:
           RUSTFLAGS: "-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads"
 
       - name: Generate coverage data
-        id: grcov
-        uses: actions-rs/grcov@v0.1
+        run: |
+          ./grcov target/debug/ \
+            --source-dir . \
+            --commit-sha ${{ github.sha }} \
+            --service-job-id ${{ github.job }} \
+            --service-name ${{ github.workflow }} \
+            --service-number ${{ github.run_number }} \
+            --llvm \
+            --branch \
+            --ignore-not-existing \
+            --ignore "/*" \
+            --ignore "C:/*" \
+            --ignore "../*" \
+            --output-type lcov
+            --output-file lcov.info
 
       - name: Upload coverage to codecov.io
         uses: codecov/codecov-action@v1
         with:
-          file: ${{ steps.grcov.outputs.report }}
+          file: lcov.info
           fail_ci_if_error: true
