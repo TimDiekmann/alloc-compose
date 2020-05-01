@@ -740,19 +740,19 @@ mod tests {
         assert_eq!(counter.num_shrinks(), 4);
         assert_eq!(counter.num_owns(), 2);
         assert_eq!(counter.num_deallocs(), 2);
-    }
+        
+        let atomic_counter = AtomicCounter::default();
+        run_suite(atomic_counter.by_ref()).expect("Could not run test suite");
 
-    #[test]
-    #[rustfmt::skip]
-    fn atomic_counter() {
-        let counter = AtomicCounter::default();
-        run_suite(counter.by_ref()).expect("Could not run test suite");
+        assert_eq!(atomic_counter.num_allocs(), 4);
+        assert_eq!(atomic_counter.num_grows(), 8);
+        assert_eq!(atomic_counter.num_shrinks(), 4);
+        assert_eq!(atomic_counter.num_owns(), 2);
+        assert_eq!(atomic_counter.num_deallocs(), 2);
 
-        assert_eq!(counter.num_allocs(), 4);
-        assert_eq!(counter.num_grows(), 8);
-        assert_eq!(counter.num_shrinks(), 4);
-        assert_eq!(counter.num_owns(), 2);
-        assert_eq!(counter.num_deallocs(), 2);
+        assert_eq!(counter, atomic_counter);
+        assert_eq!(atomic_counter, counter);
+        assert_eq!(atomic_counter, atomic_counter);
     }
 
     #[test]
@@ -784,36 +784,36 @@ mod tests {
         assert_eq!(counter.num_owns_filter(false), 1);
         assert_eq!(counter.num_owns(), 2);
         assert_eq!(counter.num_deallocs(), 2);
-    }
 
-    #[test]
-    #[rustfmt::skip]
-    fn filtered_atomic_counter() {
-        let counter = FilteredAtomicCounter::default();
-        run_suite(counter.by_ref()).expect("Could not run test suite");
+        let atomic_counter = FilteredAtomicCounter::default();
+        run_suite(atomic_counter.by_ref()).expect("Could not run test suite");
 
-        assert_eq!(counter.num_allocs_filter(AllocInit::Uninitialized, false), 1);
-        assert_eq!(counter.num_allocs_filter(AllocInit::Zeroed, false), 1);
-        assert_eq!(counter.num_allocs_filter(AllocInit::Uninitialized, true), 1);
-        assert_eq!(counter.num_allocs_filter(AllocInit::Zeroed, true), 1);
-        assert_eq!(counter.num_allocs(), 4);
-        assert_eq!(counter.num_grows_filter(ReallocPlacement::MayMove, AllocInit::Uninitialized, false), 1);
-        assert_eq!(counter.num_grows_filter(ReallocPlacement::MayMove, AllocInit::Uninitialized, true), 1);
-        assert_eq!(counter.num_grows_filter(ReallocPlacement::MayMove, AllocInit::Zeroed, false), 1);
-        assert_eq!(counter.num_grows_filter(ReallocPlacement::MayMove, AllocInit::Zeroed, true), 1);
-        assert_eq!(counter.num_grows_filter(ReallocPlacement::InPlace, AllocInit::Uninitialized, false), 1);
-        assert_eq!(counter.num_grows_filter(ReallocPlacement::InPlace, AllocInit::Uninitialized, true), 1);
-        assert_eq!(counter.num_grows_filter(ReallocPlacement::InPlace, AllocInit::Zeroed, false), 1);
-        assert_eq!(counter.num_grows_filter(ReallocPlacement::InPlace, AllocInit::Zeroed, true), 1);
-        assert_eq!(counter.num_grows(), 8);
-        assert_eq!(counter.num_shrinks_filter(ReallocPlacement::MayMove, false), 1);
-        assert_eq!(counter.num_shrinks_filter(ReallocPlacement::MayMove, true), 1);
-        assert_eq!(counter.num_shrinks_filter(ReallocPlacement::InPlace, false), 1);
-        assert_eq!(counter.num_shrinks_filter(ReallocPlacement::InPlace, true), 1);
-        assert_eq!(counter.num_shrinks(), 4);
-        assert_eq!(counter.num_owns_filter(true), 1);
-        assert_eq!(counter.num_owns_filter(false), 1);
-        assert_eq!(counter.num_owns(), 2);
-        assert_eq!(counter.num_deallocs(), 2);
+        assert_eq!(atomic_counter.num_allocs_filter(AllocInit::Uninitialized, false), 1);
+        assert_eq!(atomic_counter.num_allocs_filter(AllocInit::Zeroed, false), 1);
+        assert_eq!(atomic_counter.num_allocs_filter(AllocInit::Uninitialized, true), 1);
+        assert_eq!(atomic_counter.num_allocs_filter(AllocInit::Zeroed, true), 1);
+        assert_eq!(atomic_counter.num_allocs(), 4);
+        assert_eq!(atomic_counter.num_grows_filter(ReallocPlacement::MayMove, AllocInit::Uninitialized, false), 1);
+        assert_eq!(atomic_counter.num_grows_filter(ReallocPlacement::MayMove, AllocInit::Uninitialized, true), 1);
+        assert_eq!(atomic_counter.num_grows_filter(ReallocPlacement::MayMove, AllocInit::Zeroed, false), 1);
+        assert_eq!(atomic_counter.num_grows_filter(ReallocPlacement::MayMove, AllocInit::Zeroed, true), 1);
+        assert_eq!(atomic_counter.num_grows_filter(ReallocPlacement::InPlace, AllocInit::Uninitialized, false), 1);
+        assert_eq!(atomic_counter.num_grows_filter(ReallocPlacement::InPlace, AllocInit::Uninitialized, true), 1);
+        assert_eq!(atomic_counter.num_grows_filter(ReallocPlacement::InPlace, AllocInit::Zeroed, false), 1);
+        assert_eq!(atomic_counter.num_grows_filter(ReallocPlacement::InPlace, AllocInit::Zeroed, true), 1);
+        assert_eq!(atomic_counter.num_grows(), 8);
+        assert_eq!(atomic_counter.num_shrinks_filter(ReallocPlacement::MayMove, false), 1);
+        assert_eq!(atomic_counter.num_shrinks_filter(ReallocPlacement::MayMove, true), 1);
+        assert_eq!(atomic_counter.num_shrinks_filter(ReallocPlacement::InPlace, false), 1);
+        assert_eq!(atomic_counter.num_shrinks_filter(ReallocPlacement::InPlace, true), 1);
+        assert_eq!(atomic_counter.num_shrinks(), 4);
+        assert_eq!(atomic_counter.num_owns_filter(true), 1);
+        assert_eq!(atomic_counter.num_owns_filter(false), 1);
+        assert_eq!(atomic_counter.num_owns(), 2);
+        assert_eq!(atomic_counter.num_deallocs(), 2);
+
+        assert_eq!(counter, atomic_counter);
+        assert_eq!(atomic_counter, counter);
+        assert_eq!(atomic_counter, atomic_counter);
     }
 }
