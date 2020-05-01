@@ -295,6 +295,7 @@
 <span id="295">295</span>
 <span id="296">296</span>
 <span id="297">297</span>
+<span id="298">298</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">doc</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;alloc&quot;</span>))]</span>
 <span class="kw">use</span> <span class="ident">alloc</span>::{<span class="ident">boxed</span>::<span class="ident">Box</span>, <span class="ident">rc</span>::<span class="ident">Rc</span>, <span class="ident">sync</span>::<span class="ident">Arc</span>};
@@ -316,6 +317,7 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// # Safety</span>
 <span class="doccomment">///   * `Clone` must not be implemented on types, which don&#39;t have a shared state.</span>
+<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">unused_variables</span>)]</span>
 <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">trait</span> <span class="ident">CallbackRef</span> {
     <span class="doccomment">/// Called before [`alloc`] was invoked.</span>
     <span class="doccomment">///</span>
