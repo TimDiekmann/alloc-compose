@@ -71,7 +71,7 @@ jobs:
             --ignore "/*" \
             --ignore "C:/*" \
             --ignore "../*" \
-            --output-type lcov
+            --output-type lcov \
             --output-file lcov.info
 
       - name: Upload coverage to codecov.io
