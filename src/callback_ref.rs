@@ -296,3 +296,173 @@ macro_rules! impl_alloc_stats {
 impl_alloc_stats!(Box);
 impl_alloc_stats!(Rc);
 impl_alloc_stats!(Arc);
+
+#[cfg(test)]
+mod tests {
+    use crate::CallbackRef;
+    use std::{
+        alloc::{AllocErr, AllocInit, Layout, MemoryBlock, ReallocPlacement},
+        cell::Cell,
+        ptr::NonNull,
+        rc::Rc,
+        sync::Arc,
+    };
+
+    #[derive(Default)]
+    struct Callback {
+        before_alloc: Cell<u32>,
+        after_alloc: Cell<u32>,
+        before_dealloc: Cell<u32>,
+        after_dealloc: Cell<u32>,
+        before_shrink: Cell<u32>,
+        after_shrink: Cell<u32>,
+        before_grow: Cell<u32>,
+        after_grow: Cell<u32>,
+        before_owns: Cell<u32>,
+        after_owns: Cell<u32>,
+    }
+
+    unsafe impl CallbackRef for Callback {
+        fn before_alloc(&self, _layout: Layout, _init: AllocInit) {
+            self.before_alloc.set(self.before_alloc.get() + 1)
+        }
+        fn after_alloc(
+            &self,
+            _layout: Layout,
+            _init: AllocInit,
+            _result: Result<MemoryBlock, AllocErr>,
+        ) {
+            self.after_alloc.set(self.after_alloc.get() + 1)
+        }
+        fn before_dealloc(&self, _ptr: NonNull<u8>, _layout: Layout) {
+            self.before_dealloc.set(self.before_dealloc.get() + 1)
+        }
+        fn after_dealloc(&self, _ptr: NonNull<u8>, _layout: Layout) {
+            self.after_dealloc.set(self.after_dealloc.get() + 1)
+        }
+        fn before_grow(
+            &self,
+            _ptr: NonNull<u8>,
+            _layout: Layout,
+            _new_size: usize,
+            _placement: ReallocPlacement,
+            _init: AllocInit,
+        ) {
+            self.before_grow.set(self.before_grow.get() + 1)
+        }
+        fn after_grow(
+            &self,
+            _ptr: NonNull<u8>,
+            _layout: Layout,
+            _new_size: usize,
+            _placement: ReallocPlacement,
+            _init: AllocInit,
+            _result: Result<MemoryBlock, AllocErr>,
+        ) {
+            self.after_grow.set(self.after_grow.get() + 1)
+        }
+        fn before_shrink(
+            &self,
+            _ptr: NonNull<u8>,
+            _layout: Layout,
+            _new_size: usize,
+            _placement: ReallocPlacement,
+        ) {
+            self.before_shrink.set(self.before_shrink.get() + 1)
+        }
+        fn after_shrink(
+            &self,
+            _ptr: NonNull<u8>,
+            _layout: Layout,
+            _new_size: usize,
+            _placement: ReallocPlacement,
+            _result: Result<MemoryBlock, AllocErr>,
+        ) {
+            self.after_shrink.set(self.after_shrink.get() + 1)
+        }
+        fn before_owns(&self) {
+            self.before_owns.set(self.before_owns.get() + 1)
+        }
+        fn after_owns(&self, _success: bool) {
+            self.after_owns.set(self.after_owns.get() + 1)
+        }
+    }
+
+    fn test_callback(callback: impl CallbackRef) {
+        callback.before_alloc(Layout::new::<()>(), AllocInit::Uninitialized);
+        callback.after_alloc(Layout::new::<()>(), AllocInit::Uninitialized, Err(AllocErr));
+        callback.before_dealloc(NonNull::dangling(), Layout::new::<()>());
+        callback.after_dealloc(NonNull::dangling(), Layout::new::<()>());
+        callback.before_grow(
+            NonNull::dangling(),
+            Layout::new::<()>(),
+            0,
+            ReallocPlacement::MayMove,
+            AllocInit::Uninitialized,
+        );
+        callback.after_grow(
+            NonNull::dangling(),
+            Layout::new::<()>(),
+            0,
+            ReallocPlacement::MayMove,
+            AllocInit::Uninitialized,
+            Err(AllocErr),
+        );
+        callback.before_shrink(
+            NonNull::dangling(),
+            Layout::new::<()>(),
+            0,
+            ReallocPlacement::MayMove,
+        );
+        callback.after_shrink(
+            NonNull::dangling(),
+            Layout::new::<()>(),
+            0,
+            ReallocPlacement::MayMove,
+            Err(AllocErr),
+        );
+        callback.before_owns();
+        callback.after_owns(false);
+    }
+
+    fn check_counts(callback: &Callback) {
+        assert_eq!(callback.before_alloc.get(), 1);
+        assert_eq!(callback.after_alloc.get(), 1);
+        assert_eq!(callback.before_dealloc.get(), 1);
+        assert_eq!(callback.after_dealloc.get(), 1);
+        assert_eq!(callback.before_grow.get(), 1);
+        assert_eq!(callback.after_grow.get(), 1);
+        assert_eq!(callback.before_shrink.get(), 1);
+        assert_eq!(callback.after_shrink.get(), 1);
+        assert_eq!(callback.before_owns.get(), 1);
+        assert_eq!(callback.after_owns.get(), 1);
+    }
+
+    #[test]
+    fn plain() {
+        let callback = Callback::default();
+        test_callback(callback.by_ref());
+        check_counts(&callback);
+    }
+
+    #[test]
+    fn boxed() {
+        let callback = Box::new(Callback::default());
+        test_callback(callback.by_ref());
+        check_counts(&callback);
+    }
+
+    #[test]
+    fn rc() {
+        let callback = Rc::new(Callback::default());
+        test_callback(callback.by_ref());
+        check_counts(&callback);
+    }
+
+    #[test]
+    fn arc() {
+        let callback = Arc::new(Callback::default());
+        test_callback(callback.by_ref());
+        check_counts(&callback);
+    }
+}
