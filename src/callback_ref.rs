@@ -18,6 +18,7 @@ use core::{
 ///
 /// # Safety
 ///   * `Clone` must not be implemented on types, which don't have a shared state.
+#[allow(unused_variables)]
 pub unsafe trait CallbackRef {
     /// Called before [`alloc`] was invoked.
     ///

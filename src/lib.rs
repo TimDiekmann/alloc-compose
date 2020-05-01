@@ -153,7 +153,7 @@ pub(crate) mod helper {
             }
         }
 
-        fn after_dealloc(&self, ptr: NonNull<u8>, layout: Layout) {
+        fn after_dealloc(&self, ptr: NonNull<u8>, _layout: Layout) {
             self.map
                 .lock()
                 .unwrap_or_else(PoisonError::into_inner)
