@@ -1,4 +1,4 @@
-### [v0.4.0](https://github.com/TimDiekmann/alloc-compose/tree/v0.4.0) (Unreleased)
+### [v0.4.0](https://github.com/TimDiekmann/alloc-compose/tree/v0.4.0)
 
 [Documentation](https://docs.rs/alloc-compose/0.4.0/alloc_compose/)
 

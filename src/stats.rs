@@ -757,6 +757,7 @@ mod tests {
 
     #[test]
     #[rustfmt::skip]
+    #[allow(clippy::cognitive_complexity)]
     fn filtered_counter() {
         let counter = FilteredCounter::default();
         run_suite(counter.by_ref()).expect("Could not run test suite");
