@@ -11,26 +11,26 @@ use core::{
 /// ```rust
 /// #![feature(allocator_api)]
 ///
-/// use alloc_compose::ChunkAlloc;
+/// use alloc_compose::Chunk;
 /// use std::alloc::{AllocInit, AllocRef, Layout, System};
 ///
 /// let mut data = [0; 64];
-/// let mut alloc = ChunkAlloc::<_, 64>(System);
+/// let mut alloc = Chunk::<_, 64>(System);
 /// let memory = alloc.alloc(Layout::new::<[u8; 16]>(), AllocInit::Uninitialized)?;
 /// assert_eq!(memory.size % 32, 0);
 /// assert!(memory.size >= 32);
 /// # Ok::<(), core::alloc::AllocErr>(())
 /// ```
 ///
-/// When growing or shrinking the memory, `ChunkAlloc` will try to alter
+/// When growing or shrinking the memory, `Chunk` will try to alter
 /// the memory in place before delegating to the underlying allocator.
 ///
 /// ```rust
 /// # #![feature(allocator_api)]
-/// # use alloc_compose::ChunkAlloc;
+/// # use alloc_compose::Chunk;
 /// # use std::alloc::{AllocInit, AllocRef, System, Layout};
 /// # let mut data = [0; 64];
-/// # let mut alloc = ChunkAlloc::<_, 64>(System);
+/// # let mut alloc = Chunk::<_, 64>(System);
 /// # let memory = alloc.alloc(Layout::new::<[u8; 16]>(), AllocInit::Uninitialized)?;
 /// use std::alloc::ReallocPlacement;
 /// let memory = unsafe {
@@ -47,9 +47,9 @@ use core::{
 /// # Ok::<(), core::alloc::AllocErr>(())
 /// ```
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
-pub struct ChunkAlloc<A, const SIZE: usize>(pub A);
+pub struct Chunk<A, const SIZE: usize>(pub A);
 
-impl<A, const SIZE: usize> ChunkAlloc<A, SIZE> {
+impl<A, const SIZE: usize> Chunk<A, SIZE> {
     const fn assert_alignment() {
         assert!(
             usize::is_power_of_two(SIZE),
@@ -62,7 +62,7 @@ impl<A, const SIZE: usize> ChunkAlloc<A, SIZE> {
     }
 }
 
-unsafe impl<A: AllocRef, const SIZE: usize> AllocRef for ChunkAlloc<A, SIZE> {
+unsafe impl<A: AllocRef, const SIZE: usize> AllocRef for Chunk<A, SIZE> {
     fn alloc(&mut self, layout: Layout, init: AllocInit) -> Result<MemoryBlock, AllocErr> {
         Self::assert_alignment();
         let memory = self.0.alloc(
@@ -142,7 +142,7 @@ unsafe impl<A: AllocRef, const SIZE: usize> AllocRef for ChunkAlloc<A, SIZE> {
     }
 }
 
-impl<A: Owns, const SIZE: usize> Owns for ChunkAlloc<A, SIZE> {
+impl<A: Owns, const SIZE: usize> Owns for Chunk<A, SIZE> {
     fn owns(&self, memory: MemoryBlock) -> bool {
         self.0.owns(memory)
     }
@@ -150,20 +150,20 @@ impl<A: Owns, const SIZE: usize> Owns for ChunkAlloc<A, SIZE> {
 
 #[cfg(test)]
 mod tests {
-    use super::ChunkAlloc;
+    use super::Chunk;
     use crate::helper;
     use std::alloc::{AllocInit, AllocRef, Layout, ReallocPlacement, System};
 
     #[test]
     #[should_panic = "`SIZE` must be a power of two"]
     fn wrong_size() {
-        let mut alloc = ChunkAlloc::<_, 63>(System);
+        let mut alloc = Chunk::<_, 63>(System);
         let _ = alloc.alloc(Layout::new::<u8>(), AllocInit::Uninitialized);
     }
 
     #[test]
     fn alloc() {
-        let mut alloc = helper::tracker(ChunkAlloc::<_, 64>(System));
+        let mut alloc = helper::tracker(Chunk::<_, 64>(System));
         let memory = alloc
             .alloc(Layout::new::<u8>(), AllocInit::Uninitialized)
             .expect("Could not allocate 64 bytes");
@@ -177,7 +177,7 @@ mod tests {
 
     #[test]
     fn dealloc() {
-        let mut alloc = helper::tracker(ChunkAlloc::<_, 64>(System));
+        let mut alloc = helper::tracker(Chunk::<_, 64>(System));
 
         unsafe {
             let memory = alloc
@@ -208,7 +208,7 @@ mod tests {
 
     #[test]
     fn grow() {
-        let mut alloc = helper::tracker(ChunkAlloc::<_, 64>(System));
+        let mut alloc = helper::tracker(Chunk::<_, 64>(System));
 
         unsafe {
             let memory = alloc
@@ -256,7 +256,7 @@ mod tests {
 
     #[test]
     fn shrink() {
-        let mut alloc = helper::tracker(ChunkAlloc::<_, 64>(System));
+        let mut alloc = helper::tracker(Chunk::<_, 64>(System));
 
         unsafe {
             let memory = alloc

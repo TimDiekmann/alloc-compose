@@ -20,7 +20,7 @@ use core::{
 /// ```
 /// #![feature(allocator_api)]
 ///
-/// use alloc_compose::{Affix, ChunkAlloc};
+/// use alloc_compose::{Affix, Chunk};
 /// use std::alloc::{Layout, System};
 ///
 /// type Prefix = [u32; 3];
@@ -29,7 +29,7 @@ use core::{
 /// type Suffix = [u64; 2];
 /// # assert_eq!(core::mem::size_of::<Suffix>(), 16);
 /// # assert_eq!(core::mem::align_of::<Suffix>(), 8);
-/// type Alloc = Affix<ChunkAlloc<System, 128>, Prefix, Suffix>;
+/// type Alloc = Affix<Chunk<System, 128>, Prefix, Suffix>;
 ///
 /// let layout = Layout::from_size_align(28, 8)?;
 /// # Ok::<(), core::alloc::LayoutErr>(())
@@ -39,12 +39,12 @@ use core::{
 ///
 /// ```
 /// # #![feature(allocator_api)]
-/// # use alloc_compose::{Affix, ChunkAlloc};
+/// # use alloc_compose::{Affix, Chunk};
 /// # use std::alloc::{Layout, System};
 /// use core::alloc::{AllocRef, AllocInit};
 /// # type Prefix = [u32; 3];
 /// # type Suffix = [u64; 2];
-/// # type Alloc = Affix<ChunkAlloc<System, 128>, Prefix, Suffix>;
+/// # type Alloc = Affix<Chunk<System, 128>, Prefix, Suffix>;
 /// # let layout = Layout::from_size_align(28, 8).unwrap();
 ///
 /// let mut my_alloc = Alloc::default();
@@ -75,13 +75,13 @@ use core::{
 ///
 /// ```
 /// # #![feature(allocator_api)]
-/// # use alloc_compose::{Affix, ChunkAlloc};
+/// # use alloc_compose::{Affix, Chunk};
 /// # use std::alloc::{Layout, System, AllocRef, AllocInit};
 /// use core::ptr::NonNull;
 /// # type Prefix = [u32; 3];
 ///
 /// // For convenience, the suffix can be ommitted
-/// type Alloc = Affix<ChunkAlloc<System, 128>, Prefix>;
+/// type Alloc = Affix<Chunk<System, 128>, Prefix>;
 /// # let layout = Layout::from_size_align(28, 8).unwrap();
 ///
 /// let mut my_alloc = Alloc::default();
@@ -109,11 +109,11 @@ use core::{
 ///
 /// ```
 /// # #![feature(allocator_api)]
-/// # use alloc_compose::{Affix, ChunkAlloc};
+/// # use alloc_compose::{Affix, Chunk};
 /// # use std::alloc::{Layout, System, AllocRef, AllocInit};
 /// # use core::ptr::NonNull;
 /// # type Suffix = [u64; 2];
-/// type Alloc = Affix<ChunkAlloc<System, 128>, (), Suffix>;
+/// type Alloc = Affix<Chunk<System, 128>, (), Suffix>;
 /// # let layout = Layout::from_size_align(28, 8).unwrap();
 ///
 /// let mut my_alloc = Alloc::default();
@@ -142,11 +142,11 @@ use core::{
 ///
 /// ```
 /// # #![feature(allocator_api)]
-/// # use alloc_compose::{Affix, ChunkAlloc};
+/// # use alloc_compose::{Affix, Chunk};
 /// # use std::alloc::{Layout, System, AllocRef, AllocInit};
 /// # use core::ptr::NonNull;
 /// # type Suffix = [u64; 2];
-/// type Alloc = Affix<ChunkAlloc<System, 128>, (), ()>;
+/// type Alloc = Affix<Chunk<System, 128>, (), ()>;
 /// # let layout = Layout::from_size_align(28, 8).unwrap();
 ///
 /// let mut my_alloc = Alloc::default();
@@ -169,7 +169,8 @@ use core::{
 /// ```
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Affix<Alloc, Prefix = (), Suffix = ()> {
-    pub alloc: Alloc,
+    /// The parent allocator to be used as backend
+    pub parent: Alloc,
     _prefix: PhantomData<Prefix>,
     _suffix: PhantomData<Suffix>,
 }
@@ -183,9 +184,9 @@ where
     }
 }
 impl<Alloc, Prefix, Suffix> Affix<Alloc, Prefix, Suffix> {
-    pub const fn new(alloc: Alloc) -> Self {
+    pub const fn new(parent: Alloc) -> Self {
         Self {
-            alloc,
+            parent,
             _prefix: PhantomData,
             _suffix: PhantomData,
         }
@@ -195,8 +196,11 @@ impl<Alloc, Prefix, Suffix> Affix<Alloc, Prefix, Suffix> {
     ///
     /// # Safety
     ///
-    /// * `ptr` must denote a block of memory [*currently allocated*] via this allocator, and
-    /// * `layout` must [*fit*] that block of memory.
+    /// * `ptr` must denote a block of memory *[currently allocated]* via this allocator, and
+    /// * `layout` must *[fit]* that block of memory.
+    ///
+    /// [currently allocated]: https://doc.rust-lang.org/nightly/core/alloc/trait.AllocRef.html#currently-allocated-memory
+    /// [fit]: https://doc.rust-lang.org/nightly/core/alloc/trait.AllocRef.html#memory-fitting
     pub unsafe fn prefix(ptr: NonNull<u8>, layout: Layout) -> NonNull<Prefix> {
         if mem::size_of::<Prefix>() == 0 {
             NonNull::dangling()
@@ -211,8 +215,11 @@ impl<Alloc, Prefix, Suffix> Affix<Alloc, Prefix, Suffix> {
     ///
     /// # Safety
     ///
-    /// * `ptr` must denote a block of memory [*currently allocated*] via this allocator, and
-    /// * `layout` must [*fit*] that block of memory.
+    /// * `ptr` must denote a block of memory *[currently allocated]* via this allocator, and
+    /// * `layout` must *[fit]* that block of memory.
+    ///
+    /// [currently allocated]: https://doc.rust-lang.org/nightly/core/alloc/trait.AllocRef.html#currently-allocated-memory
+    /// [fit]: https://doc.rust-lang.org/nightly/core/alloc/trait.AllocRef.html#memory-fitting
     pub unsafe fn suffix(ptr: NonNull<u8>, layout: Layout) -> NonNull<Suffix> {
         if mem::size_of::<Suffix>() == 0 {
             NonNull::dangling()
@@ -245,7 +252,7 @@ where
     fn alloc(&mut self, layout: Layout, init: AllocInit) -> Result<MemoryBlock, AllocErr> {
         let (layout, offset_prefix, offset_suffix) = Self::extend_layout(layout).ok_or(AllocErr)?;
 
-        let memory = self.alloc.alloc(layout, init)?;
+        let memory = self.parent.alloc(layout, init)?;
 
         Ok(MemoryBlock {
             ptr: unsafe { NonNull::new_unchecked(memory.ptr.as_ptr().add(offset_prefix)) },
@@ -260,7 +267,8 @@ where
     unsafe fn dealloc(&mut self, ptr: NonNull<u8>, layout: Layout) {
         let (layout, prefix_offset, _) = Self::extend_layout(layout).expect("Invalid layout");
         let base_ptr = ptr.as_ptr().sub(prefix_offset);
-        self.alloc.dealloc(NonNull::new_unchecked(base_ptr), layout)
+        self.parent
+            .dealloc(NonNull::new_unchecked(base_ptr), layout)
     }
 
     unsafe fn grow(
@@ -280,7 +288,7 @@ where
             Self::extend_layout(new_layout).unwrap();
 
         let suffix: MaybeUninit<Suffix> = ptr::read(ptr.add(old_offset_suffix) as *mut _);
-        let memory = self.alloc.grow(
+        let memory = self.parent.grow(
             NonNull::new_unchecked(ptr),
             old_alloc_layout,
             new_alloc_layout.size(),
@@ -323,7 +331,7 @@ where
             Self::extend_layout(new_layout).unwrap();
 
         let suffix: MaybeUninit<Suffix> = ptr::read(ptr.add(old_offset_suffix) as *mut _);
-        let memory = self.alloc.shrink(
+        let memory = self.parent.shrink(
             NonNull::new_unchecked(ptr),
             old_alloc_layout,
             new_alloc_layout.size(),

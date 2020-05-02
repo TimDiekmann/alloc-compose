@@ -10,15 +10,15 @@ use core::{
 ///
 /// # Examples
 ///
-/// The `NullAlloc` will always return `Err`:
+/// The `Null` will always return `Err`:
 ///
 /// ```rust
 /// #![feature(allocator_api)]
 ///
-/// use alloc_compose::NullAlloc;
+/// use alloc_compose::Null;
 /// use std::alloc::{AllocInit, AllocRef, Global, Layout};
 ///
-/// let memory = NullAlloc.alloc(Layout::new::<u32>(), AllocInit::Uninitialized);
+/// let memory = Null.alloc(Layout::new::<u32>(), AllocInit::Uninitialized);
 /// assert!(memory.is_err())
 /// ```
 ///
@@ -26,15 +26,15 @@ use core::{
 ///
 /// ```rust
 /// # #![feature(allocator_api)]
-/// # use alloc_compose::NullAlloc;
+/// # use alloc_compose::Null;
 /// # use std::alloc::{AllocInit, AllocRef, Global, Layout};
-/// let memory = NullAlloc.alloc(Layout::new::<()>(), AllocInit::Uninitialized);
+/// let memory = Null.alloc(Layout::new::<()>(), AllocInit::Uninitialized);
 /// assert!(memory.is_err())
 /// ```
 #[derive(Debug, Copy, Clone)]
-pub struct NullAlloc;
+pub struct Null;
 
-unsafe impl AllocRef for NullAlloc {
+unsafe impl AllocRef for Null {
     /// Will always return `Err(AllocErr)`.
     fn alloc(&mut self, _layout: Layout, _init: AllocInit) -> Result<MemoryBlock, AllocErr> {
         Err(AllocErr)
@@ -69,7 +69,7 @@ unsafe impl AllocRef for NullAlloc {
     }
 }
 
-impl Owns for NullAlloc {
+impl Owns for Null {
     /// Will always return `false.
     fn owns(&self, _memory: MemoryBlock) -> bool {
         false
@@ -84,14 +84,14 @@ mod tests {
     #[test]
     #[should_panic(expected = "unreachable")]
     fn dealloc() {
-        unsafe { NullAlloc.dealloc(NonNull::dangling(), Layout::new::<()>()) };
+        unsafe { Null.dealloc(NonNull::dangling(), Layout::new::<()>()) };
     }
 
     #[test]
     #[should_panic(expected = "unreachable")]
     fn grow() {
         unsafe {
-            let _ = NullAlloc.grow(
+            let _ = Null.grow(
                 NonNull::dangling(),
                 Layout::new::<()>(),
                 0,
@@ -105,7 +105,7 @@ mod tests {
     #[should_panic(expected = "unreachable")]
     fn shrink() {
         unsafe {
-            let _ = NullAlloc.shrink(
+            let _ = Null.shrink(
                 NonNull::dangling(),
                 Layout::new::<()>(),
                 0,
@@ -116,7 +116,7 @@ mod tests {
 
     #[test]
     fn owns() {
-        assert!(!NullAlloc.owns(MemoryBlock {
+        assert!(!Null.owns(MemoryBlock {
             ptr: NonNull::dangling(),
             size: 0
         }));
@@ -124,6 +124,6 @@ mod tests {
 
     #[test]
     fn debug() {
-        assert_eq!(format!("{:?}", NullAlloc), "NullAlloc");
+        assert_eq!(format!("{:?}", Null), "Null");
     }
 }

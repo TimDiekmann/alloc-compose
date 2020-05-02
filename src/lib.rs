@@ -20,13 +20,13 @@ pub mod stats;
 
 mod affix;
 mod callback_ref;
-mod chunk_alloc;
-mod fallback_alloc;
+mod chunk;
+mod fallback;
 mod memory_marker;
-mod null_alloc;
+mod null;
 mod proxy;
 mod region;
-mod segregate_alloc;
+mod segregate;
 
 use core::{
     alloc::{AllocErr, AllocInit, AllocRef, Layout, MemoryBlock, ReallocPlacement},
@@ -36,13 +36,13 @@ use core::{
 pub use self::{
     affix::Affix,
     callback_ref::CallbackRef,
-    chunk_alloc::ChunkAlloc,
-    fallback_alloc::FallbackAlloc,
+    chunk::Chunk,
+    fallback::Fallback,
     memory_marker::MemoryMarker,
-    null_alloc::NullAlloc,
+    null::Null,
     proxy::Proxy,
     region::Region,
-    segregate_alloc::SegregateAlloc,
+    segregate::Segregate,
 };
 
 /// Trait to determine if a given `MemoryBlock` is owned by an allocator.
@@ -92,7 +92,7 @@ unsafe fn shrink<A1: AllocRef, A2: AllocRef>(
 
 #[cfg(test)]
 pub(crate) mod helper {
-    use crate::{CallbackRef, ChunkAlloc, Proxy};
+    use crate::{CallbackRef, Chunk, Proxy};
     use std::{
         alloc::{AllocErr, AllocInit, AllocRef, Layout, MemoryBlock, ReallocPlacement, System},
         collections::HashMap,
@@ -329,7 +329,7 @@ pub(crate) mod helper {
     #[test]
     #[should_panic = "`layout` must fit that block of memory"]
     fn tracker_grow_layout_size_range() {
-        let mut alloc = tracker(ChunkAlloc::<System, 32>::default());
+        let mut alloc = tracker(Chunk::<System, 32>::default());
         let memory = alloc
             .alloc(Layout::new::<[u8; 4]>(), AllocInit::Uninitialized)
             .expect("Could not allocate 4 bytes");

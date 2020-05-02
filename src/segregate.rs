@@ -10,14 +10,12 @@ use core::{
 /// All allocations smaller than or equal to `threshold` will be dispatched to `Small`. The others
 /// will go to `Large`.
 #[derive(Debug, Copy, Clone)]
-pub struct SegregateAlloc<Small, Large, const THRESHOLD: usize> {
+pub struct Segregate<Small, Large, const THRESHOLD: usize> {
     pub small: Small,
     pub large: Large,
 }
 
-impl<Small: AllocRef, Large: AllocRef, const THRESHOLD: usize>
-    SegregateAlloc<Small, Large, THRESHOLD>
-{
+impl<Small: AllocRef, Large: AllocRef, const THRESHOLD: usize> Segregate<Small, Large, THRESHOLD> {
     fn clamp_memory(memory: MemoryBlock) -> MemoryBlock {
         MemoryBlock {
             ptr: memory.ptr,
@@ -26,8 +24,7 @@ impl<Small: AllocRef, Large: AllocRef, const THRESHOLD: usize>
     }
 }
 
-unsafe impl<Small, Large, const THRESHOLD: usize> AllocRef
-    for SegregateAlloc<Small, Large, THRESHOLD>
+unsafe impl<Small, Large, const THRESHOLD: usize> AllocRef for Segregate<Small, Large, THRESHOLD>
 where
     Small: AllocRef,
     Large: AllocRef,
@@ -104,7 +101,7 @@ where
     }
 }
 
-impl<Small, Large, const THRESHOLD: usize> Owns for SegregateAlloc<Small, Large, THRESHOLD>
+impl<Small, Large, const THRESHOLD: usize> Owns for Segregate<Small, Large, THRESHOLD>
 where
     Small: Owns,
     Large: Owns,

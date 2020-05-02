@@ -10,7 +10,7 @@ use core::{
 /// request is forwarded to the `Fallback` allocator. All other requests are dispatched
 /// appropriately to one of the two allocators.
 ///
-/// A `FallbackAlloc` is useful for fast, special-purpose allocators backed up by general-purpose
+/// A `Fallback` is useful for fast, special-purpose allocators backed up by general-purpose
 /// allocators like [`Global`] or [`System`].
 ///
 /// [`Global`]: https://doc.rust-lang.org/alloc/alloc/struct.Global.html
@@ -21,13 +21,13 @@ use core::{
 /// ```rust
 /// #![feature(allocator_api)]
 ///
-/// use alloc_compose::{FallbackAlloc, Owns, Region};
+/// use alloc_compose::{Fallback, Owns, Region};
 /// use std::alloc::{AllocInit, AllocRef, Layout, System};
 ///
 /// let mut data = [0; 32];
-/// let mut alloc = FallbackAlloc {
+/// let mut alloc = Fallback {
 ///     primary: Region::new(&mut data),
-///     fallback: System,
+///     secondary: System,
 /// };
 ///
 /// let small_memory = alloc.alloc(Layout::new::<u32>(), AllocInit::Uninitialized)?;
@@ -44,22 +44,22 @@ use core::{
 /// # Ok::<(), core::alloc::AllocErr>(())
 /// ```
 #[derive(Debug, Copy, Clone)]
-pub struct FallbackAlloc<Primary, Fallback> {
+pub struct Fallback<Primary, Secondary> {
     /// The primary allocator
     pub primary: Primary,
     /// The fallback allocator
-    pub fallback: Fallback,
+    pub secondary: Secondary,
 }
 
-unsafe impl<Primary, Fallback> AllocRef for FallbackAlloc<Primary, Fallback>
+unsafe impl<Primary, Secondary> AllocRef for Fallback<Primary, Secondary>
 where
     Primary: AllocRef + Owns,
-    Fallback: AllocRef,
+    Secondary: AllocRef,
 {
     fn alloc(&mut self, layout: Layout, init: AllocInit) -> Result<MemoryBlock, AllocErr> {
         match self.primary.alloc(layout, init) {
             primary @ Ok(_) => primary,
-            Err(_) => self.fallback.alloc(layout, init),
+            Err(_) => self.secondary.alloc(layout, init),
         }
     }
 
@@ -70,7 +70,7 @@ where
         }) {
             self.primary.dealloc(ptr, layout)
         } else {
-            self.fallback.dealloc(ptr, layout)
+            self.secondary.dealloc(ptr, layout)
         }
     }
 
@@ -91,7 +91,7 @@ where
             } else {
                 grow(
                     &mut self.primary,
-                    &mut self.fallback,
+                    &mut self.secondary,
                     ptr,
                     layout,
                     new_size,
@@ -100,7 +100,7 @@ where
                 )
             }
         } else {
-            self.fallback.grow(ptr, layout, new_size, placement, init)
+            self.secondary.grow(ptr, layout, new_size, placement, init)
         }
     }
 
@@ -117,33 +117,33 @@ where
         }) {
             self.primary.shrink(ptr, layout, new_size, placement)
         } else {
-            self.fallback.shrink(ptr, layout, new_size, placement)
+            self.secondary.shrink(ptr, layout, new_size, placement)
         }
     }
 }
 
-impl<Primary, Fallback> Owns for FallbackAlloc<Primary, Fallback>
+impl<Primary, Secondary> Owns for Fallback<Primary, Secondary>
 where
     Primary: Owns,
-    Fallback: Owns,
+    Secondary: Owns,
 {
     fn owns(&self, memory: MemoryBlock) -> bool {
-        self.primary.owns(memory) || self.fallback.owns(memory)
+        self.primary.owns(memory) || self.secondary.owns(memory)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::FallbackAlloc;
+    use super::Fallback;
     use crate::{helper, Owns, Region};
     use std::alloc::{AllocInit, AllocRef, Layout, ReallocPlacement, System};
 
     #[test]
     fn alloc() {
         let mut data = [0; 32];
-        let mut alloc = FallbackAlloc {
+        let mut alloc = Fallback {
             primary: helper::tracker(Region::new(&mut data)),
-            fallback: helper::tracker(System),
+            secondary: helper::tracker(System),
         };
 
         let small_memory = alloc
@@ -164,9 +164,9 @@ mod tests {
     #[test]
     fn grow() {
         let mut data = [0; 80];
-        let mut alloc = FallbackAlloc {
+        let mut alloc = Fallback {
             primary: helper::tracker(Region::new(&mut data)),
-            fallback: helper::tracker(System),
+            secondary: helper::tracker(System),
         };
 
         let memory = alloc
@@ -238,9 +238,9 @@ mod tests {
     #[test]
     fn shrink() {
         let mut data = [0; 80];
-        let mut alloc = FallbackAlloc {
+        let mut alloc = Fallback {
             primary: helper::tracker(Region::new(&mut data)),
-            fallback: helper::tracker(System),
+            secondary: helper::tracker(System),
         };
 
         let memory = alloc
@@ -288,9 +288,9 @@ mod tests {
     fn owns() {
         let mut data_1 = [0; 32];
         let mut data_2 = [0; 64];
-        let mut alloc = FallbackAlloc {
+        let mut alloc = Fallback {
             primary: Region::new(&mut data_1),
-            fallback: Region::new(&mut data_2),
+            secondary: Region::new(&mut data_2),
         };
 
         let memory = alloc
@@ -302,7 +302,7 @@ mod tests {
         let memory = alloc
             .alloc(Layout::new::<[u8; 64]>(), AllocInit::Uninitialized)
             .expect("Could not allocate 64 bytes");
-        assert!(alloc.fallback.owns(memory));
+        assert!(alloc.secondary.owns(memory));
         assert!(alloc.owns(memory));
     }
 }
