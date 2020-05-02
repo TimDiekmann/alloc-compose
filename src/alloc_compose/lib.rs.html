@@ -403,13 +403,13 @@
 
 <span class="kw">mod</span> <span class="ident">affix</span>;
 <span class="kw">mod</span> <span class="ident">callback_ref</span>;
-<span class="kw">mod</span> <span class="ident">chunk_alloc</span>;
-<span class="kw">mod</span> <span class="ident">fallback_alloc</span>;
+<span class="kw">mod</span> <span class="ident">chunk</span>;
+<span class="kw">mod</span> <span class="ident">fallback</span>;
 <span class="kw">mod</span> <span class="ident">memory_marker</span>;
-<span class="kw">mod</span> <span class="ident">null_alloc</span>;
+<span class="kw">mod</span> <span class="ident">null</span>;
 <span class="kw">mod</span> <span class="ident">proxy</span>;
 <span class="kw">mod</span> <span class="ident">region</span>;
-<span class="kw">mod</span> <span class="ident">segregate_alloc</span>;
+<span class="kw">mod</span> <span class="ident">segregate</span>;
 
 <span class="kw">use</span> <span class="ident">core</span>::{
     <span class="ident">alloc</span>::{<span class="ident">AllocErr</span>, <span class="ident">AllocInit</span>, <span class="ident">AllocRef</span>, <span class="ident">Layout</span>, <span class="ident">MemoryBlock</span>, <span class="ident">ReallocPlacement</span>},
@@ -419,13 +419,13 @@
 <span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::{
     <span class="ident">affix</span>::<span class="ident">Affix</span>,
     <span class="ident">callback_ref</span>::<span class="ident">CallbackRef</span>,
-    <span class="ident">chunk_alloc</span>::<span class="ident">ChunkAlloc</span>,
-    <span class="ident">fallback_alloc</span>::<span class="ident">FallbackAlloc</span>,
+    <span class="ident">chunk</span>::<span class="ident">Chunk</span>,
+    <span class="ident">fallback</span>::<span class="ident">Fallback</span>,
     <span class="ident">memory_marker</span>::<span class="ident">MemoryMarker</span>,
-    <span class="ident">null_alloc</span>::<span class="ident">NullAlloc</span>,
+    <span class="ident">null</span>::<span class="ident">Null</span>,
     <span class="ident">proxy</span>::<span class="ident">Proxy</span>,
     <span class="ident">region</span>::<span class="ident">Region</span>,
-    <span class="ident">segregate_alloc</span>::<span class="ident">SegregateAlloc</span>,
+    <span class="ident">segregate</span>::<span class="ident">Segregate</span>,
 };
 
 <span class="doccomment">/// Trait to determine if a given `MemoryBlock` is owned by an allocator.</span>
@@ -475,7 +475,7 @@
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod</span> <span class="ident">helper</span> {
-    <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">CallbackRef</span>, <span class="ident">ChunkAlloc</span>, <span class="ident">Proxy</span>};
+    <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">CallbackRef</span>, <span class="ident">Chunk</span>, <span class="ident">Proxy</span>};
     <span class="kw">use</span> <span class="ident">std</span>::{
         <span class="ident">alloc</span>::{<span class="ident">AllocErr</span>, <span class="ident">AllocInit</span>, <span class="ident">AllocRef</span>, <span class="ident">Layout</span>, <span class="ident">MemoryBlock</span>, <span class="ident">ReallocPlacement</span>, <span class="ident">System</span>},
         <span class="ident">collections</span>::<span class="ident">HashMap</span>,
@@ -712,7 +712,7 @@
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="attribute">#[<span class="ident">should_panic</span> <span class="op">=</span> <span class="string">&quot;`layout` must fit that block of memory&quot;</span>]</span>
     <span class="kw">fn</span> <span class="ident">tracker_grow_layout_size_range</span>() {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">alloc</span> <span class="op">=</span> <span class="ident">tracker</span>(<span class="ident">ChunkAlloc</span>::<span class="op">&lt;</span><span class="ident">System</span>, <span class="number">32</span><span class="op">&gt;</span>::<span class="ident">default</span>());
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">alloc</span> <span class="op">=</span> <span class="ident">tracker</span>(<span class="ident">Chunk</span>::<span class="op">&lt;</span><span class="ident">System</span>, <span class="number">32</span><span class="op">&gt;</span>::<span class="ident">default</span>());
         <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
             .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>(), <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>)
             .<span class="ident">expect</span>(<span class="string">&quot;Could not allocate 4 bytes&quot;</span>);

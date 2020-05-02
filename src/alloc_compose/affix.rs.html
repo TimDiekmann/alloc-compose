@@ -522,6 +522,14 @@
 <span id="522">522</span>
 <span id="523">523</span>
 <span id="524">524</span>
+<span id="525">525</span>
+<span id="526">526</span>
+<span id="527">527</span>
+<span id="528">528</span>
+<span id="529">529</span>
+<span id="530">530</span>
+<span id="531">531</span>
+<span id="532">532</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">core</span>::{
     <span class="ident">alloc</span>::{<span class="ident">AllocErr</span>, <span class="ident">AllocInit</span>, <span class="ident">AllocRef</span>, <span class="ident">Layout</span>, <span class="ident">MemoryBlock</span>, <span class="ident">ReallocPlacement</span>},
@@ -545,7 +553,7 @@
 <span class="doccomment">/// ```</span>
 <span class="doccomment">/// #![feature(allocator_api)]</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// use alloc_compose::{Affix, ChunkAlloc};</span>
+<span class="doccomment">/// use alloc_compose::{Affix, Chunk};</span>
 <span class="doccomment">/// use std::alloc::{Layout, System};</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// type Prefix = [u32; 3];</span>
@@ -554,7 +562,7 @@
 <span class="doccomment">/// type Suffix = [u64; 2];</span>
 <span class="doccomment">/// # assert_eq!(core::mem::size_of::&lt;Suffix&gt;(), 16);</span>
 <span class="doccomment">/// # assert_eq!(core::mem::align_of::&lt;Suffix&gt;(), 8);</span>
-<span class="doccomment">/// type Alloc = Affix&lt;ChunkAlloc&lt;System, 128&gt;, Prefix, Suffix&gt;;</span>
+<span class="doccomment">/// type Alloc = Affix&lt;Chunk&lt;System, 128&gt;, Prefix, Suffix&gt;;</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// let layout = Layout::from_size_align(28, 8)?;</span>
 <span class="doccomment">/// # Ok::&lt;(), core::alloc::LayoutErr&gt;(())</span>
@@ -564,12 +572,12 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// ```</span>
 <span class="doccomment">/// # #![feature(allocator_api)]</span>
-<span class="doccomment">/// # use alloc_compose::{Affix, ChunkAlloc};</span>
+<span class="doccomment">/// # use alloc_compose::{Affix, Chunk};</span>
 <span class="doccomment">/// # use std::alloc::{Layout, System};</span>
 <span class="doccomment">/// use core::alloc::{AllocRef, AllocInit};</span>
 <span class="doccomment">/// # type Prefix = [u32; 3];</span>
 <span class="doccomment">/// # type Suffix = [u64; 2];</span>
-<span class="doccomment">/// # type Alloc = Affix&lt;ChunkAlloc&lt;System, 128&gt;, Prefix, Suffix&gt;;</span>
+<span class="doccomment">/// # type Alloc = Affix&lt;Chunk&lt;System, 128&gt;, Prefix, Suffix&gt;;</span>
 <span class="doccomment">/// # let layout = Layout::from_size_align(28, 8).unwrap();</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// let mut my_alloc = Alloc::default();</span>
@@ -600,13 +608,13 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// ```</span>
 <span class="doccomment">/// # #![feature(allocator_api)]</span>
-<span class="doccomment">/// # use alloc_compose::{Affix, ChunkAlloc};</span>
+<span class="doccomment">/// # use alloc_compose::{Affix, Chunk};</span>
 <span class="doccomment">/// # use std::alloc::{Layout, System, AllocRef, AllocInit};</span>
 <span class="doccomment">/// use core::ptr::NonNull;</span>
 <span class="doccomment">/// # type Prefix = [u32; 3];</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// // For convenience, the suffix can be ommitted</span>
-<span class="doccomment">/// type Alloc = Affix&lt;ChunkAlloc&lt;System, 128&gt;, Prefix&gt;;</span>
+<span class="doccomment">/// type Alloc = Affix&lt;Chunk&lt;System, 128&gt;, Prefix&gt;;</span>
 <span class="doccomment">/// # let layout = Layout::from_size_align(28, 8).unwrap();</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// let mut my_alloc = Alloc::default();</span>
@@ -634,11 +642,11 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// ```</span>
 <span class="doccomment">/// # #![feature(allocator_api)]</span>
-<span class="doccomment">/// # use alloc_compose::{Affix, ChunkAlloc};</span>
+<span class="doccomment">/// # use alloc_compose::{Affix, Chunk};</span>
 <span class="doccomment">/// # use std::alloc::{Layout, System, AllocRef, AllocInit};</span>
 <span class="doccomment">/// # use core::ptr::NonNull;</span>
 <span class="doccomment">/// # type Suffix = [u64; 2];</span>
-<span class="doccomment">/// type Alloc = Affix&lt;ChunkAlloc&lt;System, 128&gt;, (), Suffix&gt;;</span>
+<span class="doccomment">/// type Alloc = Affix&lt;Chunk&lt;System, 128&gt;, (), Suffix&gt;;</span>
 <span class="doccomment">/// # let layout = Layout::from_size_align(28, 8).unwrap();</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// let mut my_alloc = Alloc::default();</span>
@@ -667,11 +675,11 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// ```</span>
 <span class="doccomment">/// # #![feature(allocator_api)]</span>
-<span class="doccomment">/// # use alloc_compose::{Affix, ChunkAlloc};</span>
+<span class="doccomment">/// # use alloc_compose::{Affix, Chunk};</span>
 <span class="doccomment">/// # use std::alloc::{Layout, System, AllocRef, AllocInit};</span>
 <span class="doccomment">/// # use core::ptr::NonNull;</span>
 <span class="doccomment">/// # type Suffix = [u64; 2];</span>
-<span class="doccomment">/// type Alloc = Affix&lt;ChunkAlloc&lt;System, 128&gt;, (), ()&gt;;</span>
+<span class="doccomment">/// type Alloc = Affix&lt;Chunk&lt;System, 128&gt;, (), ()&gt;;</span>
 <span class="doccomment">/// # let layout = Layout::from_size_align(28, 8).unwrap();</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// let mut my_alloc = Alloc::default();</span>
@@ -694,7 +702,8 @@
 <span class="doccomment">/// ```</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Affix</span><span class="op">&lt;</span><span class="ident">Alloc</span>, <span class="ident">Prefix</span> <span class="op">=</span> (), <span class="ident">Suffix</span> <span class="op">=</span> ()<span class="op">&gt;</span> {
-    <span class="kw">pub</span> <span class="ident">alloc</span>: <span class="ident">Alloc</span>,
+    <span class="doccomment">/// The parent allocator to be used as backend</span>
+    <span class="kw">pub</span> <span class="ident">parent</span>: <span class="ident">Alloc</span>,
     <span class="ident">_prefix</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">Prefix</span><span class="op">&gt;</span>,
     <span class="ident">_suffix</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">Suffix</span><span class="op">&gt;</span>,
 }
@@ -708,9 +717,9 @@
     }
 }
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Alloc</span>, <span class="ident">Prefix</span>, <span class="ident">Suffix</span><span class="op">&gt;</span> <span class="ident">Affix</span><span class="op">&lt;</span><span class="ident">Alloc</span>, <span class="ident">Prefix</span>, <span class="ident">Suffix</span><span class="op">&gt;</span> {
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">alloc</span>: <span class="ident">Alloc</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">parent</span>: <span class="ident">Alloc</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
-            <span class="ident">alloc</span>,
+            <span class="ident">parent</span>,
             <span class="ident">_prefix</span>: <span class="ident">PhantomData</span>,
             <span class="ident">_suffix</span>: <span class="ident">PhantomData</span>,
         }
@@ -720,8 +729,11 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// # Safety</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// * `ptr` must denote a block of memory [*currently allocated*] via this allocator, and</span>
-    <span class="doccomment">/// * `layout` must [*fit*] that block of memory.</span>
+    <span class="doccomment">/// * `ptr` must denote a block of memory *[currently allocated]* via this allocator, and</span>
+    <span class="doccomment">/// * `layout` must *[fit]* that block of memory.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// [currently allocated]: https://doc.rust-lang.org/nightly/core/alloc/trait.AllocRef.html#currently-allocated-memory</span>
+    <span class="doccomment">/// [fit]: https://doc.rust-lang.org/nightly/core/alloc/trait.AllocRef.html#memory-fitting</span>
     <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">prefix</span>(<span class="ident">ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">Prefix</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="ident">mem</span>::<span class="ident">size_of</span>::<span class="op">&lt;</span><span class="ident">Prefix</span><span class="op">&gt;</span>() <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
             <span class="ident">NonNull</span>::<span class="ident">dangling</span>()
@@ -736,8 +748,11 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// # Safety</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// * `ptr` must denote a block of memory [*currently allocated*] via this allocator, and</span>
-    <span class="doccomment">/// * `layout` must [*fit*] that block of memory.</span>
+    <span class="doccomment">/// * `ptr` must denote a block of memory *[currently allocated]* via this allocator, and</span>
+    <span class="doccomment">/// * `layout` must *[fit]* that block of memory.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// [currently allocated]: https://doc.rust-lang.org/nightly/core/alloc/trait.AllocRef.html#currently-allocated-memory</span>
+    <span class="doccomment">/// [fit]: https://doc.rust-lang.org/nightly/core/alloc/trait.AllocRef.html#memory-fitting</span>
     <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">suffix</span>(<span class="ident">ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">Suffix</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="ident">mem</span>::<span class="ident">size_of</span>::<span class="op">&lt;</span><span class="ident">Suffix</span><span class="op">&gt;</span>() <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
             <span class="ident">NonNull</span>::<span class="ident">dangling</span>()
@@ -770,7 +785,7 @@
     <span class="kw">fn</span> <span class="ident">alloc</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>, <span class="ident">init</span>: <span class="ident">AllocInit</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MemoryBlock</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span> {
         <span class="kw">let</span> (<span class="ident">layout</span>, <span class="ident">offset_prefix</span>, <span class="ident">offset_suffix</span>) <span class="op">=</span> <span class="self">Self</span>::<span class="ident">extend_layout</span>(<span class="ident">layout</span>).<span class="ident">ok_or</span>(<span class="ident">AllocErr</span>)<span class="question-mark">?</span>;
 
-        <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">alloc</span>.<span class="ident">alloc</span>(<span class="ident">layout</span>, <span class="ident">init</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">parent</span>.<span class="ident">alloc</span>(<span class="ident">layout</span>, <span class="ident">init</span>)<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(<span class="ident">MemoryBlock</span> {
             <span class="ident">ptr</span>: <span class="kw">unsafe</span> { <span class="ident">NonNull</span>::<span class="ident">new_unchecked</span>(<span class="ident">memory</span>.<span class="ident">ptr</span>.<span class="ident">as_ptr</span>().<span class="ident">add</span>(<span class="ident">offset_prefix</span>)) },
@@ -785,7 +800,8 @@
     <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">dealloc</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>) {
         <span class="kw">let</span> (<span class="ident">layout</span>, <span class="ident">prefix_offset</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="self">Self</span>::<span class="ident">extend_layout</span>(<span class="ident">layout</span>).<span class="ident">expect</span>(<span class="string">&quot;Invalid layout&quot;</span>);
         <span class="kw">let</span> <span class="ident">base_ptr</span> <span class="op">=</span> <span class="ident">ptr</span>.<span class="ident">as_ptr</span>().<span class="ident">sub</span>(<span class="ident">prefix_offset</span>);
-        <span class="self">self</span>.<span class="ident">alloc</span>.<span class="ident">dealloc</span>(<span class="ident">NonNull</span>::<span class="ident">new_unchecked</span>(<span class="ident">base_ptr</span>), <span class="ident">layout</span>)
+        <span class="self">self</span>.<span class="ident">parent</span>
+            .<span class="ident">dealloc</span>(<span class="ident">NonNull</span>::<span class="ident">new_unchecked</span>(<span class="ident">base_ptr</span>), <span class="ident">layout</span>)
     }
 
     <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">grow</span>(
@@ -805,7 +821,7 @@
             <span class="self">Self</span>::<span class="ident">extend_layout</span>(<span class="ident">new_layout</span>).<span class="ident">unwrap</span>();
 
         <span class="kw">let</span> <span class="ident">suffix</span>: <span class="ident">MaybeUninit</span><span class="op">&lt;</span><span class="ident">Suffix</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">ptr</span>::<span class="ident">read</span>(<span class="ident">ptr</span>.<span class="ident">add</span>(<span class="ident">old_offset_suffix</span>) <span class="kw">as</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="kw">_</span>);
-        <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">alloc</span>.<span class="ident">grow</span>(
+        <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">parent</span>.<span class="ident">grow</span>(
             <span class="ident">NonNull</span>::<span class="ident">new_unchecked</span>(<span class="ident">ptr</span>),
             <span class="ident">old_alloc_layout</span>,
             <span class="ident">new_alloc_layout</span>.<span class="ident">size</span>(),
@@ -848,7 +864,7 @@
             <span class="self">Self</span>::<span class="ident">extend_layout</span>(<span class="ident">new_layout</span>).<span class="ident">unwrap</span>();
 
         <span class="kw">let</span> <span class="ident">suffix</span>: <span class="ident">MaybeUninit</span><span class="op">&lt;</span><span class="ident">Suffix</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">ptr</span>::<span class="ident">read</span>(<span class="ident">ptr</span>.<span class="ident">add</span>(<span class="ident">old_offset_suffix</span>) <span class="kw">as</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="kw">_</span>);
-        <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">alloc</span>.<span class="ident">shrink</span>(
+        <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">parent</span>.<span class="ident">shrink</span>(
             <span class="ident">NonNull</span>::<span class="ident">new_unchecked</span>(<span class="ident">ptr</span>),
             <span class="ident">old_alloc_layout</span>,
             <span class="ident">new_alloc_layout</span>.<span class="ident">size</span>(),
