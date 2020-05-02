@@ -817,6 +817,7 @@
 <span id="817">817</span>
 <span id="818">818</span>
 <span id="819">819</span>
+<span id="820">820</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Structures to collect allocator statistics.</span>
 <span class="doccomment">//!</span>
@@ -1577,6 +1578,7 @@
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="attribute">#[<span class="ident">rustfmt</span>::<span class="ident">skip</span>]</span>
+    <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy</span>::<span class="ident">cognitive_complexity</span>)]</span>
     <span class="kw">fn</span> <span class="ident">filtered_counter</span>() {
         <span class="kw">let</span> <span class="ident">counter</span> <span class="op">=</span> <span class="ident">FilteredCounter</span>::<span class="ident">default</span>();
         <span class="ident">run_suite</span>(<span class="ident">counter</span>.<span class="ident">by_ref</span>()).<span class="ident">expect</span>(<span class="string">&quot;Could not run test suite&quot;</span>);
