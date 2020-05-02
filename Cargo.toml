@@ -15,6 +15,3 @@ exclude = [".github/**"]
 [features]
 alloc = []
 default = ["alloc"]
-
-[badges]
-maintenance = { status = "actively-developed" }
