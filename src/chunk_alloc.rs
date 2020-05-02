@@ -51,7 +51,10 @@ pub struct ChunkAlloc<A, const SIZE: usize>(pub A);
 
 impl<A, const SIZE: usize> ChunkAlloc<A, SIZE> {
     const fn assert_alignment() {
-        assert!(usize::is_power_of_two(SIZE), "SIZE must be a power of two");
+        assert!(
+            usize::is_power_of_two(SIZE),
+            "`SIZE` must be a power of two"
+        );
     }
 
     const fn next_multiple(size: usize) -> usize {
@@ -150,6 +153,13 @@ mod tests {
     use super::ChunkAlloc;
     use crate::helper;
     use std::alloc::{AllocInit, AllocRef, Layout, ReallocPlacement, System};
+
+    #[test]
+    #[should_panic = "`SIZE` must be a power of two"]
+    fn wrong_size() {
+        let mut alloc = ChunkAlloc::<_, 63>(System);
+        let _ = alloc.alloc(Layout::new::<u8>(), AllocInit::Uninitialized);
+    }
 
     #[test]
     fn alloc() {
