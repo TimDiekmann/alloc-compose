@@ -1,6 +1,6 @@
 [package]
 name = "alloc-compose"
-version = "0.4.0"
+version = "0.4.1"
 authors = ["Tim Diekmann <tim.diekmann@3dvision.de>"]
 edition = "2018"
 description = "Composable allocator structures for plugging together more powerful allocators"
@@ -17,7 +17,4 @@ alloc = []
 default = ["alloc"]
 
 [badges]
-codecov = { repository = "TimDiekmann/alloc-compose" }
-is-it-maintained-issue-resolution = { repository = "timdiekmann/alloc-compose" }
-is-it-maintained-open-issues = { repository = "timdiekmann/alloc-compose" }
 maintenance = { status = "actively-developed" }
