@@ -2,6 +2,7 @@
 
 [Documentation](https://docs.rs/alloc-compose/0.4.0/alloc_compose/)
 
+- **Breaking Change** Using unified naming scheme
 - **Breaking Change** Change `CallbackRef` to listen on `before_` and `after_` events
 - Greatly improve documentation of `Affix`
 
