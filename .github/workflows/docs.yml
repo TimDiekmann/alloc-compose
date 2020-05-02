@@ -34,7 +34,7 @@ jobs:
           echo "<meta http-equiv=\"refresh\" content=\"0; url=${CRATE_NAME/-/_}\">" > target/doc/index.html
           touch target/doc/.nojekyll
 
-      - name: Upload
+      - name: Upload as artifact
         uses: actions/upload-artifact@v2
         with:
           name: Documentation

@@ -52,7 +52,7 @@ jobs:
         id: grcov
         uses: actions-rs/grcov@v0.1
 
-      - name: Upload coverage to codecov.io
+      - name: Upload coverage as artifact
         uses: actions/upload-artifact@v2
         with:
           name: lcov.info
