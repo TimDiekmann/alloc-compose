@@ -530,6 +530,106 @@
 <span id="530">530</span>
 <span id="531">531</span>
 <span id="532">532</span>
+<span id="533">533</span>
+<span id="534">534</span>
+<span id="535">535</span>
+<span id="536">536</span>
+<span id="537">537</span>
+<span id="538">538</span>
+<span id="539">539</span>
+<span id="540">540</span>
+<span id="541">541</span>
+<span id="542">542</span>
+<span id="543">543</span>
+<span id="544">544</span>
+<span id="545">545</span>
+<span id="546">546</span>
+<span id="547">547</span>
+<span id="548">548</span>
+<span id="549">549</span>
+<span id="550">550</span>
+<span id="551">551</span>
+<span id="552">552</span>
+<span id="553">553</span>
+<span id="554">554</span>
+<span id="555">555</span>
+<span id="556">556</span>
+<span id="557">557</span>
+<span id="558">558</span>
+<span id="559">559</span>
+<span id="560">560</span>
+<span id="561">561</span>
+<span id="562">562</span>
+<span id="563">563</span>
+<span id="564">564</span>
+<span id="565">565</span>
+<span id="566">566</span>
+<span id="567">567</span>
+<span id="568">568</span>
+<span id="569">569</span>
+<span id="570">570</span>
+<span id="571">571</span>
+<span id="572">572</span>
+<span id="573">573</span>
+<span id="574">574</span>
+<span id="575">575</span>
+<span id="576">576</span>
+<span id="577">577</span>
+<span id="578">578</span>
+<span id="579">579</span>
+<span id="580">580</span>
+<span id="581">581</span>
+<span id="582">582</span>
+<span id="583">583</span>
+<span id="584">584</span>
+<span id="585">585</span>
+<span id="586">586</span>
+<span id="587">587</span>
+<span id="588">588</span>
+<span id="589">589</span>
+<span id="590">590</span>
+<span id="591">591</span>
+<span id="592">592</span>
+<span id="593">593</span>
+<span id="594">594</span>
+<span id="595">595</span>
+<span id="596">596</span>
+<span id="597">597</span>
+<span id="598">598</span>
+<span id="599">599</span>
+<span id="600">600</span>
+<span id="601">601</span>
+<span id="602">602</span>
+<span id="603">603</span>
+<span id="604">604</span>
+<span id="605">605</span>
+<span id="606">606</span>
+<span id="607">607</span>
+<span id="608">608</span>
+<span id="609">609</span>
+<span id="610">610</span>
+<span id="611">611</span>
+<span id="612">612</span>
+<span id="613">613</span>
+<span id="614">614</span>
+<span id="615">615</span>
+<span id="616">616</span>
+<span id="617">617</span>
+<span id="618">618</span>
+<span id="619">619</span>
+<span id="620">620</span>
+<span id="621">621</span>
+<span id="622">622</span>
+<span id="623">623</span>
+<span id="624">624</span>
+<span id="625">625</span>
+<span id="626">626</span>
+<span id="627">627</span>
+<span id="628">628</span>
+<span id="629">629</span>
+<span id="630">630</span>
+<span id="631">631</span>
+<span id="632">632</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">core</span>::{
     <span class="ident">alloc</span>::{<span class="ident">AllocErr</span>, <span class="ident">AllocInit</span>, <span class="ident">AllocRef</span>, <span class="ident">Layout</span>, <span class="ident">MemoryBlock</span>, <span class="ident">ReallocPlacement</span>},
@@ -543,6 +643,21 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// The alignment of the memory block is the maximum of the alignment of `Prefix` and the requested</span>
 <span class="doccomment">/// alignment. This may introduce an unused padding between `Prefix` and the returned memory.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// To get a pointer to the prefix or the suffix, the [`prefix()`] and [`suffix()`] may be called.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// [`prefix()`]: Self::prefix</span>
+<span class="doccomment">/// [`suffix()`]: Self::suffix</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// # Performance</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// Generally it&#39;s faster to calculate the pointer to the prefix than the pointer to the suffix, as</span>
+<span class="doccomment">/// the extended layout of `Prefix` and the requested memory is needed in order to calculate the</span>
+<span class="doccomment">/// `Suffix` pointer. Additionally, in most cases it&#39;s recommended to use a prefix over a suffix for</span>
+<span class="doccomment">/// a more efficient use of memory. However, small prefixes blunt the alignment so if a large</span>
+<span class="doccomment">/// alignment with a small affix is needed, suffixes may be the better option.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// For layouts known at compile time the compiler is able to optimize away almost all calculations.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// # Examples</span>
 <span class="doccomment">///</span>
@@ -725,6 +840,93 @@
         }
     }
 
+    <span class="kw">const</span> <span class="kw">fn</span> <span class="ident">align</span>(<span class="ident">request</span>: <span class="ident">Layout</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
+        <span class="kw">let</span> <span class="ident">prefix_align</span> <span class="op">=</span> <span class="ident">mem</span>::<span class="ident">align_of</span>::<span class="op">&lt;</span><span class="ident">Prefix</span><span class="op">&gt;</span>();
+        <span class="kw">if</span> <span class="ident">prefix_align</span> <span class="op">&lt;</span> <span class="ident">request</span>.<span class="ident">align</span>() {
+            <span class="ident">request</span>.<span class="ident">align</span>()
+        } <span class="kw">else</span> {
+            <span class="ident">prefix_align</span>
+        }
+    }
+
+    <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy</span>::<span class="ident">question_mark</span>)]</span>
+    <span class="kw">const</span> <span class="kw">fn</span> <span class="ident">allocation_layout</span>(<span class="ident">request</span>: <span class="ident">Layout</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span>(<span class="ident">usize</span>, <span class="ident">Layout</span>, <span class="ident">usize</span>)<span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">prefix_layout</span> <span class="op">=</span> <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span><span class="ident">Prefix</span><span class="op">&gt;</span>();
+
+        <span class="kw">let</span> <span class="ident">prefix_offset</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">offset</span>) <span class="op">=</span> <span class="ident">prefix_layout</span>
+            .<span class="ident">size</span>()
+            .<span class="ident">checked_add</span>(<span class="ident">prefix_layout</span>.<span class="ident">padding_needed_for</span>(<span class="ident">request</span>.<span class="ident">align</span>()))
+        {
+            <span class="ident">offset</span>
+        } <span class="kw">else</span> {
+            <span class="kw">return</span> <span class="prelude-val">None</span>;
+        };
+
+        <span class="kw">let</span> <span class="ident">size</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">size</span>) <span class="op">=</span> <span class="ident">prefix_offset</span>.<span class="ident">checked_add</span>(<span class="ident">request</span>.<span class="ident">size</span>()) {
+            <span class="ident">size</span>
+        } <span class="kw">else</span> {
+            <span class="kw">return</span> <span class="prelude-val">None</span>;
+        };
+
+        <span class="kw">let</span> <span class="ident">prefix_request_layout</span> <span class="op">=</span>
+            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">layout</span>) <span class="op">=</span> <span class="ident">Layout</span>::<span class="ident">from_size_align</span>(<span class="ident">size</span>, <span class="self">Self</span>::<span class="ident">align</span>(<span class="ident">request</span>)) {
+                <span class="ident">layout</span>
+            } <span class="kw">else</span> {
+                <span class="kw">return</span> <span class="prelude-val">None</span>;
+            };
+
+        <span class="kw">let</span> <span class="ident">padding</span> <span class="op">=</span> <span class="ident">prefix_request_layout</span>.<span class="ident">padding_needed_for</span>(<span class="ident">mem</span>::<span class="ident">align_of</span>::<span class="op">&lt;</span><span class="ident">Suffix</span><span class="op">&gt;</span>());
+
+        <span class="kw">let</span> (<span class="kw">_</span>, <span class="ident">prefix_suffix_offset</span>) <span class="op">=</span>
+            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">prefix_suffix_offset</span>) <span class="op">=</span> <span class="ident">prefix_request_layout</span>.<span class="ident">size</span>().<span class="ident">checked_add</span>(<span class="ident">padding</span>) {
+                (
+                    <span class="ident">prefix_suffix_offset</span>.<span class="ident">wrapping_sub</span>(<span class="ident">prefix_offset</span>),
+                    <span class="ident">prefix_suffix_offset</span>,
+                )
+            } <span class="kw">else</span> {
+                <span class="kw">return</span> <span class="prelude-val">None</span>;
+            };
+
+        <span class="kw">let</span> <span class="ident">size</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">size</span>) <span class="op">=</span> <span class="ident">prefix_suffix_offset</span>.<span class="ident">checked_add</span>(<span class="ident">mem</span>::<span class="ident">size_of</span>::<span class="op">&lt;</span><span class="ident">Suffix</span><span class="op">&gt;</span>()) {
+            <span class="ident">size</span>
+        } <span class="kw">else</span> {
+            <span class="kw">return</span> <span class="prelude-val">None</span>;
+        };
+
+        <span class="kw">let</span> <span class="ident">align</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">align</span>(<span class="ident">request</span>);
+
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">layout</span>) <span class="op">=</span> <span class="ident">Layout</span>::<span class="ident">from_size_align</span>(<span class="ident">size</span>, <span class="ident">align</span>) {
+            <span class="prelude-val">Some</span>((<span class="ident">prefix_offset</span>, <span class="ident">layout</span>, <span class="ident">prefix_suffix_offset</span>))
+        } <span class="kw">else</span> {
+            <span class="prelude-val">None</span>
+        }
+    }
+
+    <span class="kw">const</span> <span class="kw">fn</span> <span class="ident">prefix_offset</span>(<span class="ident">request</span>: <span class="ident">Layout</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
+        <span class="kw">let</span> <span class="ident">prefix</span> <span class="op">=</span> <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span><span class="ident">Prefix</span><span class="op">&gt;</span>();
+        <span class="ident">prefix</span>.<span class="ident">size</span>() <span class="op">+</span> <span class="ident">prefix</span>.<span class="ident">padding_needed_for</span>(<span class="ident">request</span>.<span class="ident">align</span>())
+    }
+
+    <span class="kw">const</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">suffix_offset</span>(<span class="ident">request</span>: <span class="ident">Layout</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">usize</span>, <span class="ident">usize</span>) {
+        <span class="kw">let</span> <span class="ident">prefix_offset</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">prefix_offset</span>(<span class="ident">request</span>);
+        <span class="kw">let</span> <span class="ident">prefix_request_layout</span> <span class="op">=</span>
+            <span class="ident">Layout</span>::<span class="ident">from_size_align_unchecked</span>(<span class="ident">prefix_offset</span> <span class="op">+</span> <span class="ident">request</span>.<span class="ident">size</span>(), <span class="self">Self</span>::<span class="ident">align</span>(<span class="ident">request</span>));
+
+        <span class="kw">let</span> <span class="ident">padding</span> <span class="op">=</span> <span class="ident">prefix_request_layout</span>.<span class="ident">padding_needed_for</span>(<span class="ident">mem</span>::<span class="ident">align_of</span>::<span class="op">&lt;</span><span class="ident">Suffix</span><span class="op">&gt;</span>());
+
+        <span class="kw">let</span> <span class="ident">prefix_suffix_offset</span> <span class="op">=</span> <span class="ident">prefix_request_layout</span>.<span class="ident">size</span>() <span class="op">+</span> <span class="ident">padding</span>;
+        (<span class="ident">prefix_suffix_offset</span> <span class="op">-</span> <span class="ident">prefix_offset</span>, <span class="ident">prefix_suffix_offset</span>)
+    }
+
+    <span class="kw">const</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">unchecked_allocation_layout</span>(<span class="ident">request</span>: <span class="ident">Layout</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">usize</span>, <span class="ident">Layout</span>, <span class="ident">usize</span>) {
+        <span class="kw">let</span> (<span class="kw">_</span>, <span class="ident">prefix_suffix_offset</span>) <span class="op">=</span> <span class="self">Self</span>::<span class="ident">suffix_offset</span>(<span class="ident">request</span>);
+        <span class="kw">let</span> <span class="ident">size</span> <span class="op">=</span> <span class="ident">prefix_suffix_offset</span> <span class="op">+</span> <span class="ident">mem</span>::<span class="ident">size_of</span>::<span class="op">&lt;</span><span class="ident">Suffix</span><span class="op">&gt;</span>();
+
+        <span class="kw">let</span> <span class="ident">prefix_offset</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">prefix_offset</span>(<span class="ident">request</span>);
+        <span class="kw">let</span> <span class="ident">layout</span> <span class="op">=</span> <span class="ident">Layout</span>::<span class="ident">from_size_align_unchecked</span>(<span class="ident">size</span>, <span class="self">Self</span>::<span class="ident">align</span>(<span class="ident">request</span>));
+        (<span class="ident">prefix_offset</span>, <span class="ident">layout</span>, <span class="ident">prefix_suffix_offset</span>)
+    }
+
     <span class="doccomment">/// Returns a pointer to the prefix.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// # Safety</span>
@@ -738,9 +940,7 @@
         <span class="kw">if</span> <span class="ident">mem</span>::<span class="ident">size_of</span>::<span class="op">&lt;</span><span class="ident">Prefix</span><span class="op">&gt;</span>() <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
             <span class="ident">NonNull</span>::<span class="ident">dangling</span>()
         } <span class="kw">else</span> {
-            <span class="kw">let</span> <span class="ident">prefix</span> <span class="op">=</span> <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span><span class="ident">Prefix</span><span class="op">&gt;</span>();
-            <span class="kw">let</span> <span class="ident">offset</span> <span class="op">=</span> <span class="ident">prefix</span>.<span class="ident">size</span>() <span class="op">+</span> <span class="ident">prefix</span>.<span class="ident">padding_needed_for</span>(<span class="ident">layout</span>.<span class="ident">align</span>());
-            <span class="ident">NonNull</span>::<span class="ident">new_unchecked</span>(<span class="ident">ptr</span>.<span class="ident">as_ptr</span>().<span class="ident">sub</span>(<span class="ident">offset</span>)).<span class="ident">cast</span>()
+            <span class="ident">NonNull</span>::<span class="ident">new_unchecked</span>(<span class="ident">ptr</span>.<span class="ident">as_ptr</span>().<span class="ident">sub</span>(<span class="self">Self</span>::<span class="ident">prefix_offset</span>(<span class="ident">layout</span>))).<span class="ident">cast</span>()
         }
     }
 
@@ -757,24 +957,8 @@
         <span class="kw">if</span> <span class="ident">mem</span>::<span class="ident">size_of</span>::<span class="op">&lt;</span><span class="ident">Suffix</span><span class="op">&gt;</span>() <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
             <span class="ident">NonNull</span>::<span class="ident">dangling</span>()
         } <span class="kw">else</span> {
-            <span class="kw">let</span> <span class="ident">offset</span> <span class="op">=</span> <span class="ident">layout</span>.<span class="ident">size</span>() <span class="op">+</span> <span class="ident">layout</span>.<span class="ident">padding_needed_for</span>(<span class="ident">mem</span>::<span class="ident">align_of</span>::<span class="op">&lt;</span><span class="ident">Suffix</span><span class="op">&gt;</span>());
-            <span class="ident">NonNull</span>::<span class="ident">new_unchecked</span>(<span class="ident">ptr</span>.<span class="ident">as_ptr</span>().<span class="ident">add</span>(<span class="ident">offset</span>)).<span class="ident">cast</span>()
+            <span class="ident">NonNull</span>::<span class="ident">new_unchecked</span>(<span class="ident">ptr</span>.<span class="ident">as_ptr</span>().<span class="ident">add</span>(<span class="self">Self</span>::<span class="ident">suffix_offset</span>(<span class="ident">layout</span>).<span class="number">0</span>)).<span class="ident">cast</span>()
         }
-    }
-
-    <span class="kw">fn</span> <span class="ident">extend_layout</span>(<span class="ident">layout</span>: <span class="ident">Layout</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span>(<span class="ident">Layout</span>, <span class="ident">usize</span>, <span class="ident">usize</span>)<span class="op">&gt;</span> {
-        <span class="kw">let</span> (<span class="ident">layout</span>, <span class="ident">content_offset</span>) <span class="op">=</span> <span class="kw">if</span> <span class="ident">mem</span>::<span class="ident">size_of</span>::<span class="op">&lt;</span><span class="ident">Prefix</span><span class="op">&gt;</span>() <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
-            (<span class="ident">layout</span>, <span class="number">0</span>)
-        } <span class="kw">else</span> {
-            <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span><span class="ident">Prefix</span><span class="op">&gt;</span>().<span class="ident">extend</span>(<span class="ident">layout</span>).<span class="ident">ok</span>()<span class="question-mark">?</span>
-        };
-        <span class="kw">let</span> (<span class="ident">layout</span>, <span class="ident">suffix_offset</span>) <span class="op">=</span> <span class="kw">if</span> <span class="ident">mem</span>::<span class="ident">size_of</span>::<span class="op">&lt;</span><span class="ident">Suffix</span><span class="op">&gt;</span>() <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
-            (<span class="ident">layout</span>, <span class="number">0</span>)
-        } <span class="kw">else</span> {
-            <span class="ident">layout</span>.<span class="ident">extend</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span><span class="ident">Suffix</span><span class="op">&gt;</span>()).<span class="ident">ok</span>()<span class="question-mark">?</span>
-        };
-
-        <span class="prelude-val">Some</span>((<span class="ident">layout</span>, <span class="ident">content_offset</span>, <span class="ident">suffix_offset</span>))
     }
 }
 
@@ -783,7 +967,8 @@
     <span class="ident">Alloc</span>: <span class="ident">AllocRef</span>,
 {
     <span class="kw">fn</span> <span class="ident">alloc</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>, <span class="ident">init</span>: <span class="ident">AllocInit</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MemoryBlock</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> (<span class="ident">layout</span>, <span class="ident">offset_prefix</span>, <span class="ident">offset_suffix</span>) <span class="op">=</span> <span class="self">Self</span>::<span class="ident">extend_layout</span>(<span class="ident">layout</span>).<span class="ident">ok_or</span>(<span class="ident">AllocErr</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> (<span class="ident">offset_prefix</span>, <span class="ident">layout</span>, <span class="ident">offset_suffix</span>) <span class="op">=</span>
+            <span class="self">Self</span>::<span class="ident">allocation_layout</span>(<span class="ident">layout</span>).<span class="ident">ok_or</span>(<span class="ident">AllocErr</span>)<span class="question-mark">?</span>;
 
         <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">parent</span>.<span class="ident">alloc</span>(<span class="ident">layout</span>, <span class="ident">init</span>)<span class="question-mark">?</span>;
 
@@ -798,7 +983,12 @@
     }
 
     <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">dealloc</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>) {
-        <span class="kw">let</span> (<span class="ident">layout</span>, <span class="ident">prefix_offset</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="self">Self</span>::<span class="ident">extend_layout</span>(<span class="ident">layout</span>).<span class="ident">expect</span>(<span class="string">&quot;Invalid layout&quot;</span>);
+        <span class="macro">debug_assert_eq</span><span class="macro">!</span>(
+            <span class="self">Self</span>::<span class="ident">allocation_layout</span>(<span class="ident">layout</span>).<span class="ident">unwrap</span>(),
+            <span class="self">Self</span>::<span class="ident">unchecked_allocation_layout</span>(<span class="ident">layout</span>)
+        );
+
+        <span class="kw">let</span> (<span class="ident">prefix_offset</span>, <span class="ident">layout</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="self">Self</span>::<span class="ident">unchecked_allocation_layout</span>(<span class="ident">layout</span>);
         <span class="kw">let</span> <span class="ident">base_ptr</span> <span class="op">=</span> <span class="ident">ptr</span>.<span class="ident">as_ptr</span>().<span class="ident">sub</span>(<span class="ident">prefix_offset</span>);
         <span class="self">self</span>.<span class="ident">parent</span>
             .<span class="ident">dealloc</span>(<span class="ident">NonNull</span>::<span class="ident">new_unchecked</span>(<span class="ident">base_ptr</span>), <span class="ident">layout</span>)
@@ -812,13 +1002,18 @@
         <span class="ident">placement</span>: <span class="ident">ReallocPlacement</span>,
         <span class="ident">init</span>: <span class="ident">AllocInit</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MemoryBlock</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> (<span class="ident">old_alloc_layout</span>, <span class="ident">old_offset_prefix</span>, <span class="ident">old_offset_suffix</span>) <span class="op">=</span>
-            <span class="self">Self</span>::<span class="ident">extend_layout</span>(<span class="ident">old_layout</span>).<span class="ident">unwrap</span>();
+        <span class="macro">debug_assert_eq</span><span class="macro">!</span>(
+            <span class="self">Self</span>::<span class="ident">allocation_layout</span>(<span class="ident">old_layout</span>).<span class="ident">unwrap</span>(),
+            <span class="self">Self</span>::<span class="ident">unchecked_allocation_layout</span>(<span class="ident">old_layout</span>)
+        );
+
+        <span class="kw">let</span> (<span class="ident">old_offset_prefix</span>, <span class="ident">old_alloc_layout</span>, <span class="ident">old_offset_suffix</span>) <span class="op">=</span>
+            <span class="self">Self</span>::<span class="ident">unchecked_allocation_layout</span>(<span class="ident">old_layout</span>);
         <span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="ident">ptr</span>.<span class="ident">as_ptr</span>().<span class="ident">sub</span>(<span class="ident">old_offset_prefix</span>);
 
         <span class="kw">let</span> <span class="ident">new_layout</span> <span class="op">=</span> <span class="ident">Layout</span>::<span class="ident">from_size_align_unchecked</span>(<span class="ident">new_size</span>, <span class="ident">old_layout</span>.<span class="ident">align</span>());
-        <span class="kw">let</span> (<span class="ident">new_alloc_layout</span>, <span class="ident">new_offset_prefix</span>, <span class="ident">new_offset_suffix</span>) <span class="op">=</span>
-            <span class="self">Self</span>::<span class="ident">extend_layout</span>(<span class="ident">new_layout</span>).<span class="ident">unwrap</span>();
+        <span class="kw">let</span> (<span class="ident">new_offset_prefix</span>, <span class="ident">new_alloc_layout</span>, <span class="ident">new_offset_suffix</span>) <span class="op">=</span>
+            <span class="self">Self</span>::<span class="ident">allocation_layout</span>(<span class="ident">new_layout</span>).<span class="ident">ok_or</span>(<span class="ident">AllocErr</span>)<span class="question-mark">?</span>;
 
         <span class="kw">let</span> <span class="ident">suffix</span>: <span class="ident">MaybeUninit</span><span class="op">&lt;</span><span class="ident">Suffix</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">ptr</span>::<span class="ident">read</span>(<span class="ident">ptr</span>.<span class="ident">add</span>(<span class="ident">old_offset_suffix</span>) <span class="kw">as</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="kw">_</span>);
         <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">parent</span>.<span class="ident">grow</span>(
@@ -855,13 +1050,18 @@
         <span class="ident">new_size</span>: <span class="ident">usize</span>,
         <span class="ident">placement</span>: <span class="ident">ReallocPlacement</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MemoryBlock</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> (<span class="ident">old_alloc_layout</span>, <span class="ident">old_offset_prefix</span>, <span class="ident">old_offset_suffix</span>) <span class="op">=</span>
-            <span class="self">Self</span>::<span class="ident">extend_layout</span>(<span class="ident">old_layout</span>).<span class="ident">unwrap</span>();
+        <span class="macro">debug_assert_eq</span><span class="macro">!</span>(
+            <span class="self">Self</span>::<span class="ident">allocation_layout</span>(<span class="ident">old_layout</span>).<span class="ident">unwrap</span>(),
+            <span class="self">Self</span>::<span class="ident">unchecked_allocation_layout</span>(<span class="ident">old_layout</span>)
+        );
+
+        <span class="kw">let</span> (<span class="ident">old_offset_prefix</span>, <span class="ident">old_alloc_layout</span>, <span class="ident">old_offset_suffix</span>) <span class="op">=</span>
+            <span class="self">Self</span>::<span class="ident">unchecked_allocation_layout</span>(<span class="ident">old_layout</span>);
         <span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="ident">ptr</span>.<span class="ident">as_ptr</span>().<span class="ident">sub</span>(<span class="ident">old_offset_prefix</span>);
 
         <span class="kw">let</span> <span class="ident">new_layout</span> <span class="op">=</span> <span class="ident">Layout</span>::<span class="ident">from_size_align_unchecked</span>(<span class="ident">new_size</span>, <span class="ident">old_layout</span>.<span class="ident">align</span>());
-        <span class="kw">let</span> (<span class="ident">new_alloc_layout</span>, <span class="ident">new_offset_prefix</span>, <span class="ident">new_offset_suffix</span>) <span class="op">=</span>
-            <span class="self">Self</span>::<span class="ident">extend_layout</span>(<span class="ident">new_layout</span>).<span class="ident">unwrap</span>();
+        <span class="kw">let</span> (<span class="ident">new_offset_prefix</span>, <span class="ident">new_alloc_layout</span>, <span class="ident">new_offset_suffix</span>) <span class="op">=</span>
+            <span class="self">Self</span>::<span class="ident">unchecked_allocation_layout</span>(<span class="ident">new_layout</span>);
 
         <span class="kw">let</span> <span class="ident">suffix</span>: <span class="ident">MaybeUninit</span><span class="op">&lt;</span><span class="ident">Suffix</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">ptr</span>::<span class="ident">read</span>(<span class="ident">ptr</span>.<span class="ident">add</span>(<span class="ident">old_offset_suffix</span>) <span class="kw">as</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="kw">_</span>);
         <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">parent</span>.<span class="ident">shrink</span>(
@@ -1049,7 +1249,7 @@
             <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>(),
             <span class="ident">AlignTo1024</span> { <span class="ident">a</span>: <span class="number">0xDEDE</span> },
             <span class="number">4</span>,
-            <span class="number">1024</span>,
+            <span class="number">1020</span>,
         )
     }
 
