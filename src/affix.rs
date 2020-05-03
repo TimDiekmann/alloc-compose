@@ -354,7 +354,7 @@ where
             Self::allocation_layout(layout).unwrap(),
             Self::unchecked_allocation_layout(layout)
         );
-        
+
         let (prefix_offset, layout, _) = Self::unchecked_allocation_layout(layout);
         let base_ptr = ptr.as_ptr().sub(prefix_offset);
         self.parent
