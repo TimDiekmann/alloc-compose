@@ -1,5 +1,6 @@
 use core::{
     alloc::{AllocErr, AllocInit, AllocRef, Layout, MemoryBlock, ReallocPlacement},
+    fmt,
     marker::PhantomData,
     mem::{self, MaybeUninit},
     ptr::{self, NonNull},
@@ -182,7 +183,6 @@ use core::{
 /// }
 /// # Ok::<(), core::alloc::AllocErr>(())
 /// ```
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Affix<Alloc, Prefix = (), Suffix = ()> {
     /// The parent allocator to be used as backend
     pub parent: Alloc,
@@ -190,14 +190,40 @@ pub struct Affix<Alloc, Prefix = (), Suffix = ()> {
     _suffix: PhantomData<Suffix>,
 }
 
-impl<Alloc, Prefix, Suffix> Default for Affix<Alloc, Prefix, Suffix>
-where
-    Alloc: Default,
-{
+impl<Alloc: fmt::Debug, Prefix, Suffix> fmt::Debug for Affix<Alloc, Prefix, Suffix> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Affix")
+            .field("parent", &self.parent)
+            .finish()
+    }
+}
+
+impl<Alloc: Default, Prefix, Suffix> Default for Affix<Alloc, Prefix, Suffix> {
     fn default() -> Self {
         Self::new(Alloc::default())
     }
 }
+
+impl<Alloc: Clone, Prefix, Suffix> Clone for Affix<Alloc, Prefix, Suffix> {
+    fn clone(&self) -> Self {
+        Self::new(self.parent.clone())
+    }
+}
+
+impl<Alloc: Copy, Prefix, Suffix> Copy for Affix<Alloc, Prefix, Suffix> {}
+
+impl<Alloc: PartialEq, Prefix, Suffix> PartialEq for Affix<Alloc, Prefix, Suffix> {
+    fn eq(&self, other: &Self) -> bool {
+        self.parent.eq(&other.parent)
+    }
+}
+
+impl<Alloc: Eq, Prefix, Suffix> Eq for Affix<Alloc, Prefix, Suffix> {}
+
+unsafe impl<Alloc: Send, Prefix, Suffix> Send for Affix<Alloc, Prefix, Suffix> {}
+unsafe impl<Alloc: Sync, Prefix, Suffix> Sync for Affix<Alloc, Prefix, Suffix> {}
+impl<Alloc: Unpin, Prefix, Suffix> Unpin for Affix<Alloc, Prefix, Suffix> {}
+
 impl<Alloc, Prefix, Suffix> Affix<Alloc, Prefix, Suffix> {
     pub const fn new(parent: Alloc) -> Self {
         Self {
