@@ -4,6 +4,7 @@
 #![feature(
     allocator_api,
     alloc_layout_extra,
+    const_checked_int_methods,
     const_alloc_layout,
     const_fn,
     const_generics,
