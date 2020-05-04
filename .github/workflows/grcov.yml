@@ -68,7 +68,7 @@ jobs:
               --excl-br-line "#\\[derive\\(" \
               --excl-start "mod tests \\{" \
               --excl-br-start "mod tests \\{" \
-              --commit-sha ${{ github.sha }}
+              --commit-sha ${{ github.sha }} \
               --service-job-id ${{ github.job }} \
               --service-name "GitHub Actions" \
               --service-number ${{ github.run_id }}
