@@ -59,7 +59,7 @@ jobs:
               --branch \
               --llvm \
               --source-dir . \
-              --output-file target/coverage/debug/lcov.info \
+              --output-file lcov.info \
               --ignore='/**' \
               --ignore='C:/**' \
               --ignore='../**' \
