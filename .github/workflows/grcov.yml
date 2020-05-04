@@ -66,8 +66,9 @@ jobs:
               --ignore-not-existing \
               --excl-line "#\\[derive\\(" \
               --excl-br-line "#\\[derive\\(" \
-              --excl-start "mod tests \\{" \
-              --excl-br-start "mod tests \\{" \
+              --excl-br-line "debug_assert" \
+              --excl-start "#[cfg(test)]" \
+              --excl-br-start "#[cfg(test)]" \
               --commit-sha ${{ github.sha }} \
               --service-job-id ${{ github.job }} \
               --service-name "GitHub Actions" \
