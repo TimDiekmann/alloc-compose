@@ -810,14 +810,6 @@
 <span id="810">810</span>
 <span id="811">811</span>
 <span id="812">812</span>
-<span id="813">813</span>
-<span id="814">814</span>
-<span id="815">815</span>
-<span id="816">816</span>
-<span id="817">817</span>
-<span id="818">818</span>
-<span id="819">819</span>
-<span id="820">820</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Structures to collect allocator statistics.</span>
 <span class="doccomment">//!</span>
@@ -1028,11 +1020,7 @@
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">AllocInit</span><span class="op">&gt;&gt;</span> <span class="kw">for</span> <span class="ident">AllocInitFilter</span> {
     <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">init</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">AllocInit</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">init</span>) <span class="op">=</span> <span class="ident">init</span> {
-            <span class="self">Self</span>::<span class="ident">from</span>(<span class="ident">init</span>)
-        } <span class="kw">else</span> {
-            <span class="self">Self</span>::<span class="prelude-val">None</span>
-        }
+        <span class="ident">init</span>.<span class="ident">map_or</span>(<span class="self">Self</span>::<span class="prelude-val">None</span>, <span class="op">|</span><span class="ident">i</span><span class="op">|</span> <span class="self">Self</span>::<span class="ident">from</span>(<span class="ident">i</span>))
     }
 }
 
@@ -1054,11 +1042,7 @@
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ReallocPlacement</span><span class="op">&gt;&gt;</span> <span class="kw">for</span> <span class="ident">ReallocPlacementFilter</span> {
     <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">placement</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ReallocPlacement</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">placement</span>) <span class="op">=</span> <span class="ident">placement</span> {
-            <span class="self">Self</span>::<span class="ident">from</span>(<span class="ident">placement</span>)
-        } <span class="kw">else</span> {
-            <span class="self">Self</span>::<span class="prelude-val">None</span>
-        }
+        <span class="ident">placement</span>.<span class="ident">map_or</span>(<span class="self">Self</span>::<span class="prelude-val">None</span>, <span class="op">|</span><span class="ident">p</span><span class="op">|</span> <span class="self">Self</span>::<span class="ident">from</span>(<span class="ident">p</span>))
     }
 }
 
