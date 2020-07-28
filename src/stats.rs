@@ -207,11 +207,7 @@ impl From<AllocInit> for AllocInitFilter {
 
 impl From<Option<AllocInit>> for AllocInitFilter {
     fn from(init: Option<AllocInit>) -> Self {
-        if let Some(init) = init {
-            Self::from(init)
-        } else {
-            Self::None
-        }
+        init.map_or(Self::None, |i| Self::from(i))
     }
 }
 
@@ -233,11 +229,7 @@ impl From<ReallocPlacement> for ReallocPlacementFilter {
 
 impl From<Option<ReallocPlacement>> for ReallocPlacementFilter {
     fn from(placement: Option<ReallocPlacement>) -> Self {
-        if let Some(placement) = placement {
-            Self::from(placement)
-        } else {
-            Self::None
-        }
+        placement.map_or(Self::None, |p| Self::from(p))
     }
 }
 
