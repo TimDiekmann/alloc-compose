@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `src/stats.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>stats.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css"><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../alloc_compose/index.html'><div class='logo-container'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `src/stats.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>stats.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../alloc_compose/index.html'><div class='logo-container'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -851,11 +851,11 @@
 }
 
 <span class="kw">impl</span> <span class="ident">PartialEq</span><span class="op">&lt;</span><span class="ident">AtomicCounter</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Counter</span> {
-    <span class="kw">fn</span> <span class="ident">eq</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="ident">AtomicCounter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">fn</span> <span class="ident">eq</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="ident">AtomicCounter</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
         <span class="self">self</span>.<span class="ident">stats</span>
             .<span class="ident">iter</span>()
             .<span class="ident">zip</span>(<span class="ident">other</span>.<span class="ident">stats</span>.<span class="ident">iter</span>())
-            .<span class="ident">all</span>(<span class="op">|</span>(<span class="ident">lhs</span>, <span class="ident">rhs</span>)<span class="op">|</span> <span class="ident">lhs</span>.<span class="ident">get</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">rhs</span>.<span class="ident">load</span>(<span class="ident">Relaxed</span>))
+            .<span class="ident">all</span>(<span class="op">|</span>(<span class="ident">lhs</span>, <span class="ident">rhs</span>)<span class="op">|</span> <span class="ident">lhs</span>.<span class="ident">get</span>() <span class="op">==</span> <span class="ident">rhs</span>.<span class="ident">load</span>(<span class="ident">Relaxed</span>))
     }
 }
 
@@ -863,7 +863,7 @@
     <span class="kw">fn</span> <span class="ident">increment_stat</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">stat</span>: <span class="ident">Stat</span>, <span class="ident">additional</span>: <span class="ident">u64</span>) {
         <span class="self">self</span>.<span class="ident">stats</span>[<span class="ident">stat</span> <span class="kw">as</span> <span class="ident">usize</span>].<span class="ident">set</span>(<span class="self">self</span>.<span class="ident">stats</span>[<span class="ident">stat</span> <span class="kw">as</span> <span class="ident">usize</span>].<span class="ident">get</span>() <span class="op">+</span> <span class="ident">additional</span>)
     }
-    <span class="kw">fn</span> <span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">stat</span>: <span class="ident">Stat</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+    <span class="kw">fn</span> <span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">stat</span>: <span class="ident">Stat</span>) <span class="op">-&gt;</span> <span class="ident">u64</span> {
         <span class="self">self</span>.<span class="ident">stats</span>[<span class="ident">stat</span> <span class="kw">as</span> <span class="ident">usize</span>].<span class="ident">get</span>()
     }
 }
@@ -875,20 +875,20 @@
 }
 
 <span class="kw">impl</span> <span class="ident">PartialEq</span> <span class="kw">for</span> <span class="ident">AtomicCounter</span> {
-    <span class="kw">fn</span> <span class="ident">eq</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">fn</span> <span class="ident">eq</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
         <span class="self">self</span>.<span class="ident">stats</span>
             .<span class="ident">iter</span>()
             .<span class="ident">zip</span>(<span class="ident">other</span>.<span class="ident">stats</span>.<span class="ident">iter</span>())
-            .<span class="ident">all</span>(<span class="op">|</span>(<span class="ident">lhs</span>, <span class="ident">rhs</span>)<span class="op">|</span> <span class="ident">lhs</span>.<span class="ident">load</span>(<span class="ident">Relaxed</span>) <span class="op">=</span><span class="op">=</span> <span class="ident">rhs</span>.<span class="ident">load</span>(<span class="ident">Relaxed</span>))
+            .<span class="ident">all</span>(<span class="op">|</span>(<span class="ident">lhs</span>, <span class="ident">rhs</span>)<span class="op">|</span> <span class="ident">lhs</span>.<span class="ident">load</span>(<span class="ident">Relaxed</span>) <span class="op">==</span> <span class="ident">rhs</span>.<span class="ident">load</span>(<span class="ident">Relaxed</span>))
     }
 }
 
 <span class="kw">impl</span> <span class="ident">PartialEq</span><span class="op">&lt;</span><span class="ident">Counter</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">AtomicCounter</span> {
-    <span class="kw">fn</span> <span class="ident">eq</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="ident">Counter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">fn</span> <span class="ident">eq</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="ident">Counter</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
         <span class="self">self</span>.<span class="ident">stats</span>
             .<span class="ident">iter</span>()
             .<span class="ident">zip</span>(<span class="ident">other</span>.<span class="ident">stats</span>.<span class="ident">iter</span>())
-            .<span class="ident">all</span>(<span class="op">|</span>(<span class="ident">lhs</span>, <span class="ident">rhs</span>)<span class="op">|</span> <span class="ident">lhs</span>.<span class="ident">load</span>(<span class="ident">Relaxed</span>) <span class="op">=</span><span class="op">=</span> <span class="ident">rhs</span>.<span class="ident">get</span>())
+            .<span class="ident">all</span>(<span class="op">|</span>(<span class="ident">lhs</span>, <span class="ident">rhs</span>)<span class="op">|</span> <span class="ident">lhs</span>.<span class="ident">load</span>(<span class="ident">Relaxed</span>) <span class="op">==</span> <span class="ident">rhs</span>.<span class="ident">get</span>())
     }
 }
 
@@ -896,40 +896,40 @@
     <span class="kw">fn</span> <span class="ident">increment_stat</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">stat</span>: <span class="ident">Stat</span>, <span class="ident">additional</span>: <span class="ident">u64</span>) {
         <span class="self">self</span>.<span class="ident">stats</span>[<span class="ident">stat</span> <span class="kw">as</span> <span class="ident">usize</span>].<span class="ident">fetch_add</span>(<span class="ident">additional</span>, <span class="ident">Relaxed</span>);
     }
-    <span class="kw">fn</span> <span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">stat</span>: <span class="ident">Stat</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+    <span class="kw">fn</span> <span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">stat</span>: <span class="ident">Stat</span>) <span class="op">-&gt;</span> <span class="ident">u64</span> {
         <span class="self">self</span>.<span class="ident">stats</span>[<span class="ident">stat</span> <span class="kw">as</span> <span class="ident">usize</span>].<span class="ident">load</span>(<span class="ident">Relaxed</span>)
     }
 }
 
 <span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">impl_callback_ref</span> {
-    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">tt</span>:<span class="ident">tt</span>) <span class="op">=</span><span class="op">&gt;</span> {
+    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">tt</span>:<span class="ident">tt</span>) <span class="op">=&gt;</span> {
         <span class="kw">impl</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">tt</span> {
             <span class="doccomment">/// Returns the number of `alloc` calls.</span>
             <span class="attribute">#[<span class="ident">inline</span>]</span>
-            <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">num_allocs</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+            <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">num_allocs</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u64</span> {
                 <span class="self">self</span>.<span class="ident">get</span>(<span class="ident">Stat</span>::<span class="ident">Allocs</span>)
             }
             <span class="doccomment">/// Returns the number of `dealloc` calls.</span>
             <span class="attribute">#[<span class="ident">inline</span>]</span>
-            <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">num_deallocs</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+            <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">num_deallocs</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u64</span> {
                 <span class="self">self</span>.<span class="ident">get</span>(<span class="ident">Stat</span>::<span class="ident">Deallocs</span>)
             }
 
             <span class="doccomment">/// Returns the number of `grow` calls.</span>
             <span class="attribute">#[<span class="ident">inline</span>]</span>
-            <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">num_grows</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+            <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">num_grows</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u64</span> {
                 <span class="self">self</span>.<span class="ident">get</span>(<span class="ident">Stat</span>::<span class="ident">Grows</span>)
             }
 
             <span class="doccomment">/// Returns the number of `shrink` calls.</span>
             <span class="attribute">#[<span class="ident">inline</span>]</span>
-            <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">num_shrinks</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+            <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">num_shrinks</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u64</span> {
                 <span class="self">self</span>.<span class="ident">get</span>(<span class="ident">Stat</span>::<span class="ident">Shrinks</span>)
             }
 
             <span class="doccomment">/// Returns the number of `owns` calls.</span>
             <span class="attribute">#[<span class="ident">inline</span>]</span>
-            <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">num_owns</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+            <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">num_owns</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u64</span> {
                 <span class="self">self</span>.<span class="ident">get</span>(<span class="ident">Stat</span>::<span class="ident">Owns</span>)
             }
         }
@@ -1018,16 +1018,16 @@
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">AllocInit</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">AllocInitFilter</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">init</span>: <span class="ident">AllocInit</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">init</span>: <span class="ident">AllocInit</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="kw">match</span> <span class="ident">init</span> {
-            <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">Self</span>::<span class="ident">Uninitialized</span>,
-            <span class="ident">AllocInit</span>::<span class="ident">Zeroed</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">Self</span>::<span class="ident">Zeroed</span>,
+            <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span> <span class="op">=&gt;</span> <span class="self">Self</span>::<span class="ident">Uninitialized</span>,
+            <span class="ident">AllocInit</span>::<span class="ident">Zeroed</span> <span class="op">=&gt;</span> <span class="self">Self</span>::<span class="ident">Zeroed</span>,
         }
     }
 }
 
-<span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">AllocInit</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">AllocInitFilter</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">init</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">AllocInit</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+<span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">AllocInit</span><span class="op">&gt;&gt;</span> <span class="kw">for</span> <span class="ident">AllocInitFilter</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">init</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">AllocInit</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">init</span>) <span class="op">=</span> <span class="ident">init</span> {
             <span class="self">Self</span>::<span class="ident">from</span>(<span class="ident">init</span>)
         } <span class="kw">else</span> {
@@ -1044,16 +1044,16 @@
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">ReallocPlacement</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">ReallocPlacementFilter</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">placement</span>: <span class="ident">ReallocPlacement</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">placement</span>: <span class="ident">ReallocPlacement</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="kw">match</span> <span class="ident">placement</span> {
-            <span class="ident">ReallocPlacement</span>::<span class="ident">MayMove</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">Self</span>::<span class="ident">MayMove</span>,
-            <span class="ident">ReallocPlacement</span>::<span class="ident">InPlace</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">Self</span>::<span class="ident">InPlace</span>,
+            <span class="ident">ReallocPlacement</span>::<span class="ident">MayMove</span> <span class="op">=&gt;</span> <span class="self">Self</span>::<span class="ident">MayMove</span>,
+            <span class="ident">ReallocPlacement</span>::<span class="ident">InPlace</span> <span class="op">=&gt;</span> <span class="self">Self</span>::<span class="ident">InPlace</span>,
         }
     }
 }
 
-<span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ReallocPlacement</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">ReallocPlacementFilter</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">placement</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ReallocPlacement</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+<span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ReallocPlacement</span><span class="op">&gt;&gt;</span> <span class="kw">for</span> <span class="ident">ReallocPlacementFilter</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">placement</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ReallocPlacement</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">placement</span>) <span class="op">=</span> <span class="ident">placement</span> {
             <span class="self">Self</span>::<span class="ident">from</span>(<span class="ident">placement</span>)
         } <span class="kw">else</span> {
@@ -1070,7 +1070,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">ResultFilter</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">success</span>: <span class="ident">bool</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">success</span>: <span class="ident">bool</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="kw">if</span> <span class="ident">success</span> { <span class="self">Self</span>::<span class="prelude-val">Ok</span> } <span class="kw">else</span> { <span class="self">Self</span>::<span class="prelude-val">Err</span> }
     }
 }
@@ -1085,17 +1085,17 @@
     <span class="kw">fn</span> <span class="ident">increment_stat</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">stat</span>: <span class="ident">FilteredStat</span>, <span class="ident">additional</span>: <span class="ident">u64</span>) {
         <span class="self">self</span>.<span class="ident">stats</span>[<span class="ident">stat</span> <span class="kw">as</span> <span class="ident">usize</span>].<span class="ident">set</span>(<span class="self">self</span>.<span class="ident">stats</span>[<span class="ident">stat</span> <span class="kw">as</span> <span class="ident">usize</span>].<span class="ident">get</span>() <span class="op">+</span> <span class="ident">additional</span>)
     }
-    <span class="kw">fn</span> <span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">stat</span>: <span class="ident">FilteredStat</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+    <span class="kw">fn</span> <span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">stat</span>: <span class="ident">FilteredStat</span>) <span class="op">-&gt;</span> <span class="ident">u64</span> {
         <span class="self">self</span>.<span class="ident">stats</span>[<span class="ident">stat</span> <span class="kw">as</span> <span class="ident">usize</span>].<span class="ident">get</span>()
     }
 }
 
 <span class="kw">impl</span> <span class="ident">PartialEq</span><span class="op">&lt;</span><span class="ident">FilteredAtomicCounter</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">FilteredCounter</span> {
-    <span class="kw">fn</span> <span class="ident">eq</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="ident">FilteredAtomicCounter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">fn</span> <span class="ident">eq</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="ident">FilteredAtomicCounter</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
         <span class="self">self</span>.<span class="ident">stats</span>
             .<span class="ident">iter</span>()
             .<span class="ident">zip</span>(<span class="ident">other</span>.<span class="ident">stats</span>.<span class="ident">iter</span>())
-            .<span class="ident">all</span>(<span class="op">|</span>(<span class="ident">lhs</span>, <span class="ident">rhs</span>)<span class="op">|</span> <span class="ident">lhs</span>.<span class="ident">get</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">rhs</span>.<span class="ident">load</span>(<span class="ident">Relaxed</span>))
+            .<span class="ident">all</span>(<span class="op">|</span>(<span class="ident">lhs</span>, <span class="ident">rhs</span>)<span class="op">|</span> <span class="ident">lhs</span>.<span class="ident">get</span>() <span class="op">==</span> <span class="ident">rhs</span>.<span class="ident">load</span>(<span class="ident">Relaxed</span>))
     }
 }
 
@@ -1109,35 +1109,35 @@
     <span class="kw">fn</span> <span class="ident">increment_stat</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">stat</span>: <span class="ident">FilteredStat</span>, <span class="ident">additional</span>: <span class="ident">u64</span>) {
         <span class="self">self</span>.<span class="ident">stats</span>[<span class="ident">stat</span> <span class="kw">as</span> <span class="ident">usize</span>].<span class="ident">fetch_add</span>(<span class="ident">additional</span>, <span class="ident">Relaxed</span>);
     }
-    <span class="kw">fn</span> <span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">stat</span>: <span class="ident">FilteredStat</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+    <span class="kw">fn</span> <span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">stat</span>: <span class="ident">FilteredStat</span>) <span class="op">-&gt;</span> <span class="ident">u64</span> {
         <span class="self">self</span>.<span class="ident">stats</span>[<span class="ident">stat</span> <span class="kw">as</span> <span class="ident">usize</span>].<span class="ident">load</span>(<span class="ident">Relaxed</span>)
     }
 }
 
 <span class="kw">impl</span> <span class="ident">PartialEq</span> <span class="kw">for</span> <span class="ident">FilteredAtomicCounter</span> {
-    <span class="kw">fn</span> <span class="ident">eq</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">fn</span> <span class="ident">eq</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
         <span class="self">self</span>.<span class="ident">stats</span>
             .<span class="ident">iter</span>()
             .<span class="ident">zip</span>(<span class="ident">other</span>.<span class="ident">stats</span>.<span class="ident">iter</span>())
-            .<span class="ident">all</span>(<span class="op">|</span>(<span class="ident">lhs</span>, <span class="ident">rhs</span>)<span class="op">|</span> <span class="ident">lhs</span>.<span class="ident">load</span>(<span class="ident">Relaxed</span>) <span class="op">=</span><span class="op">=</span> <span class="ident">rhs</span>.<span class="ident">load</span>(<span class="ident">Relaxed</span>))
+            .<span class="ident">all</span>(<span class="op">|</span>(<span class="ident">lhs</span>, <span class="ident">rhs</span>)<span class="op">|</span> <span class="ident">lhs</span>.<span class="ident">load</span>(<span class="ident">Relaxed</span>) <span class="op">==</span> <span class="ident">rhs</span>.<span class="ident">load</span>(<span class="ident">Relaxed</span>))
     }
 }
 
 <span class="kw">impl</span> <span class="ident">PartialEq</span><span class="op">&lt;</span><span class="ident">FilteredCounter</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">FilteredAtomicCounter</span> {
-    <span class="kw">fn</span> <span class="ident">eq</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="ident">FilteredCounter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">fn</span> <span class="ident">eq</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="ident">FilteredCounter</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
         <span class="self">self</span>.<span class="ident">stats</span>
             .<span class="ident">iter</span>()
             .<span class="ident">zip</span>(<span class="ident">other</span>.<span class="ident">stats</span>.<span class="ident">iter</span>())
-            .<span class="ident">all</span>(<span class="op">|</span>(<span class="ident">lhs</span>, <span class="ident">rhs</span>)<span class="op">|</span> <span class="ident">lhs</span>.<span class="ident">load</span>(<span class="ident">Relaxed</span>) <span class="op">=</span><span class="op">=</span> <span class="ident">rhs</span>.<span class="ident">get</span>())
+            .<span class="ident">all</span>(<span class="op">|</span>(<span class="ident">lhs</span>, <span class="ident">rhs</span>)<span class="op">|</span> <span class="ident">lhs</span>.<span class="ident">load</span>(<span class="ident">Relaxed</span>) <span class="op">==</span> <span class="ident">rhs</span>.<span class="ident">get</span>())
     }
 }
 
 <span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">impl_filtered_callback_ref</span> {
-    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">tt</span>:<span class="ident">tt</span>) <span class="op">=</span><span class="op">&gt;</span> {
+    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">tt</span>:<span class="ident">tt</span>) <span class="op">=&gt;</span> {
         <span class="kw">impl</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">tt</span> {
             <span class="doccomment">/// Returns the total number of `alloc` calls.</span>
             <span class="attribute">#[<span class="ident">inline</span>]</span>
-            <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">num_allocs</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+            <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">num_allocs</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u64</span> {
                 <span class="self">self</span>.<span class="ident">num_allocs_filter</span>(<span class="ident">AllocInitFilter</span>::<span class="prelude-val">None</span>, <span class="ident">ResultFilter</span>::<span class="prelude-val">None</span>)
             }
 
@@ -1146,25 +1146,25 @@
                 <span class="kw-2">&amp;</span><span class="self">self</span>,
                 <span class="ident">init</span>: <span class="kw">impl</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">AllocInitFilter</span><span class="op">&gt;</span>,
                 <span class="ident">result</span>: <span class="kw">impl</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">ResultFilter</span><span class="op">&gt;</span>,
-            ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+            ) <span class="op">-&gt;</span> <span class="ident">u64</span> {
                 <span class="kw">match</span> (<span class="ident">init</span>.<span class="ident">into</span>(), <span class="ident">result</span>.<span class="ident">into</span>()) {
-                    (<span class="ident">AllocInitFilter</span>::<span class="ident">Uninitialized</span>, <span class="ident">ResultFilter</span>::<span class="prelude-val">Ok</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    (<span class="ident">AllocInitFilter</span>::<span class="ident">Uninitialized</span>, <span class="ident">ResultFilter</span>::<span class="prelude-val">Ok</span>) <span class="op">=&gt;</span> {
                         <span class="self">self</span>.<span class="ident">get</span>(<span class="ident">FilteredStat</span>::<span class="ident">AllocsUninitializedOk</span>)
                     }
-                    (<span class="ident">AllocInitFilter</span>::<span class="ident">Uninitialized</span>, <span class="ident">ResultFilter</span>::<span class="prelude-val">Err</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    (<span class="ident">AllocInitFilter</span>::<span class="ident">Uninitialized</span>, <span class="ident">ResultFilter</span>::<span class="prelude-val">Err</span>) <span class="op">=&gt;</span> {
                         <span class="self">self</span>.<span class="ident">get</span>(<span class="ident">FilteredStat</span>::<span class="ident">AllocsUninitializedErr</span>)
                     }
-                    (<span class="ident">AllocInitFilter</span>::<span class="ident">Zeroed</span>, <span class="ident">ResultFilter</span>::<span class="prelude-val">Ok</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    (<span class="ident">AllocInitFilter</span>::<span class="ident">Zeroed</span>, <span class="ident">ResultFilter</span>::<span class="prelude-val">Ok</span>) <span class="op">=&gt;</span> {
                         <span class="self">self</span>.<span class="ident">get</span>(<span class="ident">FilteredStat</span>::<span class="ident">AllocsZeroedOk</span>)
                     }
-                    (<span class="ident">AllocInitFilter</span>::<span class="ident">Zeroed</span>, <span class="ident">ResultFilter</span>::<span class="prelude-val">Err</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    (<span class="ident">AllocInitFilter</span>::<span class="ident">Zeroed</span>, <span class="ident">ResultFilter</span>::<span class="prelude-val">Err</span>) <span class="op">=&gt;</span> {
                         <span class="self">self</span>.<span class="ident">get</span>(<span class="ident">FilteredStat</span>::<span class="ident">AllocsZeroedErr</span>)
                     }
-                    (<span class="ident">AllocInitFilter</span>::<span class="prelude-val">None</span>, <span class="ident">result</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    (<span class="ident">AllocInitFilter</span>::<span class="prelude-val">None</span>, <span class="ident">result</span>) <span class="op">=&gt;</span> {
                         <span class="self">self</span>.<span class="ident">num_allocs_filter</span>(<span class="ident">AllocInitFilter</span>::<span class="ident">Uninitialized</span>, <span class="ident">result</span>)
                             <span class="op">+</span> <span class="self">self</span>.<span class="ident">num_allocs_filter</span>(<span class="ident">AllocInitFilter</span>::<span class="ident">Zeroed</span>, <span class="ident">result</span>)
                     }
-                    (<span class="ident">i</span>, <span class="ident">ResultFilter</span>::<span class="prelude-val">None</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    (<span class="ident">i</span>, <span class="ident">ResultFilter</span>::<span class="prelude-val">None</span>) <span class="op">=&gt;</span> {
                         <span class="self">self</span>.<span class="ident">num_allocs_filter</span>(<span class="ident">i</span>, <span class="ident">ResultFilter</span>::<span class="prelude-val">Ok</span>)
                             <span class="op">+</span> <span class="self">self</span>.<span class="ident">num_allocs_filter</span>(<span class="ident">i</span>, <span class="ident">ResultFilter</span>::<span class="prelude-val">Err</span>)
                     }
@@ -1173,13 +1173,13 @@
 
             <span class="doccomment">/// Returns the total number of `dealloc` calls.</span>
             <span class="attribute">#[<span class="ident">inline</span>]</span>
-            <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">num_deallocs</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+            <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">num_deallocs</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u64</span> {
                 <span class="self">self</span>.<span class="ident">get</span>(<span class="ident">FilteredStat</span>::<span class="ident">Deallocs</span>)
             }
 
             <span class="doccomment">/// Returns the total number of `grow` calls.</span>
             <span class="attribute">#[<span class="ident">inline</span>]</span>
-            <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">num_grows</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+            <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">num_grows</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u64</span> {
                 <span class="self">self</span>.<span class="ident">num_grows_filter</span>(
                     <span class="ident">ReallocPlacementFilter</span>::<span class="prelude-val">None</span>,
                     <span class="ident">AllocInitFilter</span>::<span class="prelude-val">None</span>,
@@ -1193,57 +1193,57 @@
                 <span class="ident">placement</span>: <span class="kw">impl</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">ReallocPlacementFilter</span><span class="op">&gt;</span>,
                 <span class="ident">init</span>: <span class="kw">impl</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">AllocInitFilter</span><span class="op">&gt;</span>,
                 <span class="ident">result</span>: <span class="kw">impl</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">ResultFilter</span><span class="op">&gt;</span>,
-            ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+            ) <span class="op">-&gt;</span> <span class="ident">u64</span> {
                 <span class="kw">match</span> (<span class="ident">placement</span>.<span class="ident">into</span>(), <span class="ident">init</span>.<span class="ident">into</span>(), <span class="ident">result</span>.<span class="ident">into</span>()) {
                     (
                         <span class="ident">ReallocPlacementFilter</span>::<span class="ident">MayMove</span>,
                         <span class="ident">AllocInitFilter</span>::<span class="ident">Uninitialized</span>,
                         <span class="ident">ResultFilter</span>::<span class="prelude-val">Ok</span>,
-                    ) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">get</span>(<span class="ident">FilteredStat</span>::<span class="ident">GrowsMayMoveUninitializedOk</span>),
+                    ) <span class="op">=&gt;</span> <span class="self">self</span>.<span class="ident">get</span>(<span class="ident">FilteredStat</span>::<span class="ident">GrowsMayMoveUninitializedOk</span>),
                     (
                         <span class="ident">ReallocPlacementFilter</span>::<span class="ident">MayMove</span>,
                         <span class="ident">AllocInitFilter</span>::<span class="ident">Uninitialized</span>,
                         <span class="ident">ResultFilter</span>::<span class="prelude-val">Err</span>,
-                    ) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">get</span>(<span class="ident">FilteredStat</span>::<span class="ident">GrowsMayMoveUninitializedErr</span>),
+                    ) <span class="op">=&gt;</span> <span class="self">self</span>.<span class="ident">get</span>(<span class="ident">FilteredStat</span>::<span class="ident">GrowsMayMoveUninitializedErr</span>),
                     (
                         <span class="ident">ReallocPlacementFilter</span>::<span class="ident">MayMove</span>,
                         <span class="ident">AllocInitFilter</span>::<span class="ident">Zeroed</span>,
                         <span class="ident">ResultFilter</span>::<span class="prelude-val">Ok</span>,
-                    ) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">get</span>(<span class="ident">FilteredStat</span>::<span class="ident">GrowsMayMoveZeroedOk</span>),
+                    ) <span class="op">=&gt;</span> <span class="self">self</span>.<span class="ident">get</span>(<span class="ident">FilteredStat</span>::<span class="ident">GrowsMayMoveZeroedOk</span>),
                     (
                         <span class="ident">ReallocPlacementFilter</span>::<span class="ident">MayMove</span>,
                         <span class="ident">AllocInitFilter</span>::<span class="ident">Zeroed</span>,
                         <span class="ident">ResultFilter</span>::<span class="prelude-val">Err</span>,
-                    ) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">get</span>(<span class="ident">FilteredStat</span>::<span class="ident">GrowsMayMoveZeroedErr</span>),
+                    ) <span class="op">=&gt;</span> <span class="self">self</span>.<span class="ident">get</span>(<span class="ident">FilteredStat</span>::<span class="ident">GrowsMayMoveZeroedErr</span>),
                     (
                         <span class="ident">ReallocPlacementFilter</span>::<span class="ident">InPlace</span>,
                         <span class="ident">AllocInitFilter</span>::<span class="ident">Uninitialized</span>,
                         <span class="ident">ResultFilter</span>::<span class="prelude-val">Ok</span>,
-                    ) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">get</span>(<span class="ident">FilteredStat</span>::<span class="ident">GrowsInPlaceUninitializedOk</span>),
+                    ) <span class="op">=&gt;</span> <span class="self">self</span>.<span class="ident">get</span>(<span class="ident">FilteredStat</span>::<span class="ident">GrowsInPlaceUninitializedOk</span>),
                     (
                         <span class="ident">ReallocPlacementFilter</span>::<span class="ident">InPlace</span>,
                         <span class="ident">AllocInitFilter</span>::<span class="ident">Uninitialized</span>,
                         <span class="ident">ResultFilter</span>::<span class="prelude-val">Err</span>,
-                    ) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">get</span>(<span class="ident">FilteredStat</span>::<span class="ident">GrowsInPlaceUninitializedErr</span>),
+                    ) <span class="op">=&gt;</span> <span class="self">self</span>.<span class="ident">get</span>(<span class="ident">FilteredStat</span>::<span class="ident">GrowsInPlaceUninitializedErr</span>),
                     (
                         <span class="ident">ReallocPlacementFilter</span>::<span class="ident">InPlace</span>,
                         <span class="ident">AllocInitFilter</span>::<span class="ident">Zeroed</span>,
                         <span class="ident">ResultFilter</span>::<span class="prelude-val">Ok</span>,
-                    ) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">get</span>(<span class="ident">FilteredStat</span>::<span class="ident">GrowsInPlaceZeroedOk</span>),
+                    ) <span class="op">=&gt;</span> <span class="self">self</span>.<span class="ident">get</span>(<span class="ident">FilteredStat</span>::<span class="ident">GrowsInPlaceZeroedOk</span>),
                     (
                         <span class="ident">ReallocPlacementFilter</span>::<span class="ident">InPlace</span>,
                         <span class="ident">AllocInitFilter</span>::<span class="ident">Zeroed</span>,
                         <span class="ident">ResultFilter</span>::<span class="prelude-val">Err</span>,
-                    ) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">get</span>(<span class="ident">FilteredStat</span>::<span class="ident">GrowsInPlaceZeroedErr</span>),
-                    (<span class="ident">ReallocPlacementFilter</span>::<span class="prelude-val">None</span>, <span class="ident">i</span>, <span class="ident">result</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    ) <span class="op">=&gt;</span> <span class="self">self</span>.<span class="ident">get</span>(<span class="ident">FilteredStat</span>::<span class="ident">GrowsInPlaceZeroedErr</span>),
+                    (<span class="ident">ReallocPlacementFilter</span>::<span class="prelude-val">None</span>, <span class="ident">i</span>, <span class="ident">result</span>) <span class="op">=&gt;</span> {
                         <span class="self">self</span>.<span class="ident">num_grows_filter</span>(<span class="ident">ReallocPlacementFilter</span>::<span class="ident">MayMove</span>, <span class="ident">i</span>, <span class="ident">result</span>)
                             <span class="op">+</span> <span class="self">self</span>.<span class="ident">num_grows_filter</span>(<span class="ident">ReallocPlacementFilter</span>::<span class="ident">InPlace</span>, <span class="ident">i</span>, <span class="ident">result</span>)
                     }
-                    (<span class="ident">p</span>, <span class="ident">AllocInitFilter</span>::<span class="prelude-val">None</span>, <span class="ident">result</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    (<span class="ident">p</span>, <span class="ident">AllocInitFilter</span>::<span class="prelude-val">None</span>, <span class="ident">result</span>) <span class="op">=&gt;</span> {
                         <span class="self">self</span>.<span class="ident">num_grows_filter</span>(<span class="ident">p</span>, <span class="ident">AllocInitFilter</span>::<span class="ident">Uninitialized</span>, <span class="ident">result</span>)
                             <span class="op">+</span> <span class="self">self</span>.<span class="ident">num_grows_filter</span>(<span class="ident">p</span>, <span class="ident">AllocInitFilter</span>::<span class="ident">Zeroed</span>, <span class="ident">result</span>)
                     }
-                    (<span class="ident">p</span>, <span class="ident">i</span>, <span class="ident">ResultFilter</span>::<span class="prelude-val">None</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    (<span class="ident">p</span>, <span class="ident">i</span>, <span class="ident">ResultFilter</span>::<span class="prelude-val">None</span>) <span class="op">=&gt;</span> {
                         <span class="self">self</span>.<span class="ident">num_grows_filter</span>(<span class="ident">p</span>, <span class="ident">i</span>, <span class="ident">ResultFilter</span>::<span class="prelude-val">Ok</span>)
                             <span class="op">+</span> <span class="self">self</span>.<span class="ident">num_grows_filter</span>(<span class="ident">p</span>, <span class="ident">i</span>, <span class="ident">ResultFilter</span>::<span class="prelude-val">Err</span>)
                     }
@@ -1252,7 +1252,7 @@
 
             <span class="doccomment">/// Returns the total number of `shrink` calls.</span>
             <span class="attribute">#[<span class="ident">inline</span>]</span>
-            <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">num_shrinks</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+            <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">num_shrinks</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u64</span> {
                 <span class="self">self</span>.<span class="ident">num_shrinks_filter</span>(<span class="ident">ReallocPlacementFilter</span>::<span class="prelude-val">None</span>, <span class="ident">ResultFilter</span>::<span class="prelude-val">None</span>)
             }
 
@@ -1261,25 +1261,25 @@
                 <span class="kw-2">&amp;</span><span class="self">self</span>,
                 <span class="ident">placement</span>: <span class="kw">impl</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">ReallocPlacementFilter</span><span class="op">&gt;</span>,
                 <span class="ident">result</span>: <span class="kw">impl</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">ResultFilter</span><span class="op">&gt;</span>,
-            ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+            ) <span class="op">-&gt;</span> <span class="ident">u64</span> {
                 <span class="kw">match</span> (<span class="ident">placement</span>.<span class="ident">into</span>(), <span class="ident">result</span>.<span class="ident">into</span>()) {
-                    (<span class="ident">ReallocPlacementFilter</span>::<span class="ident">MayMove</span>, <span class="ident">ResultFilter</span>::<span class="prelude-val">Ok</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    (<span class="ident">ReallocPlacementFilter</span>::<span class="ident">MayMove</span>, <span class="ident">ResultFilter</span>::<span class="prelude-val">Ok</span>) <span class="op">=&gt;</span> {
                         <span class="self">self</span>.<span class="ident">get</span>(<span class="ident">FilteredStat</span>::<span class="ident">ShrinksMayMoveOk</span>)
                     }
-                    (<span class="ident">ReallocPlacementFilter</span>::<span class="ident">MayMove</span>, <span class="ident">ResultFilter</span>::<span class="prelude-val">Err</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    (<span class="ident">ReallocPlacementFilter</span>::<span class="ident">MayMove</span>, <span class="ident">ResultFilter</span>::<span class="prelude-val">Err</span>) <span class="op">=&gt;</span> {
                         <span class="self">self</span>.<span class="ident">get</span>(<span class="ident">FilteredStat</span>::<span class="ident">ShrinksMayMoveErr</span>)
                     }
-                    (<span class="ident">ReallocPlacementFilter</span>::<span class="ident">InPlace</span>, <span class="ident">ResultFilter</span>::<span class="prelude-val">Ok</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    (<span class="ident">ReallocPlacementFilter</span>::<span class="ident">InPlace</span>, <span class="ident">ResultFilter</span>::<span class="prelude-val">Ok</span>) <span class="op">=&gt;</span> {
                         <span class="self">self</span>.<span class="ident">get</span>(<span class="ident">FilteredStat</span>::<span class="ident">ShrinksInPlaceOk</span>)
                     }
-                    (<span class="ident">ReallocPlacementFilter</span>::<span class="ident">InPlace</span>, <span class="ident">ResultFilter</span>::<span class="prelude-val">Err</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    (<span class="ident">ReallocPlacementFilter</span>::<span class="ident">InPlace</span>, <span class="ident">ResultFilter</span>::<span class="prelude-val">Err</span>) <span class="op">=&gt;</span> {
                         <span class="self">self</span>.<span class="ident">get</span>(<span class="ident">FilteredStat</span>::<span class="ident">ShrinksInPlaceErr</span>)
                     }
-                    (<span class="ident">ReallocPlacementFilter</span>::<span class="prelude-val">None</span>, <span class="ident">result</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    (<span class="ident">ReallocPlacementFilter</span>::<span class="prelude-val">None</span>, <span class="ident">result</span>) <span class="op">=&gt;</span> {
                         <span class="self">self</span>.<span class="ident">num_shrinks_filter</span>(<span class="ident">ReallocPlacementFilter</span>::<span class="ident">MayMove</span>, <span class="ident">result</span>)
                             <span class="op">+</span> <span class="self">self</span>.<span class="ident">num_shrinks_filter</span>(<span class="ident">ReallocPlacementFilter</span>::<span class="ident">InPlace</span>, <span class="ident">result</span>)
                     }
-                    (<span class="ident">p</span>, <span class="ident">ResultFilter</span>::<span class="prelude-val">None</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    (<span class="ident">p</span>, <span class="ident">ResultFilter</span>::<span class="prelude-val">None</span>) <span class="op">=&gt;</span> {
                         <span class="self">self</span>.<span class="ident">num_shrinks_filter</span>(<span class="ident">p</span>, <span class="ident">ResultFilter</span>::<span class="prelude-val">Ok</span>)
                             <span class="op">+</span> <span class="self">self</span>.<span class="ident">num_shrinks_filter</span>(<span class="ident">p</span>, <span class="ident">ResultFilter</span>::<span class="prelude-val">Err</span>)
                     }
@@ -1288,12 +1288,12 @@
 
             <span class="doccomment">/// Returns the total number of `owns` calls.</span>
             <span class="attribute">#[<span class="ident">inline</span>]</span>
-            <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">num_owns</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+            <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">num_owns</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u64</span> {
                 <span class="self">self</span>.<span class="ident">num_owns_filter</span>(<span class="bool-val">true</span>) <span class="op">+</span> <span class="self">self</span>.<span class="ident">num_owns_filter</span>(<span class="bool-val">false</span>)
             }
 
             <span class="doccomment">/// Returns the filtered number of `owns` calls.</span>
-            <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">num_owns_filter</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">success</span>: <span class="ident">bool</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+            <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">num_owns_filter</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">success</span>: <span class="ident">bool</span>) <span class="op">-&gt;</span> <span class="ident">u64</span> {
                 <span class="kw">if</span> <span class="ident">success</span> {
                     <span class="self">self</span>.<span class="ident">get</span>(<span class="ident">FilteredStat</span>::<span class="ident">OwnsTrue</span>)
                 } <span class="kw">else</span> {
@@ -1311,16 +1311,16 @@
                 <span class="ident">result</span>: <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MemoryBlock</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span>,
             ) {
                 <span class="kw">match</span> (<span class="ident">init</span>, <span class="ident">result</span>.<span class="ident">is_ok</span>()) {
-                    (<span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>, <span class="bool-val">true</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    (<span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>, <span class="bool-val">true</span>) <span class="op">=&gt;</span> {
                         <span class="self">self</span>.<span class="ident">increment_stat</span>(<span class="ident">FilteredStat</span>::<span class="ident">AllocsUninitializedOk</span>, <span class="number">1</span>)
                     }
-                    (<span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>, <span class="bool-val">false</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    (<span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>, <span class="bool-val">false</span>) <span class="op">=&gt;</span> {
                         <span class="self">self</span>.<span class="ident">increment_stat</span>(<span class="ident">FilteredStat</span>::<span class="ident">AllocsUninitializedErr</span>, <span class="number">1</span>)
                     }
-                    (<span class="ident">AllocInit</span>::<span class="ident">Zeroed</span>, <span class="bool-val">true</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    (<span class="ident">AllocInit</span>::<span class="ident">Zeroed</span>, <span class="bool-val">true</span>) <span class="op">=&gt;</span> {
                         <span class="self">self</span>.<span class="ident">increment_stat</span>(<span class="ident">FilteredStat</span>::<span class="ident">AllocsZeroedOk</span>, <span class="number">1</span>)
                     }
-                    (<span class="ident">AllocInit</span>::<span class="ident">Zeroed</span>, <span class="bool-val">false</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    (<span class="ident">AllocInit</span>::<span class="ident">Zeroed</span>, <span class="bool-val">false</span>) <span class="op">=&gt;</span> {
                         <span class="self">self</span>.<span class="ident">increment_stat</span>(<span class="ident">FilteredStat</span>::<span class="ident">AllocsZeroedErr</span>, <span class="number">1</span>)
                     }
                 }
@@ -1341,28 +1341,28 @@
                 <span class="ident">result</span>: <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MemoryBlock</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span>,
             ) {
                 <span class="kw">match</span> (<span class="ident">placement</span>, <span class="ident">init</span>, <span class="ident">result</span>.<span class="ident">is_ok</span>()) {
-                    (<span class="ident">ReallocPlacement</span>::<span class="ident">MayMove</span>, <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>, <span class="bool-val">true</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    (<span class="ident">ReallocPlacement</span>::<span class="ident">MayMove</span>, <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>, <span class="bool-val">true</span>) <span class="op">=&gt;</span> {
                         <span class="self">self</span>.<span class="ident">increment_stat</span>(<span class="ident">FilteredStat</span>::<span class="ident">GrowsMayMoveUninitializedOk</span>, <span class="number">1</span>)
                     }
-                    (<span class="ident">ReallocPlacement</span>::<span class="ident">MayMove</span>, <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>, <span class="bool-val">false</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    (<span class="ident">ReallocPlacement</span>::<span class="ident">MayMove</span>, <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>, <span class="bool-val">false</span>) <span class="op">=&gt;</span> {
                         <span class="self">self</span>.<span class="ident">increment_stat</span>(<span class="ident">FilteredStat</span>::<span class="ident">GrowsMayMoveUninitializedErr</span>, <span class="number">1</span>)
                     }
-                    (<span class="ident">ReallocPlacement</span>::<span class="ident">MayMove</span>, <span class="ident">AllocInit</span>::<span class="ident">Zeroed</span>, <span class="bool-val">true</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    (<span class="ident">ReallocPlacement</span>::<span class="ident">MayMove</span>, <span class="ident">AllocInit</span>::<span class="ident">Zeroed</span>, <span class="bool-val">true</span>) <span class="op">=&gt;</span> {
                         <span class="self">self</span>.<span class="ident">increment_stat</span>(<span class="ident">FilteredStat</span>::<span class="ident">GrowsMayMoveZeroedOk</span>, <span class="number">1</span>)
                     }
-                    (<span class="ident">ReallocPlacement</span>::<span class="ident">MayMove</span>, <span class="ident">AllocInit</span>::<span class="ident">Zeroed</span>, <span class="bool-val">false</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    (<span class="ident">ReallocPlacement</span>::<span class="ident">MayMove</span>, <span class="ident">AllocInit</span>::<span class="ident">Zeroed</span>, <span class="bool-val">false</span>) <span class="op">=&gt;</span> {
                         <span class="self">self</span>.<span class="ident">increment_stat</span>(<span class="ident">FilteredStat</span>::<span class="ident">GrowsMayMoveZeroedErr</span>, <span class="number">1</span>)
                     }
-                    (<span class="ident">ReallocPlacement</span>::<span class="ident">InPlace</span>, <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>, <span class="bool-val">true</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    (<span class="ident">ReallocPlacement</span>::<span class="ident">InPlace</span>, <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>, <span class="bool-val">true</span>) <span class="op">=&gt;</span> {
                         <span class="self">self</span>.<span class="ident">increment_stat</span>(<span class="ident">FilteredStat</span>::<span class="ident">GrowsInPlaceUninitializedOk</span>, <span class="number">1</span>)
                     }
-                    (<span class="ident">ReallocPlacement</span>::<span class="ident">InPlace</span>, <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>, <span class="bool-val">false</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    (<span class="ident">ReallocPlacement</span>::<span class="ident">InPlace</span>, <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>, <span class="bool-val">false</span>) <span class="op">=&gt;</span> {
                         <span class="self">self</span>.<span class="ident">increment_stat</span>(<span class="ident">FilteredStat</span>::<span class="ident">GrowsInPlaceUninitializedErr</span>, <span class="number">1</span>)
                     }
-                    (<span class="ident">ReallocPlacement</span>::<span class="ident">InPlace</span>, <span class="ident">AllocInit</span>::<span class="ident">Zeroed</span>, <span class="bool-val">true</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    (<span class="ident">ReallocPlacement</span>::<span class="ident">InPlace</span>, <span class="ident">AllocInit</span>::<span class="ident">Zeroed</span>, <span class="bool-val">true</span>) <span class="op">=&gt;</span> {
                         <span class="self">self</span>.<span class="ident">increment_stat</span>(<span class="ident">FilteredStat</span>::<span class="ident">GrowsInPlaceZeroedOk</span>, <span class="number">1</span>)
                     }
-                    (<span class="ident">ReallocPlacement</span>::<span class="ident">InPlace</span>, <span class="ident">AllocInit</span>::<span class="ident">Zeroed</span>, <span class="bool-val">false</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    (<span class="ident">ReallocPlacement</span>::<span class="ident">InPlace</span>, <span class="ident">AllocInit</span>::<span class="ident">Zeroed</span>, <span class="bool-val">false</span>) <span class="op">=&gt;</span> {
                         <span class="self">self</span>.<span class="ident">increment_stat</span>(<span class="ident">FilteredStat</span>::<span class="ident">GrowsInPlaceZeroedErr</span>, <span class="number">1</span>)
                     }
                 }
@@ -1378,16 +1378,16 @@
                 <span class="ident">result</span>: <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MemoryBlock</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span>,
             ) {
                 <span class="kw">match</span> (<span class="ident">placement</span>, <span class="ident">result</span>.<span class="ident">is_ok</span>()) {
-                    (<span class="ident">ReallocPlacement</span>::<span class="ident">MayMove</span>, <span class="bool-val">true</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    (<span class="ident">ReallocPlacement</span>::<span class="ident">MayMove</span>, <span class="bool-val">true</span>) <span class="op">=&gt;</span> {
                         <span class="self">self</span>.<span class="ident">increment_stat</span>(<span class="ident">FilteredStat</span>::<span class="ident">ShrinksMayMoveOk</span>, <span class="number">1</span>)
                     }
-                    (<span class="ident">ReallocPlacement</span>::<span class="ident">MayMove</span>, <span class="bool-val">false</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    (<span class="ident">ReallocPlacement</span>::<span class="ident">MayMove</span>, <span class="bool-val">false</span>) <span class="op">=&gt;</span> {
                         <span class="self">self</span>.<span class="ident">increment_stat</span>(<span class="ident">FilteredStat</span>::<span class="ident">ShrinksMayMoveErr</span>, <span class="number">1</span>)
                     }
-                    (<span class="ident">ReallocPlacement</span>::<span class="ident">InPlace</span>, <span class="bool-val">true</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    (<span class="ident">ReallocPlacement</span>::<span class="ident">InPlace</span>, <span class="bool-val">true</span>) <span class="op">=&gt;</span> {
                         <span class="self">self</span>.<span class="ident">increment_stat</span>(<span class="ident">FilteredStat</span>::<span class="ident">ShrinksInPlaceOk</span>, <span class="number">1</span>)
                     }
-                    (<span class="ident">ReallocPlacement</span>::<span class="ident">InPlace</span>, <span class="bool-val">false</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    (<span class="ident">ReallocPlacement</span>::<span class="ident">InPlace</span>, <span class="bool-val">false</span>) <span class="op">=&gt;</span> {
                         <span class="self">self</span>.<span class="ident">increment_stat</span>(<span class="ident">FilteredStat</span>::<span class="ident">ShrinksInPlaceErr</span>, <span class="number">1</span>)
                     }
                 }
@@ -1414,7 +1414,7 @@
     <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">alloc</span>::{<span class="ident">AllocErr</span>, <span class="ident">AllocInit</span>, <span class="ident">AllocRef</span>, <span class="ident">Layout</span>, <span class="ident">ReallocPlacement</span>};
 
     <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy</span>::<span class="ident">too_many_lines</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">run_suite</span>(<span class="ident">callbacks</span>: <span class="kw">impl</span> <span class="ident">CallbackRef</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">AllocErr</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">run_suite</span>(<span class="ident">callbacks</span>: <span class="kw">impl</span> <span class="ident">CallbackRef</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">AllocErr</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">region</span> <span class="op">=</span> [<span class="number">0</span>; <span class="number">32</span>];
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">alloc</span> <span class="op">=</span> <span class="ident">Proxy</span> {
             <span class="ident">alloc</span>: <span class="ident">helper</span>::<span class="ident">tracker</span>(<span class="ident">Region</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">region</span>)),
@@ -1640,4 +1640,4 @@
     }
 }
 </pre></div>
-</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "alloc_compose";</script><script src="../../aliases.js"></script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
+</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "alloc_compose";</script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
