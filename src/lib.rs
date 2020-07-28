@@ -8,9 +8,7 @@
     const_alloc_layout,
     const_fn,
     const_generics,
-    const_if_match,
     const_panic,
-    track_caller
 )]
 #![allow(incomplete_features, clippy::must_use_candidate)]
 
