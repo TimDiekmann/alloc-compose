@@ -51,14 +51,6 @@ impl<'a> Region<'a> {
         }
     }
 
-    /// Resets the allocator.
-    ///
-    /// This implies, that `capacity()` and `capacity_left()` are equal afterwards.
-    pub fn reset(&mut self) {
-        self.offset = self.data.as_ptr() as usize;
-        debug_assert_eq!(self.capacity(), self.capacity_left());
-    }
-
     /// Checks if `memory` is the latest block, which was allocated.
     /// For those blocks, it's possible to deallocate them or to grow
     /// or shrink them in place.
@@ -488,9 +480,14 @@ mod tests {
         };
         assert_eq!(memory.size, 16);
         assert_eq!(region.capacity_left(), 0);
+        
+        region.dealloc_all();
+        let memory = region.alloc(Layout::new::<[u8; 16]>(), AllocInit::Zeroed).expect("Could not allocate 16 bytes");
+        region.alloc(Layout::new::<[u8; 8]>(), AllocInit::Uninitialized).expect("Could not allocate 16 bytes");
 
-        region.reset();
-        assert_eq!(region.capacity_left(), region.capacity());
+        unsafe {
+            region.shrink(memory.ptr, Layout::new::<[u8; 16]>(), 8, ReallocPlacement::MayMove).expect("Could not shrink to 8 bytes");
+        }
     }
 
     #[test]
