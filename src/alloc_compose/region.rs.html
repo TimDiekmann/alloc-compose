@@ -511,6 +511,19 @@
 <span id="511">511</span>
 <span id="512">512</span>
 <span id="513">513</span>
+<span id="514">514</span>
+<span id="515">515</span>
+<span id="516">516</span>
+<span id="517">517</span>
+<span id="518">518</span>
+<span id="519">519</span>
+<span id="520">520</span>
+<span id="521">521</span>
+<span id="522">522</span>
+<span id="523">523</span>
+<span id="524">524</span>
+<span id="525">525</span>
+<span id="526">526</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">AllocAll</span>, <span class="ident">Owns</span>};
 <span class="kw">use</span> <span class="ident">core</span>::{
@@ -1009,16 +1022,29 @@
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">debug</span>() {
-        <span class="kw">let</span> <span class="ident">test_output</span> <span class="op">=</span> <span class="op">|</span><span class="ident">region</span>: <span class="kw-2">&amp;</span><span class="ident">Region</span><span class="op">|</span> <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">region</span>), <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;Region {{ capacity: {}, capacity_left: {} }}&quot;</span>, <span class="ident">region</span>.<span class="ident">capacity</span>(), <span class="ident">region</span>.<span class="ident">capacity_left</span>()));
+        <span class="kw">let</span> <span class="ident">test_output</span> <span class="op">=</span> <span class="op">|</span><span class="ident">region</span>: <span class="kw-2">&amp;</span><span class="ident">Region</span><span class="op">|</span> {
+            <span class="macro">assert_eq</span><span class="macro">!</span>(
+                <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">region</span>),
+                <span class="macro">format</span><span class="macro">!</span>(
+                    <span class="string">&quot;Region {{ capacity: {}, capacity_left: {} }}&quot;</span>,
+                    <span class="ident">region</span>.<span class="ident">capacity</span>(),
+                    <span class="ident">region</span>.<span class="ident">capacity_left</span>()
+                )
+            )
+        };
 
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">data</span> <span class="op">=</span> [<span class="number">1</span>; <span class="number">32</span>];
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">region</span> <span class="op">=</span> <span class="ident">Region</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">data</span>);
         <span class="ident">test_output</span>(<span class="kw-2">&amp;</span><span class="ident">region</span>);
 
-        <span class="ident">region</span>.<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">16</span>]<span class="op">&gt;</span>(), <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>).<span class="ident">expect</span>(<span class="string">&quot;Could not allocate 16 bytes&quot;</span>);
+        <span class="ident">region</span>
+            .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">16</span>]<span class="op">&gt;</span>(), <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>)
+            .<span class="ident">expect</span>(<span class="string">&quot;Could not allocate 16 bytes&quot;</span>);
         <span class="ident">test_output</span>(<span class="kw-2">&amp;</span><span class="ident">region</span>);
 
-        <span class="ident">region</span>.<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">16</span>]<span class="op">&gt;</span>(), <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>).<span class="ident">expect</span>(<span class="string">&quot;Could not allocate 16 bytes&quot;</span>);
+        <span class="ident">region</span>
+            .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">16</span>]<span class="op">&gt;</span>(), <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>)
+            .<span class="ident">expect</span>(<span class="string">&quot;Could not allocate 16 bytes&quot;</span>);
         <span class="ident">test_output</span>(<span class="kw-2">&amp;</span><span class="ident">region</span>);
 
         <span class="ident">region</span>.<span class="ident">dealloc_all</span>();
