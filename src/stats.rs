@@ -222,7 +222,7 @@ impl From<AllocInit> for AllocInitFilter {
 
 impl From<Option<AllocInit>> for AllocInitFilter {
     fn from(init: Option<AllocInit>) -> Self {
-        init.map_or(Self::None, |i| Self::from(i))
+        init.map_or(Self::None, Self::from)
     }
 }
 
@@ -244,7 +244,7 @@ impl From<ReallocPlacement> for ReallocPlacementFilter {
 
 impl From<Option<ReallocPlacement>> for ReallocPlacementFilter {
     fn from(placement: Option<ReallocPlacement>) -> Self {
-        placement.map_or(Self::None, |p| Self::from(p))
+        placement.map_or(Self::None, Self::from)
     }
 }
 
