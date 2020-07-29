@@ -441,8 +441,57 @@
 <span id="441">441</span>
 <span id="442">442</span>
 <span id="443">443</span>
+<span id="444">444</span>
+<span id="445">445</span>
+<span id="446">446</span>
+<span id="447">447</span>
+<span id="448">448</span>
+<span id="449">449</span>
+<span id="450">450</span>
+<span id="451">451</span>
+<span id="452">452</span>
+<span id="453">453</span>
+<span id="454">454</span>
+<span id="455">455</span>
+<span id="456">456</span>
+<span id="457">457</span>
+<span id="458">458</span>
+<span id="459">459</span>
+<span id="460">460</span>
+<span id="461">461</span>
+<span id="462">462</span>
+<span id="463">463</span>
+<span id="464">464</span>
+<span id="465">465</span>
+<span id="466">466</span>
+<span id="467">467</span>
+<span id="468">468</span>
+<span id="469">469</span>
+<span id="470">470</span>
+<span id="471">471</span>
+<span id="472">472</span>
+<span id="473">473</span>
+<span id="474">474</span>
+<span id="475">475</span>
+<span id="476">476</span>
+<span id="477">477</span>
+<span id="478">478</span>
+<span id="479">479</span>
+<span id="480">480</span>
+<span id="481">481</span>
+<span id="482">482</span>
+<span id="483">483</span>
+<span id="484">484</span>
+<span id="485">485</span>
+<span id="486">486</span>
+<span id="487">487</span>
+<span id="488">488</span>
+<span id="489">489</span>
+<span id="490">490</span>
+<span id="491">491</span>
+<span id="492">492</span>
 </pre><div class="example-wrap"><pre class="rust ">
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">Owns</span>;
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">AllocAll</span>, <span class="ident">Owns</span>};
 <span class="kw">use</span> <span class="ident">core</span>::{
     <span class="ident">alloc</span>::{<span class="ident">AllocErr</span>, <span class="ident">AllocInit</span>, <span class="ident">AllocRef</span>, <span class="ident">Layout</span>, <span class="ident">MemoryBlock</span>, <span class="ident">ReallocPlacement</span>},
     <span class="ident">fmt</span>,
@@ -493,16 +542,6 @@
             <span class="ident">data</span>,
             <span class="ident">offset</span>: <span class="ident">current</span>,
         }
-    }
-
-    <span class="doccomment">/// Returns the total capacity available in this allocator.</span>
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="kw">fn</span> <span class="ident">capacity</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">usize</span> {
-        <span class="self">self</span>.<span class="ident">data</span>.<span class="ident">len</span>()
-    }
-
-    <span class="doccomment">/// Returns the free capacity left for allocating.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">capacity_left</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">usize</span> {
-        <span class="self">self</span>.<span class="ident">data</span>.<span class="ident">as_ptr</span>() <span class="kw">as</span> <span class="ident">usize</span> <span class="op">+</span> <span class="self">self</span>.<span class="ident">data</span>.<span class="ident">len</span>() <span class="op">-</span> <span class="self">self</span>.<span class="ident">offset</span>
     }
 
     <span class="doccomment">/// Resets the allocator.</span>
@@ -650,6 +689,41 @@
     }
 }
 
+<span class="kw">impl</span> <span class="ident">AllocAll</span> <span class="kw">for</span> <span class="ident">Region</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">alloc_all</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>, <span class="ident">init</span>: <span class="ident">AllocInit</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MemoryBlock</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">offset</span> <span class="op">=</span> (<span class="self">self</span>.<span class="ident">offset</span> <span class="kw">as</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">u8</span>).<span class="ident">align_offset</span>(<span class="ident">layout</span>.<span class="ident">align</span>());
+        <span class="kw">let</span> <span class="ident">current</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">offset</span>.<span class="ident">checked_add</span>(<span class="ident">offset</span>).<span class="ident">ok_or</span>(<span class="ident">AllocErr</span>)<span class="question-mark">?</span>;
+
+        <span class="kw">let</span> <span class="ident">new</span> <span class="op">=</span> <span class="ident">current</span>.<span class="ident">checked_add</span>(<span class="ident">layout</span>.<span class="ident">size</span>()).<span class="ident">ok_or</span>(<span class="ident">AllocErr</span>)<span class="question-mark">?</span>;
+        <span class="kw">if</span> <span class="ident">new</span> <span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">data</span>.<span class="ident">as_ptr</span>() <span class="kw">as</span> <span class="ident">usize</span> <span class="op">+</span> <span class="self">self</span>.<span class="ident">data</span>.<span class="ident">len</span>() {
+            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">AllocErr</span>);
+        }
+
+        <span class="kw">let</span> <span class="ident">capacity_left</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">capacity_left</span>();
+        <span class="self">self</span>.<span class="ident">offset</span> <span class="op">+=</span> <span class="ident">capacity_left</span>;
+        <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">MemoryBlock</span> {
+            <span class="ident">ptr</span>: <span class="kw">unsafe</span> { <span class="ident">NonNull</span>::<span class="ident">new_unchecked</span>(<span class="ident">current</span> <span class="kw">as</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">u8</span>) },
+            <span class="ident">size</span>: <span class="ident">capacity_left</span>,
+        };
+        <span class="kw">unsafe</span> { <span class="ident">init</span>.<span class="ident">init</span>(<span class="ident">memory</span>) };
+
+        <span class="prelude-val">Ok</span>(<span class="ident">memory</span>)
+    }
+
+    <span class="kw">fn</span> <span class="ident">dealloc_all</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
+        <span class="self">self</span>.<span class="ident">offset</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">data</span>.<span class="ident">as_ptr</span>() <span class="kw">as</span> <span class="ident">usize</span>;
+        <span class="macro">debug_assert</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">is_empty</span>());
+    }
+
+    <span class="kw">fn</span> <span class="ident">capacity</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">usize</span> {
+        <span class="self">self</span>.<span class="ident">data</span>.<span class="ident">len</span>()
+    }
+
+    <span class="kw">fn</span> <span class="ident">capacity_left</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">usize</span> {
+        <span class="self">self</span>.<span class="ident">data</span>.<span class="ident">as_ptr</span>() <span class="kw">as</span> <span class="ident">usize</span> <span class="op">+</span> <span class="self">self</span>.<span class="ident">data</span>.<span class="ident">len</span>() <span class="op">-</span> <span class="self">self</span>.<span class="ident">offset</span>
+    }
+}
+
 <span class="kw">impl</span> <span class="ident">Owns</span> <span class="kw">for</span> <span class="ident">Region</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">owns</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">memory</span>: <span class="ident">MemoryBlock</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
         <span class="self">self</span>.<span class="ident">data</span>.<span class="ident">as_ptr</span>() <span class="op">&lt;=</span> <span class="ident">memory</span>.<span class="ident">ptr</span>.<span class="ident">as_ptr</span>()
@@ -670,14 +744,38 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">region</span> <span class="op">=</span> <span class="ident">Region</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">data</span>);
 
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">region</span>.<span class="ident">capacity</span>(), <span class="number">32</span>);
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">region</span>.<span class="ident">capacity</span>(), <span class="ident">region</span>.<span class="ident">capacity_left</span>());
+        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">region</span>.<span class="ident">is_empty</span>());
 
         <span class="ident">region</span>
             .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">0</span>]<span class="op">&gt;</span>(), <span class="ident">AllocInit</span>::<span class="ident">Zeroed</span>)
             .<span class="ident">expect</span>(<span class="string">&quot;Could not allocated 0 bytes&quot;</span>);
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">region</span>.<span class="ident">capacity_left</span>(), <span class="ident">region</span>.<span class="ident">capacity</span>());
+        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">region</span>.<span class="ident">is_empty</span>());
 
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">data</span>, [<span class="number">1</span>; <span class="number">32</span>]);
+    }
+
+    <span class="attribute">#[<span class="ident">test</span>]</span>
+    <span class="kw">fn</span> <span class="ident">alloc_all</span>() {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">data</span> <span class="op">=</span> [<span class="number">1</span>; <span class="number">32</span>];
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">region</span> <span class="op">=</span> <span class="ident">Region</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">data</span>);
+
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">region</span>.<span class="ident">capacity</span>(), <span class="number">32</span>);
+        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">region</span>.<span class="ident">is_empty</span>());
+
+        <span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="ident">region</span>
+            .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>(), <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>)
+            .<span class="ident">expect</span>(<span class="string">&quot;Could not allocated 1 byte&quot;</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">ptr</span>.<span class="ident">size</span>, <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">region</span>.<span class="ident">capacity_left</span>(), <span class="number">31</span>);
+
+        <span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="ident">region</span>
+            .<span class="ident">alloc_all</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>(), <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>)
+            .<span class="ident">expect</span>(<span class="string">&quot;Could not allocated 4 bytes&quot;</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">ptr</span>.<span class="ident">size</span>, <span class="number">31</span>);
+        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">region</span>.<span class="ident">is_full</span>());
+
+        <span class="ident">region</span>.<span class="ident">dealloc_all</span>();
+        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">region</span>.<span class="ident">is_empty</span>());
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>

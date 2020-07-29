@@ -135,8 +135,50 @@
 <span id="135">135</span>
 <span id="136">136</span>
 <span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
+<span id="161">161</span>
+<span id="162">162</span>
+<span id="163">163</span>
+<span id="164">164</span>
+<span id="165">165</span>
+<span id="166">166</span>
+<span id="167">167</span>
+<span id="168">168</span>
+<span id="169">169</span>
+<span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
+<span id="179">179</span>
 </pre><div class="example-wrap"><pre class="rust ">
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">CallbackRef</span>, <span class="ident">Owns</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">AllocAll</span>, <span class="ident">CallbackRef</span>, <span class="ident">Owns</span>};
 <span class="kw">use</span> <span class="ident">core</span>::{
     <span class="ident">alloc</span>::{<span class="ident">AllocErr</span>, <span class="ident">AllocInit</span>, <span class="ident">AllocRef</span>, <span class="ident">Layout</span>, <span class="ident">MemoryBlock</span>, <span class="ident">ReallocPlacement</span>},
     <span class="ident">ptr</span>::<span class="ident">NonNull</span>,
@@ -217,6 +259,7 @@
 }
 
 <span class="kw">unsafe</span> <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">AllocRef</span>, <span class="ident">C</span>: <span class="ident">CallbackRef</span><span class="op">&gt;</span> <span class="ident">AllocRef</span> <span class="kw">for</span> <span class="ident">Proxy</span><span class="op">&lt;</span><span class="ident">A</span>, <span class="ident">C</span><span class="op">&gt;</span> {
+    <span class="attribute">#[<span class="ident">track_caller</span>]</span>
     <span class="kw">fn</span> <span class="ident">alloc</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>, <span class="ident">init</span>: <span class="ident">AllocInit</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MemoryBlock</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">callbacks</span>.<span class="ident">before_alloc</span>(<span class="ident">layout</span>, <span class="ident">init</span>);
         <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">alloc</span>.<span class="ident">alloc</span>(<span class="ident">layout</span>, <span class="ident">init</span>);
@@ -262,6 +305,47 @@
         <span class="self">self</span>.<span class="ident">callbacks</span>
             .<span class="ident">after_shrink</span>(<span class="ident">ptr</span>, <span class="ident">layout</span>, <span class="ident">new_size</span>, <span class="ident">placement</span>, <span class="ident">result</span>);
         <span class="ident">result</span>
+    }
+}
+
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">AllocAll</span>, <span class="ident">C</span>: <span class="ident">CallbackRef</span><span class="op">&gt;</span> <span class="ident">AllocAll</span> <span class="kw">for</span> <span class="ident">Proxy</span><span class="op">&lt;</span><span class="ident">A</span>, <span class="ident">C</span><span class="op">&gt;</span> {
+    <span class="attribute">#[<span class="ident">track_caller</span>]</span>
+    <span class="kw">fn</span> <span class="ident">alloc_all</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>, <span class="ident">init</span>: <span class="ident">AllocInit</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MemoryBlock</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">callbacks</span>.<span class="ident">before_alloc_all</span>(<span class="ident">layout</span>, <span class="ident">init</span>);
+        <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">alloc</span>.<span class="ident">alloc_all</span>(<span class="ident">layout</span>, <span class="ident">init</span>);
+        <span class="self">self</span>.<span class="ident">callbacks</span>.<span class="ident">after_alloc_all</span>(<span class="ident">layout</span>, <span class="ident">init</span>, <span class="ident">result</span>);
+        <span class="ident">result</span>
+    }
+
+    <span class="attribute">#[<span class="ident">track_caller</span>]</span>
+    <span class="kw">fn</span> <span class="ident">dealloc_all</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
+        <span class="self">self</span>.<span class="ident">callbacks</span>.<span class="ident">before_dealloc_all</span>();
+        <span class="self">self</span>.<span class="ident">alloc</span>.<span class="ident">dealloc_all</span>();
+        <span class="self">self</span>.<span class="ident">callbacks</span>.<span class="ident">after_dealloc_all</span>();
+    }
+
+    <span class="attribute">#[<span class="ident">track_caller</span>]</span>
+    <span class="attribute">#[<span class="ident">inline</span>]</span>
+    <span class="kw">fn</span> <span class="ident">capacity</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">usize</span> {
+        <span class="self">self</span>.<span class="ident">alloc</span>.<span class="ident">capacity</span>()
+    }
+
+    <span class="attribute">#[<span class="ident">track_caller</span>]</span>
+    <span class="attribute">#[<span class="ident">inline</span>]</span>
+    <span class="kw">fn</span> <span class="ident">capacity_left</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">usize</span> {
+        <span class="self">self</span>.<span class="ident">alloc</span>.<span class="ident">capacity</span>()
+    }
+
+    <span class="attribute">#[<span class="ident">track_caller</span>]</span>
+    <span class="attribute">#[<span class="ident">inline</span>]</span>
+    <span class="kw">fn</span> <span class="ident">is_empty</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
+        <span class="self">self</span>.<span class="ident">alloc</span>.<span class="ident">is_empty</span>()
+    }
+
+    <span class="attribute">#[<span class="ident">track_caller</span>]</span>
+    <span class="attribute">#[<span class="ident">inline</span>]</span>
+    <span class="kw">fn</span> <span class="ident">is_full</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
+        <span class="self">self</span>.<span class="ident">alloc</span>.<span class="ident">is_full</span>()
     }
 }
 

@@ -466,6 +466,36 @@
 <span id="466">466</span>
 <span id="467">467</span>
 <span id="468">468</span>
+<span id="469">469</span>
+<span id="470">470</span>
+<span id="471">471</span>
+<span id="472">472</span>
+<span id="473">473</span>
+<span id="474">474</span>
+<span id="475">475</span>
+<span id="476">476</span>
+<span id="477">477</span>
+<span id="478">478</span>
+<span id="479">479</span>
+<span id="480">480</span>
+<span id="481">481</span>
+<span id="482">482</span>
+<span id="483">483</span>
+<span id="484">484</span>
+<span id="485">485</span>
+<span id="486">486</span>
+<span id="487">487</span>
+<span id="488">488</span>
+<span id="489">489</span>
+<span id="490">490</span>
+<span id="491">491</span>
+<span id="492">492</span>
+<span id="493">493</span>
+<span id="494">494</span>
+<span id="495">495</span>
+<span id="496">496</span>
+<span id="497">497</span>
+<span id="498">498</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">doc</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;alloc&quot;</span>))]</span>
 <span class="kw">use</span> <span class="ident">alloc</span>::{<span class="ident">boxed</span>::<span class="ident">Box</span>, <span class="ident">rc</span>::<span class="ident">Rc</span>, <span class="ident">sync</span>::<span class="ident">Arc</span>};
@@ -501,6 +531,24 @@
     <span class="attribute">#[<span class="ident">inline</span>]</span>
     <span class="kw">fn</span> <span class="ident">after_alloc</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>, <span class="ident">init</span>: <span class="ident">AllocInit</span>, <span class="ident">result</span>: <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MemoryBlock</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span>) {}
 
+    <span class="doccomment">/// Called before [`alloc_all`] was invoked.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// [`alloc_all`]: crate::AllocAll::alloc_all</span>
+    <span class="attribute">#[<span class="ident">inline</span>]</span>
+    <span class="kw">fn</span> <span class="ident">before_alloc_all</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>, <span class="ident">init</span>: <span class="ident">AllocInit</span>) {}
+
+    <span class="doccomment">/// Called after [`alloc_all`] was invoked.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// [`alloc_all`]: crate::AllocAll::alloc_all</span>
+    <span class="attribute">#[<span class="ident">inline</span>]</span>
+    <span class="kw">fn</span> <span class="ident">after_alloc_all</span>(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">layout</span>: <span class="ident">Layout</span>,
+        <span class="ident">init</span>: <span class="ident">AllocInit</span>,
+        <span class="ident">result</span>: <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MemoryBlock</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span>,
+    ) {
+    }
+
     <span class="doccomment">/// Called before [`dealloc`] was invoked.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// [`dealloc`]: core::alloc::AllocRef::dealloc</span>
@@ -512,6 +560,18 @@
     <span class="doccomment">/// [`dealloc`]: core::alloc::AllocRef::dealloc</span>
     <span class="attribute">#[<span class="ident">inline</span>]</span>
     <span class="kw">fn</span> <span class="ident">after_dealloc</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>) {}
+
+    <span class="doccomment">/// Called before [`dealloc_all`] was invoked.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// [`dealloc_all`]: crate::AllocAll::dealloc_all</span>
+    <span class="attribute">#[<span class="ident">inline</span>]</span>
+    <span class="kw">fn</span> <span class="ident">before_dealloc_all</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) {}
+
+    <span class="doccomment">/// Called after [`dealloc_all`] was invoked.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// [`dealloc_all`]: crate::AllocAll::dealloc_all</span>
+    <span class="attribute">#[<span class="ident">inline</span>]</span>
+    <span class="kw">fn</span> <span class="ident">after_dealloc_all</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) {}
 
     <span class="doccomment">/// Called before [`grow`] was invoked.</span>
     <span class="doccomment">///</span>
