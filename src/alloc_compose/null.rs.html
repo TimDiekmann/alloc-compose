@@ -151,6 +151,9 @@
 <span id="151">151</span>
 <span id="152">152</span>
 <span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">AllocAll</span>, <span class="ident">Owns</span>};
 <span class="kw">use</span> <span class="ident">core</span>::{
@@ -259,7 +262,10 @@
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">alloc_all</span>() {
-        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">Null</span>.<span class="ident">alloc_all</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>(), <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>).<span class="ident">is_err</span>());
+        <span class="macro">assert</span><span class="macro">!</span>(
+            <span class="ident">Null</span>.<span class="ident">alloc_all</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>(), <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>)
+                .<span class="ident">is_err</span>()
+        );
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">Null</span>.<span class="ident">capacity</span>(), <span class="number">0</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">Null</span>.<span class="ident">capacity_left</span>(), <span class="number">0</span>);
         <span class="ident">Null</span>.<span class="ident">dealloc_all</span>();
