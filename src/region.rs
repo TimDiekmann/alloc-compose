@@ -495,16 +495,29 @@ mod tests {
 
     #[test]
     fn debug() {
-        let test_output = |region: &Region| assert_eq!(format!("{:?}", region), format!("Region {{ capacity: {}, capacity_left: {} }}", region.capacity(), region.capacity_left()));
+        let test_output = |region: &Region| {
+            assert_eq!(
+                format!("{:?}", region),
+                format!(
+                    "Region {{ capacity: {}, capacity_left: {} }}",
+                    region.capacity(),
+                    region.capacity_left()
+                )
+            )
+        };
 
         let mut data = [1; 32];
         let mut region = Region::new(&mut data);
         test_output(&region);
 
-        region.alloc(Layout::new::<[u8; 16]>(), AllocInit::Uninitialized).expect("Could not allocate 16 bytes");
+        region
+            .alloc(Layout::new::<[u8; 16]>(), AllocInit::Uninitialized)
+            .expect("Could not allocate 16 bytes");
         test_output(&region);
 
-        region.alloc(Layout::new::<[u8; 16]>(), AllocInit::Uninitialized).expect("Could not allocate 16 bytes");
+        region
+            .alloc(Layout::new::<[u8; 16]>(), AllocInit::Uninitialized)
+            .expect("Could not allocate 16 bytes");
         test_output(&region);
 
         region.dealloc_all();
