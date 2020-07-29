@@ -521,9 +521,6 @@
 <span id="521">521</span>
 <span id="522">522</span>
 <span id="523">523</span>
-<span id="524">524</span>
-<span id="525">525</span>
-<span id="526">526</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">AllocAll</span>, <span class="ident">Owns</span>};
 <span class="kw">use</span> <span class="ident">core</span>::{
@@ -576,14 +573,6 @@
             <span class="ident">data</span>,
             <span class="ident">offset</span>: <span class="ident">current</span>,
         }
-    }
-
-    <span class="doccomment">/// Resets the allocator.</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// This implies, that `capacity()` and `capacity_left()` are equal afterwards.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">reset</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
-        <span class="self">self</span>.<span class="ident">offset</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">data</span>.<span class="ident">as_ptr</span>() <span class="kw">as</span> <span class="ident">usize</span>;
-        <span class="macro">debug_assert_eq</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">capacity</span>(), <span class="self">self</span>.<span class="ident">capacity_left</span>());
     }
 
     <span class="doccomment">/// Checks if `memory` is the latest block, which was allocated.</span>
@@ -1015,9 +1004,14 @@
         };
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">memory</span>.<span class="ident">size</span>, <span class="number">16</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">region</span>.<span class="ident">capacity_left</span>(), <span class="number">0</span>);
+        
+        <span class="ident">region</span>.<span class="ident">dealloc_all</span>();
+        <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">region</span>.<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">16</span>]<span class="op">&gt;</span>(), <span class="ident">AllocInit</span>::<span class="ident">Zeroed</span>).<span class="ident">expect</span>(<span class="string">&quot;Could not allocate 16 bytes&quot;</span>);
+        <span class="ident">region</span>.<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">8</span>]<span class="op">&gt;</span>(), <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>).<span class="ident">expect</span>(<span class="string">&quot;Could not allocate 16 bytes&quot;</span>);
 
-        <span class="ident">region</span>.<span class="ident">reset</span>();
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">region</span>.<span class="ident">capacity_left</span>(), <span class="ident">region</span>.<span class="ident">capacity</span>());
+        <span class="kw">unsafe</span> {
+            <span class="ident">region</span>.<span class="ident">shrink</span>(<span class="ident">memory</span>.<span class="ident">ptr</span>, <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">16</span>]<span class="op">&gt;</span>(), <span class="number">8</span>, <span class="ident">ReallocPlacement</span>::<span class="ident">MayMove</span>).<span class="ident">expect</span>(<span class="string">&quot;Could not shrink to 8 bytes&quot;</span>);
+        }
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
