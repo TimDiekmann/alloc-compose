@@ -283,6 +283,13 @@ mod tests {
 
         region.dealloc_all();
         assert!(region.is_empty());
+
+        region
+            .alloc(Layout::new::<[u8; 16]>(), AllocInit::Uninitialized)
+            .expect("Could not allocate 16 bytes");
+        region
+            .alloc_all(Layout::new::<[u8; 17]>(), AllocInit::Uninitialized)
+            .expect_err("Could allocate more than 32 bytes");
     }
 
     #[test]
@@ -333,11 +340,9 @@ mod tests {
         let mut data = [1; 32];
         let mut region = Region::new(&mut data);
 
-        assert!(
-            region
-                .alloc(Layout::new::<[u8; 33]>(), AllocInit::Uninitialized)
-                .is_err()
-        );
+        region
+            .alloc(Layout::new::<[u8; 33]>(), AllocInit::Uninitialized)
+            .expect_err("Could allocate 33 bytes");
     }
 
     #[test]
@@ -450,17 +455,15 @@ mod tests {
         assert_eq!(region.capacity_left(), 16);
 
         let memory = unsafe {
-            assert!(
-                region
-                    .grow(
-                        memory.ptr,
-                        layout,
-                        16,
-                        ReallocPlacement::InPlace,
-                        AllocInit::Uninitialized,
-                    )
-                    .is_err()
-            );
+            region
+                .grow(
+                    memory.ptr,
+                    layout,
+                    16,
+                    ReallocPlacement::InPlace,
+                    AllocInit::Uninitialized,
+                )
+                .expect_err("Could grow 16 bytes in place");
             region
                 .grow(
                     memory.ptr,
@@ -488,5 +491,23 @@ mod tests {
 
         region.reset();
         assert_eq!(region.capacity_left(), region.capacity());
+    }
+
+    #[test]
+    fn debug() {
+        let test_output = |region: &Region| assert_eq!(format!("{:?}", region), format!("Region {{ capacity: {}, capacity_left: {} }}", region.capacity(), region.capacity_left()));
+
+        let mut data = [1; 32];
+        let mut region = Region::new(&mut data);
+        test_output(&region);
+
+        region.alloc(Layout::new::<[u8; 16]>(), AllocInit::Uninitialized).expect("Could not allocate 16 bytes");
+        test_output(&region);
+
+        region.alloc(Layout::new::<[u8; 16]>(), AllocInit::Uninitialized).expect("Could not allocate 16 bytes");
+        test_output(&region);
+
+        region.dealloc_all();
+        test_output(&region);
     }
 }

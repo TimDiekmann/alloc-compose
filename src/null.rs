@@ -105,7 +105,10 @@ mod tests {
 
     #[test]
     fn alloc_all() {
-        assert!(Null.alloc_all(Layout::new::<u32>(), AllocInit::Uninitialized).is_err());
+        assert!(
+            Null.alloc_all(Layout::new::<u32>(), AllocInit::Uninitialized)
+                .is_err()
+        );
         assert_eq!(Null.capacity(), 0);
         assert_eq!(Null.capacity_left(), 0);
         Null.dealloc_all();
