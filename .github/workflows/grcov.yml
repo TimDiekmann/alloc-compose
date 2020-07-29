@@ -38,7 +38,7 @@ jobs:
         with:
           crate: grcov
           version: latest
-          # use-tool-cache: true
+          use-tool-cache: true
           # command: install
           # args: grcov --git https://github.com/mozilla/grcov
 
