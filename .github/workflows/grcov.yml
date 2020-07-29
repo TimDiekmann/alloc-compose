@@ -63,7 +63,7 @@ jobs:
               --ignore='../**' \
               --ignore-not-existing \
               --excl-line "#\\[derive\\(" \
-              --excl-br-line "(#\\[derive\\()|(debug_assert)" \
+              --excl-br-line "#\\[derive\\(" \
               --excl-start "#\\[cfg\\(test\\)\\]" \
               --excl-br-start "#\\[cfg\\(test\\)\\]" \
               --commit-sha ${{ github.sha }} \
