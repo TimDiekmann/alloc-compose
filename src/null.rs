@@ -80,7 +80,6 @@ impl AllocAll for Null {
         0
     }
 
-    /// Returns the free capacity left for allocating.
     fn capacity_left(&self) -> usize {
         0
     }
@@ -102,6 +101,14 @@ mod tests {
     #[should_panic(expected = "unreachable")]
     fn dealloc() {
         unsafe { Null.dealloc(NonNull::dangling(), Layout::new::<()>()) };
+    }
+
+    #[test]
+    fn alloc_all() {
+        assert!(Null.alloc_all(Layout::new::<u32>(), AllocInit::Uninitialized).is_err());
+        assert_eq!(Null.capacity(), 0);
+        assert_eq!(Null.capacity_left(), 0);
+        Null.dealloc_all();
     }
 
     #[test]
