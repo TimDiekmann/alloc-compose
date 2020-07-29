@@ -1,30 +1,30 @@
-## v0.5.0 (Unreleased) - [Documentation](https://timdiekmann.github.io/alloc-compose/alloc_compose/index.html)
+## [v0.5](https://timdiekmann.github.io/alloc-compose/alloc_compose/index.html) (Unreleased)
 
 - **Breaking Change** Add `AllocAll` trait and move some methods from `Region` into that trait
 
-## [v0.4](https://github.com/TimDiekmann/alloc-compose/tree/v0.4.0) - [Documentation](https://docs.rs/alloc-compose/0.4.0/alloc_compose/)
+## [v0.4](https://docs.rs/alloc-compose/0.4)
 
 - **Breaking Change** Using unified naming scheme
 - **Breaking Change** Change `CallbackRef` to listen on `before_` and `after_` events
 - Greatly improve documentation of `Affix`
 
-### [v0.3.1](https://github.com/TimDiekmann/alloc-compose/tree/v0.3.1) - [Documentation](https://docs.rs/alloc-compose/0.3.1/alloc_compose/)
+### [v0.3.1](https://docs.rs/alloc-compose/0.3)
 
 - Add more documentation
 - Add more tests
 
-## [v0.3](https://github.com/TimDiekmann/alloc-compose/tree/v0.3.0) - [Documentation](https://docs.rs/alloc-compose/0.3.0/alloc_compose/)
+## [v0.3.0](https://docs.rs/alloc-compose/0.3)
 
 - **Breaking Change** Use `const_generics` in `SegregateAlloc`
 - Add `AffixAlloc`, `ChunkAlloc`, and `MemoryMarker`
 - Add more tests
 
-## [v0.2](https://github.com/TimDiekmann/alloc-compose/tree/v0.2.0) - [Documentation](https://docs.rs/alloc-compose/0.2.0/alloc_compose/)
+## [v0.2](https://docs.rs/alloc-compose/0.2)
 
 - **Breaking Change** Use `core::alloc` instead of `alloc_wg`
 - Add `Region`, `CallbackRef`, `Proxy`, and `stats`
 - Add more tests
 
-## [v0.1](https://github.com/TimDiekmann/alloc-compose/tree/v0.1.0) - [Documentation](https://docs.rs/alloc-compose/0.1.0/alloc_compose/)
+## [v0.1](https://docs.rs/alloc-compose/0.1)
 
 - Initial release: `Owns`, `NullAlloc`, `FallbackAlloc`, and `SegregateAlloc`
