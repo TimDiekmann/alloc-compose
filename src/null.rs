@@ -1,4 +1,4 @@
-use crate::Owns;
+use crate::{AllocAll, Owns};
 use core::{
     alloc::{AllocErr, AllocInit, AllocRef, Layout, MemoryBlock, ReallocPlacement},
     ptr::NonNull,
@@ -66,6 +66,23 @@ unsafe impl AllocRef for Null {
         _placement: ReallocPlacement,
     ) -> Result<MemoryBlock, AllocErr> {
         unreachable!("NullAlloc::shrink must never be called as `alloc` always fails")
+    }
+}
+
+impl AllocAll for Null {
+    fn alloc_all(&mut self, _layout: Layout, _init: AllocInit) -> Result<MemoryBlock, AllocErr> {
+        Err(AllocErr)
+    }
+
+    fn dealloc_all(&mut self) {}
+
+    fn capacity(&self) -> usize {
+        0
+    }
+
+    /// Returns the free capacity left for allocating.
+    fn capacity_left(&self) -> usize {
+        0
     }
 }
 

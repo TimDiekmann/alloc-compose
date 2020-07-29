@@ -1,4 +1,4 @@
-use crate::{CallbackRef, Owns};
+use crate::{AllocAll, CallbackRef, Owns};
 use core::{
     alloc::{AllocErr, AllocInit, AllocRef, Layout, MemoryBlock, ReallocPlacement},
     ptr::NonNull,
@@ -79,6 +79,7 @@ pub struct Proxy<A, C> {
 }
 
 unsafe impl<A: AllocRef, C: CallbackRef> AllocRef for Proxy<A, C> {
+    #[track_caller]
     fn alloc(&mut self, layout: Layout, init: AllocInit) -> Result<MemoryBlock, AllocErr> {
         self.callbacks.before_alloc(layout, init);
         let result = self.alloc.alloc(layout, init);
@@ -124,6 +125,47 @@ unsafe impl<A: AllocRef, C: CallbackRef> AllocRef for Proxy<A, C> {
         self.callbacks
             .after_shrink(ptr, layout, new_size, placement, result);
         result
+    }
+}
+
+impl<A: AllocAll, C: CallbackRef> AllocAll for Proxy<A, C> {
+    #[track_caller]
+    fn alloc_all(&mut self, layout: Layout, init: AllocInit) -> Result<MemoryBlock, AllocErr> {
+        self.callbacks.before_alloc_all(layout, init);
+        let result = self.alloc.alloc_all(layout, init);
+        self.callbacks.after_alloc_all(layout, init, result);
+        result
+    }
+
+    #[track_caller]
+    fn dealloc_all(&mut self) {
+        self.callbacks.before_dealloc_all();
+        self.alloc.dealloc_all();
+        self.callbacks.after_dealloc_all();
+    }
+
+    #[track_caller]
+    #[inline]
+    fn capacity(&self) -> usize {
+        self.alloc.capacity()
+    }
+
+    #[track_caller]
+    #[inline]
+    fn capacity_left(&self) -> usize {
+        self.alloc.capacity()
+    }
+
+    #[track_caller]
+    #[inline]
+    fn is_empty(&self) -> bool {
+        self.alloc.is_empty()
+    }
+
+    #[track_caller]
+    #[inline]
+    fn is_full(&self) -> bool {
+        self.alloc.is_full()
     }
 }
 

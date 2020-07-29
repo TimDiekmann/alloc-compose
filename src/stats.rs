@@ -125,7 +125,22 @@ macro_rules! impl_callback_ref {
             }
 
             #[inline]
+            fn after_alloc_all(
+                &self,
+                _layout: Layout,
+                _init: AllocInit,
+                _result: Result<MemoryBlock, AllocErr>,
+            ) {
+                self.increment_stat(Stat::Allocs, 1)
+            }
+
+            #[inline]
             fn before_dealloc(&self, _ptr: NonNull<u8>, _layout: Layout) {
+                self.increment_stat(Stat::Deallocs, 1);
+            }
+
+            #[inline]
+            fn before_dealloc_all(&self) {
                 self.increment_stat(Stat::Deallocs, 1);
             }
 
@@ -498,7 +513,35 @@ macro_rules! impl_filtered_callback_ref {
             }
 
             #[inline]
+            fn after_alloc_all(
+                &self,
+                _layout: Layout,
+                init: AllocInit,
+                result: Result<MemoryBlock, AllocErr>,
+            ) {
+                match (init, result.is_ok()) {
+                    (AllocInit::Uninitialized, true) => {
+                        self.increment_stat(FilteredStat::AllocsUninitializedOk, 1)
+                    }
+                    (AllocInit::Uninitialized, false) => {
+                        self.increment_stat(FilteredStat::AllocsUninitializedErr, 1)
+                    }
+                    (AllocInit::Zeroed, true) => {
+                        self.increment_stat(FilteredStat::AllocsZeroedOk, 1)
+                    }
+                    (AllocInit::Zeroed, false) => {
+                        self.increment_stat(FilteredStat::AllocsZeroedErr, 1)
+                    }
+                }
+            }
+
+            #[inline]
             fn before_dealloc(&self, _ptr: NonNull<u8>, _layout: Layout) {
+                self.increment_stat(FilteredStat::Deallocs, 1);
+            }
+
+            #[inline]
+            fn before_dealloc_all(&self) {
                 self.increment_stat(FilteredStat::Deallocs, 1);
             }
 

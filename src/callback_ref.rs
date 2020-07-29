@@ -32,6 +32,24 @@ pub unsafe trait CallbackRef {
     #[inline]
     fn after_alloc(&self, layout: Layout, init: AllocInit, result: Result<MemoryBlock, AllocErr>) {}
 
+    /// Called before [`alloc_all`] was invoked.
+    ///
+    /// [`alloc_all`]: crate::AllocAll::alloc_all
+    #[inline]
+    fn before_alloc_all(&self, layout: Layout, init: AllocInit) {}
+
+    /// Called after [`alloc_all`] was invoked.
+    ///
+    /// [`alloc_all`]: crate::AllocAll::alloc_all
+    #[inline]
+    fn after_alloc_all(
+        &self,
+        layout: Layout,
+        init: AllocInit,
+        result: Result<MemoryBlock, AllocErr>,
+    ) {
+    }
+
     /// Called before [`dealloc`] was invoked.
     ///
     /// [`dealloc`]: core::alloc::AllocRef::dealloc
@@ -43,6 +61,18 @@ pub unsafe trait CallbackRef {
     /// [`dealloc`]: core::alloc::AllocRef::dealloc
     #[inline]
     fn after_dealloc(&self, ptr: NonNull<u8>, layout: Layout) {}
+
+    /// Called before [`dealloc_all`] was invoked.
+    ///
+    /// [`dealloc_all`]: crate::AllocAll::dealloc_all
+    #[inline]
+    fn before_dealloc_all(&self) {}
+
+    /// Called after [`dealloc_all`] was invoked.
+    ///
+    /// [`dealloc_all`]: crate::AllocAll::dealloc_all
+    #[inline]
+    fn after_dealloc_all(&self) {}
 
     /// Called before [`grow`] was invoked.
     ///

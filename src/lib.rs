@@ -44,6 +44,54 @@ pub use self::{
     segregate::Segregate,
 };
 
+pub trait AllocAll {
+    /// Attempts to allocate all of the memory the allocator can provide.
+    ///
+    /// If the allocator is currently not managing any memory, then it returns all the memory
+    /// available to the allocator. Subsequent calls should not suceed.
+    ///
+    /// On success, returns a [`MemoryBlock`][] meeting the size and alignment guarantees of `layout`.
+    ///
+    /// The returned block is at least as large as specified by `layout.size()` and is
+    /// initialized as specified by [`init`], all the way up to the returned size of the block.
+    ///
+    /// [`init`]: AllocInit
+    ///
+    /// # Errors
+    ///
+    /// Returning `Err` indicates that either memory is exhausted or `layout` does not meet
+    /// allocator's size or alignment constraints.
+    ///
+    /// Implementations are encouraged to return `Err` on memory exhaustion rather than panicking or
+    /// aborting, but this is not a strict requirement. (Specifically: it is *legal* to implement
+    /// this trait atop an underlying native allocation library that aborts on memory exhaustion.)
+    ///
+    /// Clients wishing to abort computation in response to an allocation error are encouraged to
+    /// call the [`handle_alloc_error`] function, rather than directly invoking `panic!` or similar.
+    ///
+    /// [`handle_alloc_error`]: ../../alloc/alloc/fn.handle_alloc_error.html
+    fn alloc_all(&mut self, layout: Layout, init: AllocInit) -> Result<MemoryBlock, AllocErr>;
+
+    /// Deallocates all the memory the allocator had allocated.
+    fn dealloc_all(&mut self);
+
+    /// Returns the total capacity available in this allocator.
+    fn capacity(&self) -> usize;
+
+    /// Returns the free capacity left for allocating.
+    fn capacity_left(&self) -> usize;
+
+    /// Returns if the allocator is currently not holding memory.
+    fn is_empty(&self) -> bool {
+        self.capacity() == self.capacity_left()
+    }
+
+    /// Returns if the allocator has no more capacity left.
+    fn is_full(&self) -> bool {
+        self.capacity_left() == 0
+    }
+}
+
 /// Trait to determine if a given `MemoryBlock` is owned by an allocator.
 pub trait Owns {
     /// Returns if the allocator *owns* the passed `MemoryBlock`.

@@ -1,4 +1,4 @@
-use crate::Owns;
+use crate::{AllocAll, Owns};
 use core::{
     alloc::{AllocErr, AllocInit, AllocRef, Layout, MemoryBlock, ReallocPlacement},
     fmt,
@@ -49,16 +49,6 @@ impl<'a> Region<'a> {
             data,
             offset: current,
         }
-    }
-
-    /// Returns the total capacity available in this allocator.
-    pub const fn capacity(&self) -> usize {
-        self.data.len()
-    }
-
-    /// Returns the free capacity left for allocating.
-    pub fn capacity_left(&self) -> usize {
-        self.data.as_ptr() as usize + self.data.len() - self.offset
     }
 
     /// Resets the allocator.
@@ -206,6 +196,41 @@ unsafe impl AllocRef for Region<'_> {
     }
 }
 
+impl AllocAll for Region<'_> {
+    fn alloc_all(&mut self, layout: Layout, init: AllocInit) -> Result<MemoryBlock, AllocErr> {
+        let offset = (self.offset as *mut u8).align_offset(layout.align());
+        let current = self.offset.checked_add(offset).ok_or(AllocErr)?;
+
+        let new = current.checked_add(layout.size()).ok_or(AllocErr)?;
+        if new > self.data.as_ptr() as usize + self.data.len() {
+            return Err(AllocErr);
+        }
+
+        let capacity_left = self.capacity_left();
+        self.offset += capacity_left;
+        let memory = MemoryBlock {
+            ptr: unsafe { NonNull::new_unchecked(current as *mut u8) },
+            size: capacity_left,
+        };
+        unsafe { init.init(memory) };
+
+        Ok(memory)
+    }
+
+    fn dealloc_all(&mut self) {
+        self.offset = self.data.as_ptr() as usize;
+        debug_assert!(self.is_empty());
+    }
+
+    fn capacity(&self) -> usize {
+        self.data.len()
+    }
+
+    fn capacity_left(&self) -> usize {
+        self.data.as_ptr() as usize + self.data.len() - self.offset
+    }
+}
+
 impl Owns for Region<'_> {
     fn owns(&self, memory: MemoryBlock) -> bool {
         self.data.as_ptr() <= memory.ptr.as_ptr()
@@ -226,14 +251,38 @@ mod tests {
         let mut region = Region::new(&mut data);
 
         assert_eq!(region.capacity(), 32);
-        assert_eq!(region.capacity(), region.capacity_left());
+        assert!(region.is_empty());
 
         region
             .alloc(Layout::new::<[u8; 0]>(), AllocInit::Zeroed)
             .expect("Could not allocated 0 bytes");
-        assert_eq!(region.capacity_left(), region.capacity());
+        assert!(region.is_empty());
 
         assert_eq!(data, [1; 32]);
+    }
+
+    #[test]
+    fn alloc_all() {
+        let mut data = [1; 32];
+        let mut region = Region::new(&mut data);
+
+        assert_eq!(region.capacity(), 32);
+        assert!(region.is_empty());
+
+        let ptr = region
+            .alloc(Layout::new::<u8>(), AllocInit::Uninitialized)
+            .expect("Could not allocated 1 byte");
+        assert_eq!(ptr.size, 1);
+        assert_eq!(region.capacity_left(), 31);
+
+        let ptr = region
+            .alloc_all(Layout::new::<[u8; 4]>(), AllocInit::Uninitialized)
+            .expect("Could not allocated 4 bytes");
+        assert_eq!(ptr.size, 31);
+        assert!(region.is_full());
+
+        region.dealloc_all();
+        assert!(region.is_empty());
     }
 
     #[test]
