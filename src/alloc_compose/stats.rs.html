@@ -1488,7 +1488,7 @@
 <span class="kw">mod</span> <span class="ident">tests</span> {
     <span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">AtomicCounter</span>, <span class="ident">Counter</span>, <span class="ident">FilteredAtomicCounter</span>, <span class="ident">FilteredCounter</span>};
     <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">helper</span>, <span class="ident">CallbackRef</span>, <span class="ident">Owns</span>, <span class="ident">Proxy</span>, <span class="ident">Region</span>};
-    <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">alloc</span>::{<span class="ident">AllocErr</span>, <span class="ident">AllocInit</span>, <span class="ident">AllocRef</span>, <span class="ident">Layout</span>, <span class="ident">ReallocPlacement</span>, <span class="ident">System</span>};
+    <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">alloc</span>::{<span class="ident">AllocInit</span>, <span class="ident">AllocRef</span>, <span class="ident">Layout</span>, <span class="ident">ReallocPlacement</span>};
 
     <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy</span>::<span class="ident">too_many_lines</span>)]</span>
     <span class="kw">fn</span> <span class="ident">run_suite</span>(<span class="ident">callbacks</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">CallbackRef</span>) {
