@@ -626,10 +626,11 @@ mod tests {
     use super::{AtomicCounter, Counter, FilteredAtomicCounter, FilteredCounter};
     use crate::{helper, CallbackRef, Owns, Proxy, Region};
     use std::alloc::{AllocInit, AllocRef, Layout, ReallocPlacement};
+    use std::mem::MaybeUninit;
 
     #[allow(clippy::too_many_lines)]
     fn run_suite(callbacks: &impl CallbackRef) {
-        let mut region = [0; 32];
+        let mut region = [MaybeUninit::new(0); 32];
         let mut alloc = Proxy {
             alloc: helper::tracker(Region::new(&mut region)),
             callbacks,

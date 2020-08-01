@@ -1,7 +1,9 @@
 ## [v0.5](https://timdiekmann.github.io/alloc-compose/alloc_compose/index.html) (Unreleased)
 
-- **Breaking Change** Add `AllocAll` trait and move some methods from `Region` into that trait
-- **Breaking Change** Remove `MemoryMarker`
+**Breaking Changes:** 
+- Add `AllocAll` trait and move some methods from `Region` into that trait
+- Change `Region` to require `[MaybeUninit<u8>]` rather than `[u8]`
+- Remove `MemoryMarker`
 
 ## [v0.4](https://docs.rs/alloc-compose/0.4)
 

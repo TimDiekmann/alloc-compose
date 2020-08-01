@@ -546,7 +546,7 @@ mod tests {
                 Affix::<System, Prefix, Suffix>::prefix(memory.ptr, layout).as_ref(),
                 &prefix
             );
-            assert_eq!(memory.as_slice(), &vec![0_u8; memory.size][..]);
+            assert_eq!(MaybeUninit::slice_get_ref(memory.as_slice()), &vec![0_u8; memory.size][..]);
             assert_eq!(
                 Affix::<System, Prefix, Suffix>::suffix(memory.ptr, layout).as_ref(),
                 &suffix
@@ -569,7 +569,7 @@ mod tests {
                 &prefix
             );
             assert_eq!(
-                growed_memory.as_slice(),
+                MaybeUninit::slice_get_ref(growed_memory.as_slice()),
                 &vec![0_u8; growed_memory.size][..]
             );
             assert_eq!(
@@ -590,7 +590,7 @@ mod tests {
                 Affix::<System, Prefix, Suffix>::prefix(memory.ptr, layout).as_ref(),
                 &prefix
             );
-            assert_eq!(memory.as_slice(), &vec![0_u8; memory.size][..]);
+            assert_eq!(MaybeUninit::slice_get_ref(memory.as_slice()), &vec![0_u8; memory.size][..]);
             assert_eq!(
                 Affix::<System, Prefix, Suffix>::suffix(memory.ptr, layout).as_ref(),
                 &suffix

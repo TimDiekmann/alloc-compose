@@ -1,6 +1,7 @@
 #![cfg_attr(not(test), no_std)]
 #![cfg_attr(doc, feature(doc_cfg, external_doc))]
 #![cfg_attr(feature = "intrinsics", feature(core_intrinsics))]
+#![cfg_attr(test, feature(maybe_uninit_slice_assume_init))]
 #![cfg_attr(doc, doc(include = "../README.md"))]
 #![feature(
     allocator_api,
@@ -157,6 +158,7 @@ pub(crate) mod helper {
     use std::{
         alloc::{AllocErr, AllocInit, AllocRef, Layout, MemoryBlock, ReallocPlacement, System},
         collections::HashMap,
+        mem::MaybeUninit,
         ptr::NonNull,
         slice,
         sync::{Mutex, PoisonError},
@@ -320,16 +322,16 @@ pub(crate) mod helper {
     }
 
     pub trait AsSlice {
-        unsafe fn as_slice<'a>(self) -> &'a [u8];
-        unsafe fn as_slice_mut<'a>(self) -> &'a mut [u8];
+        unsafe fn as_slice<'a>(self) -> &'a [MaybeUninit<u8>];
+        unsafe fn as_slice_mut<'a>(self) -> &'a mut [MaybeUninit<u8>];
     }
 
     impl AsSlice for MemoryBlock {
-        unsafe fn as_slice<'a>(self) -> &'a [u8] {
-            slice::from_raw_parts(self.ptr.as_ptr(), self.size)
+        unsafe fn as_slice<'a>(self) -> &'a [MaybeUninit<u8>] {
+            slice::from_raw_parts(self.ptr.cast().as_ptr(), self.size)
         }
-        unsafe fn as_slice_mut<'a>(self) -> &'a mut [u8] {
-            slice::from_raw_parts_mut(self.ptr.as_ptr(), self.size)
+        unsafe fn as_slice_mut<'a>(self) -> &'a mut [MaybeUninit<u8>] {
+            slice::from_raw_parts_mut(self.ptr.cast().as_ptr(), self.size)
         }
     }
 

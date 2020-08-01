@@ -2,6 +2,7 @@ use crate::{unlikely, AllocAll, Owns};
 use core::{
     alloc::{AllocErr, AllocInit, AllocRef, Layout, MemoryBlock, ReallocPlacement},
     fmt,
+    mem::MaybeUninit,
     ptr::{self, NonNull},
 };
 
@@ -14,8 +15,9 @@ use core::{
 ///
 /// use alloc_compose::{Owns, Region};
 /// use core::alloc::{AllocInit, AllocRef, Layout};
+/// use core::mem::MaybeUninit;
 ///
-/// let mut data = [0; 64];
+/// let mut data = [MaybeUninit::new(0); 64];
 /// let mut region = Region::new(&mut data);
 ///
 /// let memory = region.alloc(Layout::new::<u32>(), AllocInit::Uninitialized)?;
@@ -27,8 +29,8 @@ use core::{
 /// ```rust
 /// # #![feature(allocator_api)]
 /// # use alloc_compose::{Owns, Region};
-/// # use core::alloc::{AllocInit, AllocRef, Layout};
-/// # let mut data = [0; 64];
+/// # use core::{alloc::{AllocInit, AllocRef, Layout}, mem::MaybeUninit};
+/// # let mut data = [MaybeUninit::new(0); 64];
 /// # let mut region = Region::new(&mut data);
 /// # let memory = region.alloc(Layout::new::<u32>(), AllocInit::Uninitialized)?;
 /// unsafe { region.dealloc(memory.ptr, Layout::new::<u32>()) };
@@ -36,13 +38,13 @@ use core::{
 /// # Ok::<(), core::alloc::AllocErr>(())
 /// ```
 pub struct Region<'a> {
-    data: &'a mut [u8],
+    data: &'a mut [MaybeUninit<u8>],
     ptr: usize,
 }
 
 impl<'a> Region<'a> {
     #[inline]
-    pub fn new(data: &'a mut [u8]) -> Self {
+    pub fn new(data: &'a mut [MaybeUninit<u8>]) -> Self {
         let ptr = data.as_ptr() as usize + data.len();
         let region = Self { data, ptr };
         debug_assert!(region.is_empty());
@@ -252,23 +254,43 @@ mod tests {
 
     #[test]
     fn alloc_zero() {
-        let mut data = [1; 32];
+        let mut data = [MaybeUninit::new(1); 32];
         let mut region = Region::new(&mut data);
 
         assert_eq!(region.capacity(), 32);
         assert!(region.is_empty());
 
         region
-            .alloc(Layout::new::<[u8; 0]>(), AllocInit::Zeroed)
+            .alloc(Layout::new::<[u8; 0]>(), AllocInit::Uninitialized)
             .expect("Could not allocated 0 bytes");
         assert!(region.is_empty());
 
-        assert_eq!(data, [1; 32]);
+        unsafe {
+            assert_eq!(MaybeUninit::slice_get_ref(&data), &[1; 32][..]);
+        }
+    }
+
+    #[test]
+    fn alloc_zeroed() {
+        let mut data = [MaybeUninit::new(1); 32];
+        let mut region = Region::new(&mut data);
+
+        assert_eq!(region.capacity(), 32);
+        assert!(region.is_empty());
+
+        region
+            .alloc(Layout::new::<[u8; 32]>(), AllocInit::Zeroed)
+            .expect("Could not allocated 32 bytes");
+        assert!(!region.is_empty());
+
+        unsafe {
+            assert_eq!(MaybeUninit::slice_get_ref(&data), &[0; 32][..]);
+        }
     }
 
     #[test]
     fn alloc_all() {
-        let mut data = [1; 32];
+        let mut data = [MaybeUninit::new(1); 32];
         let mut region = Region::new(&mut data);
 
         assert_eq!(region.capacity(), 32);
@@ -299,7 +321,7 @@ mod tests {
 
     #[test]
     fn alloc_small() {
-        let mut data = [1; 32];
+        let mut data = [MaybeUninit::new(1); 32];
         let mut region = Region::new(&mut data);
 
         assert_eq!(region.capacity(), 32);
@@ -310,26 +332,15 @@ mod tests {
             .expect("Could not allocated 16 bytes");
         assert_eq!(region.capacity_left(), 16);
 
-        assert_eq!(&data[0..16], &[1; 16][..]);
-        assert_eq!(&data[16..], &[0; 16][..]);
-    }
-
-    #[test]
-    fn alloc_full() {
-        let mut data = [1; 32];
-        let mut region = Region::new(&mut data);
-
-        region
-            .alloc(Layout::new::<[u8; 32]>(), AllocInit::Zeroed)
-            .expect("Could not allocated 32 bytes");
-        assert_eq!(region.capacity_left(), 0);
-
-        assert_eq!(data, [0; 32]);
+        unsafe {
+            assert_eq!(MaybeUninit::slice_get_ref(&data[0..16]), &[1; 16][..]);
+            assert_eq!(MaybeUninit::slice_get_ref(&data[16..]), &[0; 16][..]);
+        }
     }
 
     #[test]
     fn alloc_uninitialzed() {
-        let mut data = [1; 32];
+        let mut data = [MaybeUninit::new(1); 32];
         let mut region = Region::new(&mut data);
 
         region
@@ -337,12 +348,14 @@ mod tests {
             .expect("Could not allocated 32 bytes");
         assert_eq!(region.capacity_left(), 0);
 
-        assert_eq!(data, [1; 32]);
+        unsafe {
+            assert_eq!(MaybeUninit::slice_get_ref(&data), &[1; 32][..]);
+        }
     }
 
     #[test]
     fn alloc_fail() {
-        let mut data = [1; 32];
+        let mut data = [MaybeUninit::new(1); 32];
         let mut region = Region::new(&mut data);
 
         region
@@ -380,7 +393,7 @@ mod tests {
 
     #[test]
     fn dealloc() {
-        let mut data = [1; 32];
+        let mut data = [MaybeUninit::new(1); 32];
         let mut region = Region::new(&mut data);
         let layout = Layout::from_size_align(8, 1).expect("Invalid layout");
 
@@ -417,7 +430,7 @@ mod tests {
 
     #[test]
     fn realloc() {
-        let mut data = [1; 32];
+        let mut data = [MaybeUninit::new(1); 32];
         let mut region = Region::new(&mut data);
         let layout = Layout::from_size_align(8, 1).expect("Invalid layout");
 
@@ -479,7 +492,7 @@ mod tests {
             )
         };
 
-        let mut data = [1; 32];
+        let mut data = [MaybeUninit::new(1); 32];
         let mut region = Region::new(&mut data);
         test_output(&region);
 

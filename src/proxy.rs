@@ -44,9 +44,10 @@ use core::{
 ///     stats::{AllocInitFilter, ResultFilter},
 ///     Region,
 /// };
+/// use core::mem::MaybeUninit;
 ///
 /// let counter = stats::FilteredCounter::default();
-/// let mut data = [0; 32];
+/// let mut data = [MaybeUninit::new(0); 32];
 /// let mut alloc = Proxy {
 ///     alloc: Region::new(&mut data),
 ///     callbacks: counter.by_ref(),

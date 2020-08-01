@@ -23,8 +23,9 @@ use core::{
 ///
 /// use alloc_compose::{Fallback, Owns, Region};
 /// use std::alloc::{AllocInit, AllocRef, Layout, System};
+/// use std::mem::MaybeUninit;
 ///
-/// let mut data = [0; 32];
+/// let mut data = [MaybeUninit::new(0); 32];
 /// let mut alloc = Fallback {
 ///     primary: Region::new(&mut data),
 ///     secondary: System,
@@ -137,10 +138,11 @@ mod tests {
     use super::Fallback;
     use crate::{helper, Owns, Region};
     use std::alloc::{AllocInit, AllocRef, Layout, ReallocPlacement, System};
+    use std::mem::MaybeUninit;
 
     #[test]
     fn alloc() {
-        let mut data = [0; 32];
+        let mut data = [MaybeUninit::new(0); 32];
         let mut alloc = Fallback {
             primary: helper::tracker(Region::new(&mut data)),
             secondary: helper::tracker(System),
@@ -163,7 +165,7 @@ mod tests {
 
     #[test]
     fn grow() {
-        let mut data = [0; 80];
+        let mut data = [MaybeUninit::new(0); 80];
         let mut alloc = Fallback {
             primary: helper::tracker(Region::new(&mut data)),
             secondary: helper::tracker(System),
@@ -226,7 +228,7 @@ mod tests {
 
     #[test]
     fn shrink() {
-        let mut data = [0; 80];
+        let mut data = [MaybeUninit::new(0); 80];
         let mut alloc = Fallback {
             primary: helper::tracker(Region::new(&mut data)),
             secondary: helper::tracker(System),
@@ -275,8 +277,8 @@ mod tests {
 
     #[test]
     fn owns() {
-        let mut data_1 = [0; 32];
-        let mut data_2 = [0; 64];
+        let mut data_1 = [MaybeUninit::new(0); 32];
+        let mut data_2 = [MaybeUninit::new(0); 64];
         let mut alloc = Fallback {
             primary: Region::new(&mut data_1),
             secondary: Region::new(&mut data_2),
