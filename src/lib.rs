@@ -22,7 +22,6 @@ mod affix;
 mod callback_ref;
 mod chunk;
 mod fallback;
-mod memory_marker;
 mod null;
 mod proxy;
 mod region;
@@ -38,7 +37,6 @@ pub use self::{
     callback_ref::CallbackRef,
     chunk::Chunk,
     fallback::Fallback,
-    memory_marker::MemoryMarker,
     null::Null,
     proxy::Proxy,
     region::Region,

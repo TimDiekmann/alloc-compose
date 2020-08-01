@@ -625,7 +625,7 @@ impl_filtered_callback_ref!(FilteredAtomicCounter);
 mod tests {
     use super::{AtomicCounter, Counter, FilteredAtomicCounter, FilteredCounter};
     use crate::{helper, CallbackRef, Owns, Proxy, Region};
-    use std::alloc::{AllocErr, System, AllocInit, AllocRef, Layout, ReallocPlacement};
+    use std::alloc::{AllocErr, AllocInit, AllocRef, Layout, ReallocPlacement, System};
 
     #[allow(clippy::too_many_lines)]
     fn run_suite(callbacks: &impl CallbackRef) {
@@ -648,8 +648,8 @@ mod tests {
 
         unsafe {
             let memory_tmp = alloc
-            .alloc(Layout::new::<[u8; 4]>(), AllocInit::Zeroed)
-            .unwrap();
+                .alloc(Layout::new::<[u8; 4]>(), AllocInit::Zeroed)
+                .unwrap();
             alloc.dealloc(memory_tmp.ptr, Layout::new::<[u8; 4]>());
         }
         unsafe {
@@ -765,7 +765,7 @@ mod tests {
                 )
                 .unwrap();
 
-                assert!(alloc.owns(memory));
+            assert!(alloc.owns(memory));
             alloc.dealloc(memory.ptr, Layout::new::<[u8; 4]>());
             assert!(!alloc.owns(memory));
         }
