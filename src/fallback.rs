@@ -22,8 +22,10 @@ use core::{
 /// #![feature(allocator_api)]
 ///
 /// use alloc_compose::{Fallback, Owns, Region};
-/// use std::alloc::{AllocInit, AllocRef, Layout, System};
-/// use std::mem::MaybeUninit;
+/// use std::{
+///     alloc::{AllocInit, AllocRef, Layout, System},
+///     mem::MaybeUninit,
+/// };
 ///
 /// let mut data = [MaybeUninit::new(0); 32];
 /// let mut alloc = Fallback {
@@ -137,8 +139,10 @@ where
 mod tests {
     use super::Fallback;
     use crate::{helper, Owns, Region};
-    use std::alloc::{AllocInit, AllocRef, Layout, ReallocPlacement, System};
-    use std::mem::MaybeUninit;
+    use std::{
+        alloc::{AllocInit, AllocRef, Layout, ReallocPlacement, System},
+        mem::MaybeUninit,
+    };
 
     #[test]
     fn alloc() {

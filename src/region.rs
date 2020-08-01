@@ -14,8 +14,10 @@ use core::{
 /// #![feature(allocator_api)]
 ///
 /// use alloc_compose::{Owns, Region};
-/// use core::alloc::{AllocInit, AllocRef, Layout};
-/// use core::mem::MaybeUninit;
+/// use core::{
+///     alloc::{AllocInit, AllocRef, Layout},
+///     mem::MaybeUninit,
+/// };
 ///
 /// let mut data = [MaybeUninit::new(0); 64];
 /// let mut region = Region::new(&mut data);
