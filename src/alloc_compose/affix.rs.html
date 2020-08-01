@@ -656,6 +656,12 @@
 <span id="656">656</span>
 <span id="657">657</span>
 <span id="658">658</span>
+<span id="659">659</span>
+<span id="660">660</span>
+<span id="661">661</span>
+<span id="662">662</span>
+<span id="663">663</span>
+<span id="664">664</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">core</span>::{
     <span class="ident">alloc</span>::{<span class="ident">AllocErr</span>, <span class="ident">AllocInit</span>, <span class="ident">AllocRef</span>, <span class="ident">Layout</span>, <span class="ident">MemoryBlock</span>, <span class="ident">ReallocPlacement</span>},
@@ -1205,7 +1211,10 @@
                 <span class="ident">Affix</span>::<span class="op">&lt;</span><span class="ident">System</span>, <span class="ident">Prefix</span>, <span class="ident">Suffix</span><span class="op">&gt;</span>::<span class="ident">prefix</span>(<span class="ident">memory</span>.<span class="ident">ptr</span>, <span class="ident">layout</span>).<span class="ident">as_ref</span>(),
                 <span class="kw-2">&amp;</span><span class="ident">prefix</span>
             );
-            <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">MaybeUninit</span>::<span class="ident">slice_get_ref</span>(<span class="ident">memory</span>.<span class="ident">as_slice</span>()), <span class="kw-2">&amp;</span><span class="macro">vec</span><span class="macro">!</span>[<span class="number">0_u8</span>; <span class="ident">memory</span>.<span class="ident">size</span>][..]);
+            <span class="macro">assert_eq</span><span class="macro">!</span>(
+                <span class="ident">MaybeUninit</span>::<span class="ident">slice_get_ref</span>(<span class="ident">memory</span>.<span class="ident">as_slice</span>()),
+                <span class="kw-2">&amp;</span><span class="macro">vec</span><span class="macro">!</span>[<span class="number">0_u8</span>; <span class="ident">memory</span>.<span class="ident">size</span>][..]
+            );
             <span class="macro">assert_eq</span><span class="macro">!</span>(
                 <span class="ident">Affix</span>::<span class="op">&lt;</span><span class="ident">System</span>, <span class="ident">Prefix</span>, <span class="ident">Suffix</span><span class="op">&gt;</span>::<span class="ident">suffix</span>(<span class="ident">memory</span>.<span class="ident">ptr</span>, <span class="ident">layout</span>).<span class="ident">as_ref</span>(),
                 <span class="kw-2">&amp;</span><span class="ident">suffix</span>
@@ -1249,7 +1258,10 @@
                 <span class="ident">Affix</span>::<span class="op">&lt;</span><span class="ident">System</span>, <span class="ident">Prefix</span>, <span class="ident">Suffix</span><span class="op">&gt;</span>::<span class="ident">prefix</span>(<span class="ident">memory</span>.<span class="ident">ptr</span>, <span class="ident">layout</span>).<span class="ident">as_ref</span>(),
                 <span class="kw-2">&amp;</span><span class="ident">prefix</span>
             );
-            <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">MaybeUninit</span>::<span class="ident">slice_get_ref</span>(<span class="ident">memory</span>.<span class="ident">as_slice</span>()), <span class="kw-2">&amp;</span><span class="macro">vec</span><span class="macro">!</span>[<span class="number">0_u8</span>; <span class="ident">memory</span>.<span class="ident">size</span>][..]);
+            <span class="macro">assert_eq</span><span class="macro">!</span>(
+                <span class="ident">MaybeUninit</span>::<span class="ident">slice_get_ref</span>(<span class="ident">memory</span>.<span class="ident">as_slice</span>()),
+                <span class="kw-2">&amp;</span><span class="macro">vec</span><span class="macro">!</span>[<span class="number">0_u8</span>; <span class="ident">memory</span>.<span class="ident">size</span>][..]
+            );
             <span class="macro">assert_eq</span><span class="macro">!</span>(
                 <span class="ident">Affix</span>::<span class="op">&lt;</span><span class="ident">System</span>, <span class="ident">Prefix</span>, <span class="ident">Suffix</span><span class="op">&gt;</span>::<span class="ident">suffix</span>(<span class="ident">memory</span>.<span class="ident">ptr</span>, <span class="ident">layout</span>).<span class="ident">as_ref</span>(),
                 <span class="kw-2">&amp;</span><span class="ident">suffix</span>
