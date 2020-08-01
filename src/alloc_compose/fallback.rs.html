@@ -295,17 +295,6 @@
 <span id="295">295</span>
 <span id="296">296</span>
 <span id="297">297</span>
-<span id="298">298</span>
-<span id="299">299</span>
-<span id="300">300</span>
-<span id="301">301</span>
-<span id="302">302</span>
-<span id="303">303</span>
-<span id="304">304</span>
-<span id="305">305</span>
-<span id="306">306</span>
-<span id="307">307</span>
-<span id="308">308</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">grow</span>, <span class="ident">Owns</span>};
 <span class="kw">use</span> <span class="ident">core</span>::{
@@ -489,34 +478,23 @@
                     <span class="ident">memory</span>.<span class="ident">ptr</span>,
                     <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">32</span>]<span class="op">&gt;</span>(),
                     <span class="number">64</span>,
-                    <span class="ident">ReallocPlacement</span>::<span class="ident">InPlace</span>,
+                    <span class="ident">ReallocPlacement</span>::<span class="ident">MayMove</span>,
                     <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>,
                 )
                 .<span class="ident">expect</span>(<span class="string">&quot;Could not grow to 64 bytes&quot;</span>);
             <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">alloc</span>.<span class="ident">primary</span>.<span class="ident">owns</span>(<span class="ident">memory</span>));
+            <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">memory</span>.<span class="ident">size</span>, <span class="number">64</span>);
 
             <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
                 .<span class="ident">grow</span>(
                     <span class="ident">memory</span>.<span class="ident">ptr</span>,
                     <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">64</span>]<span class="op">&gt;</span>(),
                     <span class="number">80</span>,
-                    <span class="ident">ReallocPlacement</span>::<span class="ident">InPlace</span>,
+                    <span class="ident">ReallocPlacement</span>::<span class="ident">MayMove</span>,
                     <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>,
                 )
                 .<span class="ident">expect</span>(<span class="string">&quot;Could not grow to 80 bytes&quot;</span>);
             <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">alloc</span>.<span class="ident">primary</span>.<span class="ident">owns</span>(<span class="ident">memory</span>));
-
-            <span class="macro">assert</span><span class="macro">!</span>(
-                <span class="ident">alloc</span>
-                    .<span class="ident">grow</span>(
-                        <span class="ident">memory</span>.<span class="ident">ptr</span>,
-                        <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">80</span>]<span class="op">&gt;</span>(),
-                        <span class="number">96</span>,
-                        <span class="ident">ReallocPlacement</span>::<span class="ident">InPlace</span>,
-                        <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>,
-                    )
-                    .<span class="ident">is_err</span>()
-            );
 
             <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
                 .<span class="ident">grow</span>(

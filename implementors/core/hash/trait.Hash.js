@@ -1,3 +1,3 @@
 (function() {var implementors = {};
-implementors["alloc_compose"] = [{"text":"impl&lt;A:&nbsp;<a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/hash/trait.Hash.html\" title=\"trait core::hash::Hash\">Hash</a>, C:&nbsp;<a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/hash/trait.Hash.html\" title=\"trait core::hash::Hash\">Hash</a>&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/hash/trait.Hash.html\" title=\"trait core::hash::Hash\">Hash</a> for <a class=\"struct\" href=\"alloc_compose/struct.Proxy.html\" title=\"struct alloc_compose::Proxy\">Proxy</a>&lt;A, C&gt;","synthetic":false,"types":["alloc_compose::proxy::Proxy"]}];
+implementors["alloc_compose"] = [{"text":"impl&lt;A:&nbsp;Hash, C:&nbsp;Hash&gt; Hash for Proxy&lt;A, C&gt;","synthetic":false,"types":[]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

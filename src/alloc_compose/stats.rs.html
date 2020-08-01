@@ -853,6 +853,13 @@
 <span id="853">853</span>
 <span id="854">854</span>
 <span id="855">855</span>
+<span id="856">856</span>
+<span id="857">857</span>
+<span id="858">858</span>
+<span id="859">859</span>
+<span id="860">860</span>
+<span id="861">861</span>
+<span id="862">862</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Structures to collect allocator statistics.</span>
 <span class="doccomment">//!</span>
@@ -1481,10 +1488,10 @@
 <span class="kw">mod</span> <span class="ident">tests</span> {
     <span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">AtomicCounter</span>, <span class="ident">Counter</span>, <span class="ident">FilteredAtomicCounter</span>, <span class="ident">FilteredCounter</span>};
     <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">helper</span>, <span class="ident">CallbackRef</span>, <span class="ident">Owns</span>, <span class="ident">Proxy</span>, <span class="ident">Region</span>};
-    <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">alloc</span>::{<span class="ident">AllocErr</span>, <span class="ident">AllocInit</span>, <span class="ident">AllocRef</span>, <span class="ident">Layout</span>, <span class="ident">ReallocPlacement</span>};
+    <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">alloc</span>::{<span class="ident">AllocErr</span>, <span class="ident">AllocInit</span>, <span class="ident">AllocRef</span>, <span class="ident">Layout</span>, <span class="ident">ReallocPlacement</span>, <span class="ident">System</span>};
 
     <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy</span>::<span class="ident">too_many_lines</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">run_suite</span>(<span class="ident">callbacks</span>: <span class="kw">impl</span> <span class="ident">CallbackRef</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">AllocErr</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">run_suite</span>(<span class="ident">callbacks</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">CallbackRef</span>) {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">region</span> <span class="op">=</span> [<span class="number">0</span>; <span class="number">32</span>];
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">alloc</span> <span class="op">=</span> <span class="ident">Proxy</span> {
             <span class="ident">alloc</span>: <span class="ident">helper</span>::<span class="ident">tracker</span>(<span class="ident">Region</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">region</span>)),
@@ -1503,8 +1510,15 @@
         );
 
         <span class="kw">unsafe</span> {
-            <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>.<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>(), <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>)<span class="question-mark">?</span>;
-            <span class="kw">let</span> <span class="ident">memory_tmp</span> <span class="op">=</span> <span class="ident">alloc</span>.<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">28</span>]<span class="op">&gt;</span>(), <span class="ident">AllocInit</span>::<span class="ident">Zeroed</span>)<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">memory_tmp</span> <span class="op">=</span> <span class="ident">alloc</span>
+                .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>(), <span class="ident">AllocInit</span>::<span class="ident">Zeroed</span>)
+                .<span class="ident">unwrap</span>();
+            <span class="ident">alloc</span>.<span class="ident">dealloc</span>(<span class="ident">memory_tmp</span>.<span class="ident">ptr</span>, <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>());
+        }
+        <span class="kw">unsafe</span> {
+            <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
+                .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>(), <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>)
+                .<span class="ident">unwrap</span>();
             <span class="macro">assert</span><span class="macro">!</span>(
                 <span class="ident">alloc</span>
                     .<span class="ident">shrink</span>(
@@ -1515,17 +1529,6 @@
                     )
                     .<span class="ident">is_err</span>()
             );
-            <span class="macro">assert</span><span class="macro">!</span>(
-                <span class="ident">alloc</span>
-                    .<span class="ident">shrink</span>(
-                        <span class="ident">memory</span>.<span class="ident">ptr</span>,
-                        <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>(),
-                        <span class="number">2</span>,
-                        <span class="ident">ReallocPlacement</span>::<span class="ident">MayMove</span>
-                    )
-                    .<span class="ident">is_err</span>()
-            );
-            <span class="ident">alloc</span>.<span class="ident">dealloc</span>(<span class="ident">memory_tmp</span>.<span class="ident">ptr</span>, <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">28</span>]<span class="op">&gt;</span>());
 
             <span class="macro">assert</span><span class="macro">!</span>(
                 <span class="ident">alloc</span>
@@ -1571,73 +1574,84 @@
                     )
                     .<span class="ident">is_err</span>()
             );
-            <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>.<span class="ident">grow</span>(
-                <span class="ident">memory</span>.<span class="ident">ptr</span>,
-                <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>(),
-                <span class="number">8</span>,
-                <span class="ident">ReallocPlacement</span>::<span class="ident">MayMove</span>,
-                <span class="ident">AllocInit</span>::<span class="ident">Zeroed</span>,
-            )<span class="question-mark">?</span>;
-            <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>.<span class="ident">grow</span>(
-                <span class="ident">memory</span>.<span class="ident">ptr</span>,
-                <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">8</span>]<span class="op">&gt;</span>(),
-                <span class="number">16</span>,
-                <span class="ident">ReallocPlacement</span>::<span class="ident">MayMove</span>,
-                <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>,
-            )<span class="question-mark">?</span>;
-            <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>.<span class="ident">shrink</span>(
-                <span class="ident">memory</span>.<span class="ident">ptr</span>,
-                <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">16</span>]<span class="op">&gt;</span>(),
-                <span class="number">4</span>,
-                <span class="ident">ReallocPlacement</span>::<span class="ident">MayMove</span>,
-            )<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
+                .<span class="ident">grow</span>(
+                    <span class="ident">memory</span>.<span class="ident">ptr</span>,
+                    <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>(),
+                    <span class="number">8</span>,
+                    <span class="ident">ReallocPlacement</span>::<span class="ident">MayMove</span>,
+                    <span class="ident">AllocInit</span>::<span class="ident">Zeroed</span>,
+                )
+                .<span class="ident">unwrap</span>();
+            <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
+                .<span class="ident">grow</span>(
+                    <span class="ident">memory</span>.<span class="ident">ptr</span>,
+                    <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">8</span>]<span class="op">&gt;</span>(),
+                    <span class="number">16</span>,
+                    <span class="ident">ReallocPlacement</span>::<span class="ident">MayMove</span>,
+                    <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>,
+                )
+                .<span class="ident">unwrap</span>();
+            <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
+                .<span class="ident">shrink</span>(
+                    <span class="ident">memory</span>.<span class="ident">ptr</span>,
+                    <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">16</span>]<span class="op">&gt;</span>(),
+                    <span class="number">4</span>,
+                    <span class="ident">ReallocPlacement</span>::<span class="ident">MayMove</span>,
+                )
+                .<span class="ident">unwrap</span>();
 
-            <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>.<span class="ident">grow</span>(
-                <span class="ident">memory</span>.<span class="ident">ptr</span>,
-                <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>(),
-                <span class="number">8</span>,
-                <span class="ident">ReallocPlacement</span>::<span class="ident">InPlace</span>,
-                <span class="ident">AllocInit</span>::<span class="ident">Zeroed</span>,
-            )<span class="question-mark">?</span>;
-            <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>.<span class="ident">grow</span>(
-                <span class="ident">memory</span>.<span class="ident">ptr</span>,
-                <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">8</span>]<span class="op">&gt;</span>(),
-                <span class="number">16</span>,
-                <span class="ident">ReallocPlacement</span>::<span class="ident">InPlace</span>,
-                <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>,
-            )<span class="question-mark">?</span>;
-            <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>.<span class="ident">shrink</span>(
-                <span class="ident">memory</span>.<span class="ident">ptr</span>,
-                <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">16</span>]<span class="op">&gt;</span>(),
-                <span class="number">4</span>,
-                <span class="ident">ReallocPlacement</span>::<span class="ident">InPlace</span>,
-            )<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
+                .<span class="ident">grow</span>(
+                    <span class="ident">memory</span>.<span class="ident">ptr</span>,
+                    <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>(),
+                    <span class="number">4</span>,
+                    <span class="ident">ReallocPlacement</span>::<span class="ident">InPlace</span>,
+                    <span class="ident">AllocInit</span>::<span class="ident">Zeroed</span>,
+                )
+                .<span class="ident">unwrap</span>();
+            <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
+                .<span class="ident">grow</span>(
+                    <span class="ident">memory</span>.<span class="ident">ptr</span>,
+                    <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>(),
+                    <span class="number">4</span>,
+                    <span class="ident">ReallocPlacement</span>::<span class="ident">InPlace</span>,
+                    <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>,
+                )
+                .<span class="ident">unwrap</span>();
+            <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
+                .<span class="ident">shrink</span>(
+                    <span class="ident">memory</span>.<span class="ident">ptr</span>,
+                    <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>(),
+                    <span class="number">4</span>,
+                    <span class="ident">ReallocPlacement</span>::<span class="ident">InPlace</span>,
+                )
+                .<span class="ident">unwrap</span>();
 
             <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">alloc</span>.<span class="ident">owns</span>(<span class="ident">memory</span>));
             <span class="ident">alloc</span>.<span class="ident">dealloc</span>(<span class="ident">memory</span>.<span class="ident">ptr</span>, <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>());
             <span class="macro">assert</span><span class="macro">!</span>(<span class="op">!</span><span class="ident">alloc</span>.<span class="ident">owns</span>(<span class="ident">memory</span>));
         }
-        <span class="prelude-val">Ok</span>(())
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="attribute">#[<span class="ident">rustfmt</span>::<span class="ident">skip</span>]</span>
     <span class="kw">fn</span> <span class="ident">counter</span>() {
         <span class="kw">let</span> <span class="ident">counter</span> <span class="op">=</span> <span class="ident">Counter</span>::<span class="ident">default</span>();
-        <span class="ident">run_suite</span>(<span class="ident">counter</span>.<span class="ident">by_ref</span>()).<span class="ident">expect</span>(<span class="string">&quot;Could not run test suite&quot;</span>);
+        <span class="ident">run_suite</span>(<span class="ident">counter</span>.<span class="ident">by_ref</span>());
 
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_allocs</span>(), <span class="number">4</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_grows</span>(), <span class="number">8</span>);
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_shrinks</span>(), <span class="number">4</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_shrinks</span>(), <span class="number">3</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_owns</span>(), <span class="number">2</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_deallocs</span>(), <span class="number">2</span>);
         
         <span class="kw">let</span> <span class="ident">atomic_counter</span> <span class="op">=</span> <span class="ident">AtomicCounter</span>::<span class="ident">default</span>();
-        <span class="ident">run_suite</span>(<span class="ident">atomic_counter</span>.<span class="ident">by_ref</span>()).<span class="ident">expect</span>(<span class="string">&quot;Could not run test suite&quot;</span>);
+        <span class="ident">run_suite</span>(<span class="ident">atomic_counter</span>.<span class="ident">by_ref</span>());
 
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_allocs</span>(), <span class="number">4</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_grows</span>(), <span class="number">8</span>);
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_shrinks</span>(), <span class="number">4</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_shrinks</span>(), <span class="number">3</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_owns</span>(), <span class="number">2</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_deallocs</span>(), <span class="number">2</span>);
 
@@ -1651,7 +1665,7 @@
     <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy</span>::<span class="ident">cognitive_complexity</span>)]</span>
     <span class="kw">fn</span> <span class="ident">filtered_counter</span>() {
         <span class="kw">let</span> <span class="ident">counter</span> <span class="op">=</span> <span class="ident">FilteredCounter</span>::<span class="ident">default</span>();
-        <span class="ident">run_suite</span>(<span class="ident">counter</span>.<span class="ident">by_ref</span>()).<span class="ident">expect</span>(<span class="string">&quot;Could not run test suite&quot;</span>);
+        <span class="ident">run_suite</span>(<span class="ident">counter</span>.<span class="ident">by_ref</span>());
 
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_allocs_filter</span>(<span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>, <span class="bool-val">false</span>), <span class="number">1</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_allocs_filter</span>(<span class="ident">AllocInit</span>::<span class="ident">Zeroed</span>, <span class="bool-val">false</span>), <span class="number">1</span>);
@@ -1667,18 +1681,18 @@
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_grows_filter</span>(<span class="ident">ReallocPlacement</span>::<span class="ident">InPlace</span>, <span class="ident">AllocInit</span>::<span class="ident">Zeroed</span>, <span class="bool-val">false</span>), <span class="number">1</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_grows_filter</span>(<span class="ident">ReallocPlacement</span>::<span class="ident">InPlace</span>, <span class="ident">AllocInit</span>::<span class="ident">Zeroed</span>, <span class="bool-val">true</span>), <span class="number">1</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_grows</span>(), <span class="number">8</span>);
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_shrinks_filter</span>(<span class="ident">ReallocPlacement</span>::<span class="ident">MayMove</span>, <span class="bool-val">false</span>), <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_shrinks_filter</span>(<span class="ident">ReallocPlacement</span>::<span class="ident">MayMove</span>, <span class="bool-val">false</span>), <span class="number">0</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_shrinks_filter</span>(<span class="ident">ReallocPlacement</span>::<span class="ident">MayMove</span>, <span class="bool-val">true</span>), <span class="number">1</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_shrinks_filter</span>(<span class="ident">ReallocPlacement</span>::<span class="ident">InPlace</span>, <span class="bool-val">false</span>), <span class="number">1</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_shrinks_filter</span>(<span class="ident">ReallocPlacement</span>::<span class="ident">InPlace</span>, <span class="bool-val">true</span>), <span class="number">1</span>);
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_shrinks</span>(), <span class="number">4</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_shrinks</span>(), <span class="number">3</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_owns_filter</span>(<span class="bool-val">true</span>), <span class="number">1</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_owns_filter</span>(<span class="bool-val">false</span>), <span class="number">1</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_owns</span>(), <span class="number">2</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_deallocs</span>(), <span class="number">2</span>);
 
         <span class="kw">let</span> <span class="ident">atomic_counter</span> <span class="op">=</span> <span class="ident">FilteredAtomicCounter</span>::<span class="ident">default</span>();
-        <span class="ident">run_suite</span>(<span class="ident">atomic_counter</span>.<span class="ident">by_ref</span>()).<span class="ident">expect</span>(<span class="string">&quot;Could not run test suite&quot;</span>);
+        <span class="ident">run_suite</span>(<span class="ident">atomic_counter</span>.<span class="ident">by_ref</span>());
 
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_allocs_filter</span>(<span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>, <span class="bool-val">false</span>), <span class="number">1</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_allocs_filter</span>(<span class="ident">AllocInit</span>::<span class="ident">Zeroed</span>, <span class="bool-val">false</span>), <span class="number">1</span>);
@@ -1694,11 +1708,11 @@
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_grows_filter</span>(<span class="ident">ReallocPlacement</span>::<span class="ident">InPlace</span>, <span class="ident">AllocInit</span>::<span class="ident">Zeroed</span>, <span class="bool-val">false</span>), <span class="number">1</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_grows_filter</span>(<span class="ident">ReallocPlacement</span>::<span class="ident">InPlace</span>, <span class="ident">AllocInit</span>::<span class="ident">Zeroed</span>, <span class="bool-val">true</span>), <span class="number">1</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_grows</span>(), <span class="number">8</span>);
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_shrinks_filter</span>(<span class="ident">ReallocPlacement</span>::<span class="ident">MayMove</span>, <span class="bool-val">false</span>), <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_shrinks_filter</span>(<span class="ident">ReallocPlacement</span>::<span class="ident">MayMove</span>, <span class="bool-val">false</span>), <span class="number">0</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_shrinks_filter</span>(<span class="ident">ReallocPlacement</span>::<span class="ident">MayMove</span>, <span class="bool-val">true</span>), <span class="number">1</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_shrinks_filter</span>(<span class="ident">ReallocPlacement</span>::<span class="ident">InPlace</span>, <span class="bool-val">false</span>), <span class="number">1</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_shrinks_filter</span>(<span class="ident">ReallocPlacement</span>::<span class="ident">InPlace</span>, <span class="bool-val">true</span>), <span class="number">1</span>);
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_shrinks</span>(), <span class="number">4</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_shrinks</span>(), <span class="number">3</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_owns_filter</span>(<span class="bool-val">true</span>), <span class="number">1</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_owns_filter</span>(<span class="bool-val">false</span>), <span class="number">1</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_owns</span>(), <span class="number">2</span>);
