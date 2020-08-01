@@ -625,7 +625,7 @@ impl_filtered_callback_ref!(FilteredAtomicCounter);
 mod tests {
     use super::{AtomicCounter, Counter, FilteredAtomicCounter, FilteredCounter};
     use crate::{helper, CallbackRef, Owns, Proxy, Region};
-    use std::alloc::{AllocErr, AllocInit, AllocRef, Layout, ReallocPlacement, System};
+    use std::alloc::{AllocInit, AllocRef, Layout, ReallocPlacement};
 
     #[allow(clippy::too_many_lines)]
     fn run_suite(callbacks: &impl CallbackRef) {

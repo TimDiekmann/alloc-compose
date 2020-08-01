@@ -45,16 +45,11 @@ pub use self::{
 
 #[cfg(feature = "intrinsics")]
 mod intrinsics {
-    pub use core::intrinsics::{likely, unlikely};
+    pub use core::intrinsics::unlikely;
 }
 
 #[cfg(not(feature = "intrinsics"))]
 mod intrinsics {
-    #[inline(always)]
-    pub fn likely(b: bool) -> bool {
-        b
-    }
-
     #[inline(always)]
     pub fn unlikely(b: bool) -> bool {
         b
