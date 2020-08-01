@@ -860,6 +860,7 @@
 <span id="860">860</span>
 <span id="861">861</span>
 <span id="862">862</span>
+<span id="863">863</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Structures to collect allocator statistics.</span>
 <span class="doccomment">//!</span>
@@ -1489,10 +1490,11 @@
     <span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">AtomicCounter</span>, <span class="ident">Counter</span>, <span class="ident">FilteredAtomicCounter</span>, <span class="ident">FilteredCounter</span>};
     <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">helper</span>, <span class="ident">CallbackRef</span>, <span class="ident">Owns</span>, <span class="ident">Proxy</span>, <span class="ident">Region</span>};
     <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">alloc</span>::{<span class="ident">AllocInit</span>, <span class="ident">AllocRef</span>, <span class="ident">Layout</span>, <span class="ident">ReallocPlacement</span>};
+    <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">mem</span>::<span class="ident">MaybeUninit</span>;
 
     <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy</span>::<span class="ident">too_many_lines</span>)]</span>
     <span class="kw">fn</span> <span class="ident">run_suite</span>(<span class="ident">callbacks</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">CallbackRef</span>) {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">region</span> <span class="op">=</span> [<span class="number">0</span>; <span class="number">32</span>];
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">region</span> <span class="op">=</span> [<span class="ident">MaybeUninit</span>::<span class="ident">new</span>(<span class="number">0</span>); <span class="number">32</span>];
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">alloc</span> <span class="op">=</span> <span class="ident">Proxy</span> {
             <span class="ident">alloc</span>: <span class="ident">helper</span>::<span class="ident">tracker</span>(<span class="ident">Region</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">region</span>)),
             <span class="ident">callbacks</span>,

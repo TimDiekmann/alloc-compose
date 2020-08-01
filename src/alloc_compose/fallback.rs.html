@@ -295,6 +295,8 @@
 <span id="295">295</span>
 <span id="296">296</span>
 <span id="297">297</span>
+<span id="298">298</span>
+<span id="299">299</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">grow</span>, <span class="ident">Owns</span>};
 <span class="kw">use</span> <span class="ident">core</span>::{
@@ -321,8 +323,9 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// use alloc_compose::{Fallback, Owns, Region};</span>
 <span class="doccomment">/// use std::alloc::{AllocInit, AllocRef, Layout, System};</span>
+<span class="doccomment">/// use std::mem::MaybeUninit;</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// let mut data = [0; 32];</span>
+<span class="doccomment">/// let mut data = [MaybeUninit::new(0); 32];</span>
 <span class="doccomment">/// let mut alloc = Fallback {</span>
 <span class="doccomment">///     primary: Region::new(&amp;mut data),</span>
 <span class="doccomment">///     secondary: System,</span>
@@ -435,10 +438,11 @@
     <span class="kw">use</span> <span class="kw">super</span>::<span class="ident">Fallback</span>;
     <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">helper</span>, <span class="ident">Owns</span>, <span class="ident">Region</span>};
     <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">alloc</span>::{<span class="ident">AllocInit</span>, <span class="ident">AllocRef</span>, <span class="ident">Layout</span>, <span class="ident">ReallocPlacement</span>, <span class="ident">System</span>};
+    <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">mem</span>::<span class="ident">MaybeUninit</span>;
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">alloc</span>() {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">data</span> <span class="op">=</span> [<span class="number">0</span>; <span class="number">32</span>];
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">data</span> <span class="op">=</span> [<span class="ident">MaybeUninit</span>::<span class="ident">new</span>(<span class="number">0</span>); <span class="number">32</span>];
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">alloc</span> <span class="op">=</span> <span class="ident">Fallback</span> {
             <span class="ident">primary</span>: <span class="ident">helper</span>::<span class="ident">tracker</span>(<span class="ident">Region</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">data</span>)),
             <span class="ident">secondary</span>: <span class="ident">helper</span>::<span class="ident">tracker</span>(<span class="ident">System</span>),
@@ -461,7 +465,7 @@
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">grow</span>() {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">data</span> <span class="op">=</span> [<span class="number">0</span>; <span class="number">80</span>];
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">data</span> <span class="op">=</span> [<span class="ident">MaybeUninit</span>::<span class="ident">new</span>(<span class="number">0</span>); <span class="number">80</span>];
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">alloc</span> <span class="op">=</span> <span class="ident">Fallback</span> {
             <span class="ident">primary</span>: <span class="ident">helper</span>::<span class="ident">tracker</span>(<span class="ident">Region</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">data</span>)),
             <span class="ident">secondary</span>: <span class="ident">helper</span>::<span class="ident">tracker</span>(<span class="ident">System</span>),
@@ -524,7 +528,7 @@
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">shrink</span>() {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">data</span> <span class="op">=</span> [<span class="number">0</span>; <span class="number">80</span>];
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">data</span> <span class="op">=</span> [<span class="ident">MaybeUninit</span>::<span class="ident">new</span>(<span class="number">0</span>); <span class="number">80</span>];
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">alloc</span> <span class="op">=</span> <span class="ident">Fallback</span> {
             <span class="ident">primary</span>: <span class="ident">helper</span>::<span class="ident">tracker</span>(<span class="ident">Region</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">data</span>)),
             <span class="ident">secondary</span>: <span class="ident">helper</span>::<span class="ident">tracker</span>(<span class="ident">System</span>),
@@ -573,8 +577,8 @@
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">owns</span>() {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">data_1</span> <span class="op">=</span> [<span class="number">0</span>; <span class="number">32</span>];
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">data_2</span> <span class="op">=</span> [<span class="number">0</span>; <span class="number">64</span>];
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">data_1</span> <span class="op">=</span> [<span class="ident">MaybeUninit</span>::<span class="ident">new</span>(<span class="number">0</span>); <span class="number">32</span>];
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">data_2</span> <span class="op">=</span> [<span class="ident">MaybeUninit</span>::<span class="ident">new</span>(<span class="number">0</span>); <span class="number">64</span>];
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">alloc</span> <span class="op">=</span> <span class="ident">Fallback</span> {
             <span class="ident">primary</span>: <span class="ident">Region</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">data_1</span>),
             <span class="ident">secondary</span>: <span class="ident">Region</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">data_2</span>),

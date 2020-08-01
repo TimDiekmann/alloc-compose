@@ -177,6 +177,7 @@
 <span id="177">177</span>
 <span id="178">178</span>
 <span id="179">179</span>
+<span id="180">180</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">AllocAll</span>, <span class="ident">CallbackRef</span>, <span class="ident">Owns</span>};
 <span class="kw">use</span> <span class="ident">core</span>::{
@@ -224,9 +225,10 @@
 <span class="doccomment">///     stats::{AllocInitFilter, ResultFilter},</span>
 <span class="doccomment">///     Region,</span>
 <span class="doccomment">/// };</span>
+<span class="doccomment">/// use core::mem::MaybeUninit;</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// let counter = stats::FilteredCounter::default();</span>
-<span class="doccomment">/// let mut data = [0; 32];</span>
+<span class="doccomment">/// let mut data = [MaybeUninit::new(0); 32];</span>
 <span class="doccomment">/// let mut alloc = Proxy {</span>
 <span class="doccomment">///     alloc: Region::new(&amp;mut data),</span>
 <span class="doccomment">///     callbacks: counter.by_ref(),</span>
