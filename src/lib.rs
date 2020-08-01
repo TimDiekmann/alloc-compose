@@ -1,5 +1,6 @@
 #![cfg_attr(not(test), no_std)]
 #![cfg_attr(doc, feature(doc_cfg, external_doc))]
+#![cfg_attr(feature = "intrinsics", feature(core_intrinsics))]
 #![cfg_attr(doc, doc(include = "../README.md"))]
 #![feature(
     allocator_api,
@@ -43,6 +44,26 @@ pub use self::{
     region::Region,
     segregate::Segregate,
 };
+
+#[cfg(feature = "intrinsics")]
+mod intrinsics {
+    pub use core::intrinsics::{likely, unlikely};
+}
+
+#[cfg(not(feature = "intrinsics"))]
+mod intrinsics {
+    #[inline(always)]
+    pub fn likely(b: bool) -> bool {
+        b
+    }
+
+    #[inline(always)]
+    pub fn unlikely(b: bool) -> bool {
+        b
+    }
+}
+
+use crate::intrinsics::*;
 
 pub trait AllocAll {
     /// Attempts to allocate all of the memory the allocator can provide.

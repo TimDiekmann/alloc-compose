@@ -180,34 +180,23 @@ mod tests {
                     memory.ptr,
                     Layout::new::<[u8; 32]>(),
                     64,
-                    ReallocPlacement::InPlace,
+                    ReallocPlacement::MayMove,
                     AllocInit::Uninitialized,
                 )
                 .expect("Could not grow to 64 bytes");
             assert!(alloc.primary.owns(memory));
+            assert_eq!(memory.size, 64);
 
             let memory = alloc
                 .grow(
                     memory.ptr,
                     Layout::new::<[u8; 64]>(),
                     80,
-                    ReallocPlacement::InPlace,
+                    ReallocPlacement::MayMove,
                     AllocInit::Uninitialized,
                 )
                 .expect("Could not grow to 80 bytes");
             assert!(alloc.primary.owns(memory));
-
-            assert!(
-                alloc
-                    .grow(
-                        memory.ptr,
-                        Layout::new::<[u8; 80]>(),
-                        96,
-                        ReallocPlacement::InPlace,
-                        AllocInit::Uninitialized,
-                    )
-                    .is_err()
-            );
 
             let memory = alloc
                 .grow(

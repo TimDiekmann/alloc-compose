@@ -146,7 +146,7 @@ mod tests {
                     memory.ptr,
                     Layout::new::<[u8; 8]>(),
                     4,
-                    ReallocPlacement::InPlace,
+                    ReallocPlacement::MayMove,
                 )
                 .expect("Could not shrink to 4 bytes");
             assert_eq!(data, [0, 0, 0, 0, 0xDD, 0xDD, 0xDD, 0xDD]);

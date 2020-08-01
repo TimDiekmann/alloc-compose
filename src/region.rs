@@ -1,9 +1,8 @@
-use crate::{AllocAll, Owns};
+use crate::{unlikely, AllocAll, Owns};
 use core::{
     alloc::{AllocErr, AllocInit, AllocRef, Layout, MemoryBlock, ReallocPlacement},
     fmt,
-    ptr,
-    ptr::NonNull,
+    ptr::{self, NonNull},
 };
 
 /// Allocator over an user-defined region of memory.
@@ -38,25 +37,39 @@ use core::{
 /// ```
 pub struct Region<'a> {
     data: &'a mut [u8],
-    offset: usize,
+    ptr: usize,
 }
 
 impl<'a> Region<'a> {
     #[inline]
     pub fn new(data: &'a mut [u8]) -> Self {
-        let current = data.as_ptr() as usize;
-        Self {
-            data,
-            offset: current,
-        }
+        let ptr = data.as_ptr() as usize + data.len();
+        let region = Self { data, ptr };
+        debug_assert!(region.is_empty());
+        region
     }
 
     /// Checks if `memory` is the latest block, which was allocated.
-    /// For those blocks, it's possible to deallocate them or to grow
-    /// or shrink them in place.
+    /// For those blocks, it's possible to deallocate them.
     #[inline]
     pub fn is_last_block(&self, memory: MemoryBlock) -> bool {
-        memory.ptr.as_ptr() as usize + memory.size == self.offset as usize
+        self.ptr == memory.ptr.as_ptr() as usize
+    }
+
+    fn start(&self) -> usize {
+        self.data.as_ptr() as usize
+    }
+    fn end(&self) -> usize {
+        self.data.as_ptr() as usize + self.data.len()
+    }
+
+    fn create_block(&mut self, ptr: usize) -> Result<MemoryBlock, AllocErr> {
+        let memory = MemoryBlock {
+            ptr: unsafe { NonNull::new_unchecked(ptr as *mut u8) },
+            size: self.ptr - ptr,
+        };
+        self.ptr = ptr;
+        Ok(memory)
     }
 }
 
@@ -71,37 +84,29 @@ impl fmt::Debug for Region<'_> {
 
 unsafe impl AllocRef for Region<'_> {
     fn alloc(&mut self, layout: Layout, init: AllocInit) -> Result<MemoryBlock, AllocErr> {
-        let offset = (self.offset as *mut u8).align_offset(layout.align());
-        let current = self.offset.checked_add(offset).ok_or(AllocErr)?;
+        let new_ptr = self.ptr.checked_sub(layout.size()).ok_or(AllocErr)?;
+        let aligned_ptr = new_ptr & !(layout.align() - 1);
 
-        let new = current.checked_add(layout.size()).ok_or(AllocErr)?;
-        if new > self.data.as_ptr() as usize + self.data.len() {
+        if unlikely(aligned_ptr < self.start()) {
             return Err(AllocErr);
         }
 
-        self.offset = new;
-        let memory = MemoryBlock {
-            ptr: unsafe { NonNull::new_unchecked(current as *mut u8) },
-            size: layout.size(),
-        };
+        let memory = self.create_block(aligned_ptr)?;
         unsafe { init.init(memory) };
-
         Ok(memory)
     }
 
     unsafe fn dealloc(&mut self, ptr: NonNull<u8>, layout: Layout) {
-        debug_assert!(
-            self.owns(MemoryBlock {
-                ptr,
-                size: layout.size()
-            }),
-            "`ptr` must denote a block of memory currently allocated via this allocator"
-        );
-        if self.is_last_block(MemoryBlock {
+        let memory = MemoryBlock {
             ptr,
             size: layout.size(),
-        }) {
-            self.offset = ptr.as_ptr() as usize;
+        };
+        debug_assert!(
+            self.owns(memory),
+            "`ptr` must denote a block of memory currently allocated via this allocator"
+        );
+        if self.is_last_block(memory) {
+            self.ptr += layout.size()
         }
     }
 
@@ -113,40 +118,47 @@ unsafe impl AllocRef for Region<'_> {
         placement: ReallocPlacement,
         init: AllocInit,
     ) -> Result<MemoryBlock, AllocErr> {
-        let size = layout.size();
+        let memory = MemoryBlock {
+            ptr,
+            size: layout.size(),
+        };
         debug_assert!(
-            new_size >= size,
+            self.owns(memory),
+            "`ptr` must denote a block of memory currently allocated via this allocator"
+        );
+        let old_size = layout.size();
+        debug_assert!(
+            new_size >= old_size,
             "`new_size` must be greater than or equal to `layout.size()`"
         );
 
-        if layout.size() == new_size {
-            Ok(MemoryBlock {
-                ptr,
-                size: new_size,
-            })
-        } else if self.is_last_block(MemoryBlock {
-            ptr,
-            size: layout.size(),
-        }) {
-            let start = ptr.as_ptr() as usize;
-            let new = start.checked_add(new_size).ok_or(AllocErr)?;
-            if new > self.data.as_ptr() as usize + self.data.len() {
+        if old_size == new_size {
+            Ok(memory)
+        } else if placement == ReallocPlacement::InPlace {
+            Err(AllocErr)
+        } else if self.is_last_block(memory) {
+            let additional = new_size - old_size;
+            let new_ptr = self.ptr.checked_sub(additional).ok_or(AllocErr)?;
+            let aligned_ptr = new_ptr & !(layout.align() - 1);
+
+            if unlikely(aligned_ptr < self.start()) {
                 return Err(AllocErr);
             }
-            self.offset = new;
-            let new_memory = MemoryBlock {
-                ptr,
-                size: new_size,
+
+            let memory = MemoryBlock {
+                ptr: NonNull::new_unchecked(aligned_ptr as *mut u8),
+                size: self.ptr + layout.size() - aligned_ptr,
             };
-            init.init_offset(new_memory, layout.size());
-            Ok(new_memory)
-        } else if placement == ReallocPlacement::MayMove {
+            self.ptr = aligned_ptr;
+            ptr::copy(ptr.as_ptr(), memory.ptr.as_ptr(), old_size);
+            init.init_offset(memory, old_size);
+
+            Ok(memory)
+        } else {
             let new_layout = Layout::from_size_align_unchecked(new_size, layout.align());
             let new_memory = self.alloc(new_layout, init)?;
-            ptr::copy_nonoverlapping(ptr.as_ptr(), new_memory.ptr.as_ptr(), size);
+            ptr::copy_nonoverlapping(ptr.as_ptr(), new_memory.ptr.as_ptr(), old_size);
             Ok(new_memory)
-        } else {
-            Err(AllocErr)
         }
     }
 
@@ -157,60 +169,61 @@ unsafe impl AllocRef for Region<'_> {
         new_size: usize,
         placement: ReallocPlacement,
     ) -> Result<MemoryBlock, AllocErr> {
-        let size = layout.size();
+        let old_size = layout.size();
+        let memory = MemoryBlock {
+            ptr,
+            size: old_size,
+        };
         debug_assert!(
-            new_size <= size,
+            self.owns(memory),
+            "`ptr` must denote a block of memory currently allocated via this allocator"
+        );
+        debug_assert!(
+            new_size <= old_size,
             "`new_size` must be smaller than or equal to `layout.size()`"
         );
 
-        if layout.size() == new_size {
-            Ok(MemoryBlock {
-                ptr,
-                size: new_size,
-            })
-        } else if self.is_last_block(MemoryBlock {
-            ptr,
-            size: layout.size(),
-        }) {
-            self.offset = ptr.as_ptr() as usize + new_size;
-            Ok(MemoryBlock {
-                ptr,
-                size: new_size,
-            })
-        } else if placement == ReallocPlacement::MayMove {
-            let new_layout = Layout::from_size_align_unchecked(new_size, layout.align());
-            let new_memory = self.alloc(new_layout, AllocInit::Uninitialized)?;
-            ptr::copy_nonoverlapping(ptr.as_ptr(), new_memory.ptr.as_ptr(), new_size);
-            Ok(new_memory)
+        if old_size == new_size {
+            Ok(memory)
+        } else if self.is_last_block(memory) {
+            match placement {
+                ReallocPlacement::MayMove => {
+                    let new_ptr = self.ptr + old_size - new_size;
+                    let aligned_ptr = new_ptr & !(layout.align() - 1);
+
+                    let memory = MemoryBlock {
+                        ptr: NonNull::new_unchecked(aligned_ptr as *mut u8),
+                        size: self.ptr + old_size - aligned_ptr,
+                    };
+                    ptr::copy(ptr.as_ptr(), memory.ptr.as_ptr(), new_size);
+                    self.ptr = aligned_ptr;
+                    Ok(memory)
+                }
+                ReallocPlacement::InPlace => Err(AllocErr),
+            }
         } else {
-            Err(AllocErr)
+            Ok(memory)
         }
     }
 }
 
 impl AllocAll for Region<'_> {
     fn alloc_all(&mut self, layout: Layout, init: AllocInit) -> Result<MemoryBlock, AllocErr> {
-        let offset = (self.offset as *mut u8).align_offset(layout.align());
-        let current = self.offset.checked_add(offset).ok_or(AllocErr)?;
+        let new_ptr = self.data.as_ptr() as usize;
+        let aligned_ptr =
+            new_ptr.checked_add(layout.align() - 1).ok_or(AllocErr)? & !(layout.align() - 1);
 
-        let new = current.checked_add(layout.size()).ok_or(AllocErr)?;
-        if new > self.data.as_ptr() as usize + self.data.len() {
+        if unlikely(aligned_ptr + layout.size() >= self.ptr) {
             return Err(AllocErr);
         }
 
-        let capacity_left = self.capacity_left();
-        self.offset += capacity_left;
-        let memory = MemoryBlock {
-            ptr: unsafe { NonNull::new_unchecked(current as *mut u8) },
-            size: capacity_left,
-        };
+        let memory = self.create_block(aligned_ptr)?;
         unsafe { init.init(memory) };
-
         Ok(memory)
     }
 
     fn dealloc_all(&mut self) {
-        self.offset = self.data.as_ptr() as usize;
+        self.ptr = self.end();
         debug_assert!(self.is_empty());
     }
 
@@ -219,14 +232,14 @@ impl AllocAll for Region<'_> {
     }
 
     fn capacity_left(&self) -> usize {
-        self.data.as_ptr() as usize + self.data.len() - self.offset
+        self.ptr - self.start()
     }
 }
 
 impl Owns for Region<'_> {
     fn owns(&self, memory: MemoryBlock) -> bool {
-        self.data.as_ptr() <= memory.ptr.as_ptr()
-            && memory.ptr.as_ptr() as usize + memory.size <= self.offset as usize
+        let ptr = memory.ptr.as_ptr() as usize;
+        ptr >= self.ptr && ptr + memory.size <= self.end()
     }
 }
 
@@ -297,8 +310,8 @@ mod tests {
             .expect("Could not allocated 16 bytes");
         assert_eq!(region.capacity_left(), 16);
 
-        assert_eq!(&data[0..16], &[0; 16][..]);
-        assert_eq!(&data[16..], &[1; 16][..]);
+        assert_eq!(&data[0..16], &[1; 16][..]);
+        assert_eq!(&data[16..], &[0; 16][..]);
     }
 
     #[test]
@@ -414,60 +427,12 @@ mod tests {
         assert_eq!(memory.size, 8);
         assert_eq!(region.capacity_left(), 24);
 
-        let memory = unsafe {
-            region
-                .grow(
-                    memory.ptr,
-                    layout,
-                    16,
-                    ReallocPlacement::InPlace,
-                    AllocInit::Uninitialized,
-                )
-                .expect("Could not grow to 16 bytes")
-        };
-        assert_eq!(memory.size, 16);
-        assert_eq!(region.capacity_left(), 16);
-
-        let memory = unsafe {
-            region
-                .shrink(
-                    memory.ptr,
-                    Layout::from_size_align(16, 1).expect("Invalid layout"),
-                    8,
-                    ReallocPlacement::InPlace,
-                )
-                .expect("Could not shrink to 8 bytes")
-        };
-        assert_eq!(memory.size, 8);
-        assert_eq!(region.capacity_left(), 24);
-
         region
             .alloc(layout, AllocInit::Uninitialized)
             .expect("Could not allocate 8 bytes");
         assert_eq!(region.capacity_left(), 16);
 
         let memory = unsafe {
-            region
-                .grow(
-                    memory.ptr,
-                    layout,
-                    16,
-                    ReallocPlacement::InPlace,
-                    AllocInit::Uninitialized,
-                )
-                .expect_err("Could grow 16 bytes in place");
-            region
-                .grow(
-                    memory.ptr,
-                    layout,
-                    8,
-                    ReallocPlacement::InPlace,
-                    AllocInit::Uninitialized,
-                )
-                .expect("Could not grow by 0 bytes");
-            region
-                .shrink(memory.ptr, layout, 8, ReallocPlacement::InPlace)
-                .expect("Could not grow by 0 bytes");
             region
                 .grow(
                     memory.ptr,
@@ -480,13 +445,24 @@ mod tests {
         };
         assert_eq!(memory.size, 16);
         assert_eq!(region.capacity_left(), 0);
-        
+
         region.dealloc_all();
-        let memory = region.alloc(Layout::new::<[u8; 16]>(), AllocInit::Zeroed).expect("Could not allocate 16 bytes");
-        region.alloc(Layout::new::<[u8; 8]>(), AllocInit::Uninitialized).expect("Could not allocate 16 bytes");
+        let memory = region
+            .alloc(Layout::new::<[u8; 16]>(), AllocInit::Zeroed)
+            .expect("Could not allocate 16 bytes");
+        region
+            .alloc(Layout::new::<[u8; 8]>(), AllocInit::Uninitialized)
+            .expect("Could not allocate 16 bytes");
 
         unsafe {
-            region.shrink(memory.ptr, Layout::new::<[u8; 16]>(), 8, ReallocPlacement::MayMove).expect("Could not shrink to 8 bytes");
+            region
+                .shrink(
+                    memory.ptr,
+                    Layout::new::<[u8; 16]>(),
+                    8,
+                    ReallocPlacement::MayMove,
+                )
+                .expect("Could not shrink to 8 bytes");
         }
     }
 

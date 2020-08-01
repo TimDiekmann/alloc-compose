@@ -625,10 +625,10 @@ impl_filtered_callback_ref!(FilteredAtomicCounter);
 mod tests {
     use super::{AtomicCounter, Counter, FilteredAtomicCounter, FilteredCounter};
     use crate::{helper, CallbackRef, Owns, Proxy, Region};
-    use std::alloc::{AllocErr, AllocInit, AllocRef, Layout, ReallocPlacement};
+    use std::alloc::{AllocErr, System, AllocInit, AllocRef, Layout, ReallocPlacement};
 
     #[allow(clippy::too_many_lines)]
-    fn run_suite(callbacks: impl CallbackRef) -> Result<(), AllocErr> {
+    fn run_suite(callbacks: &impl CallbackRef) {
         let mut region = [0; 32];
         let mut alloc = Proxy {
             alloc: helper::tracker(Region::new(&mut region)),
@@ -647,8 +647,15 @@ mod tests {
         );
 
         unsafe {
-            let memory = alloc.alloc(Layout::new::<[u8; 4]>(), AllocInit::Uninitialized)?;
-            let memory_tmp = alloc.alloc(Layout::new::<[u8; 28]>(), AllocInit::Zeroed)?;
+            let memory_tmp = alloc
+            .alloc(Layout::new::<[u8; 4]>(), AllocInit::Zeroed)
+            .unwrap();
+            alloc.dealloc(memory_tmp.ptr, Layout::new::<[u8; 4]>());
+        }
+        unsafe {
+            let memory = alloc
+                .alloc(Layout::new::<[u8; 4]>(), AllocInit::Uninitialized)
+                .unwrap();
             assert!(
                 alloc
                     .shrink(
@@ -659,17 +666,6 @@ mod tests {
                     )
                     .is_err()
             );
-            assert!(
-                alloc
-                    .shrink(
-                        memory.ptr,
-                        Layout::new::<[u8; 4]>(),
-                        2,
-                        ReallocPlacement::MayMove
-                    )
-                    .is_err()
-            );
-            alloc.dealloc(memory_tmp.ptr, Layout::new::<[u8; 28]>());
 
             assert!(
                 alloc
@@ -715,73 +711,84 @@ mod tests {
                     )
                     .is_err()
             );
-            let memory = alloc.grow(
-                memory.ptr,
-                Layout::new::<[u8; 4]>(),
-                8,
-                ReallocPlacement::MayMove,
-                AllocInit::Zeroed,
-            )?;
-            let memory = alloc.grow(
-                memory.ptr,
-                Layout::new::<[u8; 8]>(),
-                16,
-                ReallocPlacement::MayMove,
-                AllocInit::Uninitialized,
-            )?;
-            let memory = alloc.shrink(
-                memory.ptr,
-                Layout::new::<[u8; 16]>(),
-                4,
-                ReallocPlacement::MayMove,
-            )?;
+            let memory = alloc
+                .grow(
+                    memory.ptr,
+                    Layout::new::<[u8; 4]>(),
+                    8,
+                    ReallocPlacement::MayMove,
+                    AllocInit::Zeroed,
+                )
+                .unwrap();
+            let memory = alloc
+                .grow(
+                    memory.ptr,
+                    Layout::new::<[u8; 8]>(),
+                    16,
+                    ReallocPlacement::MayMove,
+                    AllocInit::Uninitialized,
+                )
+                .unwrap();
+            let memory = alloc
+                .shrink(
+                    memory.ptr,
+                    Layout::new::<[u8; 16]>(),
+                    4,
+                    ReallocPlacement::MayMove,
+                )
+                .unwrap();
 
-            let memory = alloc.grow(
-                memory.ptr,
-                Layout::new::<[u8; 4]>(),
-                8,
-                ReallocPlacement::InPlace,
-                AllocInit::Zeroed,
-            )?;
-            let memory = alloc.grow(
-                memory.ptr,
-                Layout::new::<[u8; 8]>(),
-                16,
-                ReallocPlacement::InPlace,
-                AllocInit::Uninitialized,
-            )?;
-            let memory = alloc.shrink(
-                memory.ptr,
-                Layout::new::<[u8; 16]>(),
-                4,
-                ReallocPlacement::InPlace,
-            )?;
+            let memory = alloc
+                .grow(
+                    memory.ptr,
+                    Layout::new::<[u8; 4]>(),
+                    4,
+                    ReallocPlacement::InPlace,
+                    AllocInit::Zeroed,
+                )
+                .unwrap();
+            let memory = alloc
+                .grow(
+                    memory.ptr,
+                    Layout::new::<[u8; 4]>(),
+                    4,
+                    ReallocPlacement::InPlace,
+                    AllocInit::Uninitialized,
+                )
+                .unwrap();
+            let memory = alloc
+                .shrink(
+                    memory.ptr,
+                    Layout::new::<[u8; 4]>(),
+                    4,
+                    ReallocPlacement::InPlace,
+                )
+                .unwrap();
 
-            assert!(alloc.owns(memory));
+                assert!(alloc.owns(memory));
             alloc.dealloc(memory.ptr, Layout::new::<[u8; 4]>());
             assert!(!alloc.owns(memory));
         }
-        Ok(())
     }
 
     #[test]
     #[rustfmt::skip]
     fn counter() {
         let counter = Counter::default();
-        run_suite(counter.by_ref()).expect("Could not run test suite");
+        run_suite(counter.by_ref());
 
         assert_eq!(counter.num_allocs(), 4);
         assert_eq!(counter.num_grows(), 8);
-        assert_eq!(counter.num_shrinks(), 4);
+        assert_eq!(counter.num_shrinks(), 3);
         assert_eq!(counter.num_owns(), 2);
         assert_eq!(counter.num_deallocs(), 2);
         
         let atomic_counter = AtomicCounter::default();
-        run_suite(atomic_counter.by_ref()).expect("Could not run test suite");
+        run_suite(atomic_counter.by_ref());
 
         assert_eq!(atomic_counter.num_allocs(), 4);
         assert_eq!(atomic_counter.num_grows(), 8);
-        assert_eq!(atomic_counter.num_shrinks(), 4);
+        assert_eq!(atomic_counter.num_shrinks(), 3);
         assert_eq!(atomic_counter.num_owns(), 2);
         assert_eq!(atomic_counter.num_deallocs(), 2);
 
@@ -795,7 +802,7 @@ mod tests {
     #[allow(clippy::cognitive_complexity)]
     fn filtered_counter() {
         let counter = FilteredCounter::default();
-        run_suite(counter.by_ref()).expect("Could not run test suite");
+        run_suite(counter.by_ref());
 
         assert_eq!(counter.num_allocs_filter(AllocInit::Uninitialized, false), 1);
         assert_eq!(counter.num_allocs_filter(AllocInit::Zeroed, false), 1);
@@ -811,18 +818,18 @@ mod tests {
         assert_eq!(counter.num_grows_filter(ReallocPlacement::InPlace, AllocInit::Zeroed, false), 1);
         assert_eq!(counter.num_grows_filter(ReallocPlacement::InPlace, AllocInit::Zeroed, true), 1);
         assert_eq!(counter.num_grows(), 8);
-        assert_eq!(counter.num_shrinks_filter(ReallocPlacement::MayMove, false), 1);
+        assert_eq!(counter.num_shrinks_filter(ReallocPlacement::MayMove, false), 0);
         assert_eq!(counter.num_shrinks_filter(ReallocPlacement::MayMove, true), 1);
         assert_eq!(counter.num_shrinks_filter(ReallocPlacement::InPlace, false), 1);
         assert_eq!(counter.num_shrinks_filter(ReallocPlacement::InPlace, true), 1);
-        assert_eq!(counter.num_shrinks(), 4);
+        assert_eq!(counter.num_shrinks(), 3);
         assert_eq!(counter.num_owns_filter(true), 1);
         assert_eq!(counter.num_owns_filter(false), 1);
         assert_eq!(counter.num_owns(), 2);
         assert_eq!(counter.num_deallocs(), 2);
 
         let atomic_counter = FilteredAtomicCounter::default();
-        run_suite(atomic_counter.by_ref()).expect("Could not run test suite");
+        run_suite(atomic_counter.by_ref());
 
         assert_eq!(atomic_counter.num_allocs_filter(AllocInit::Uninitialized, false), 1);
         assert_eq!(atomic_counter.num_allocs_filter(AllocInit::Zeroed, false), 1);
@@ -838,11 +845,11 @@ mod tests {
         assert_eq!(atomic_counter.num_grows_filter(ReallocPlacement::InPlace, AllocInit::Zeroed, false), 1);
         assert_eq!(atomic_counter.num_grows_filter(ReallocPlacement::InPlace, AllocInit::Zeroed, true), 1);
         assert_eq!(atomic_counter.num_grows(), 8);
-        assert_eq!(atomic_counter.num_shrinks_filter(ReallocPlacement::MayMove, false), 1);
+        assert_eq!(atomic_counter.num_shrinks_filter(ReallocPlacement::MayMove, false), 0);
         assert_eq!(atomic_counter.num_shrinks_filter(ReallocPlacement::MayMove, true), 1);
         assert_eq!(atomic_counter.num_shrinks_filter(ReallocPlacement::InPlace, false), 1);
         assert_eq!(atomic_counter.num_shrinks_filter(ReallocPlacement::InPlace, true), 1);
-        assert_eq!(atomic_counter.num_shrinks(), 4);
+        assert_eq!(atomic_counter.num_shrinks(), 3);
         assert_eq!(atomic_counter.num_owns_filter(true), 1);
         assert_eq!(atomic_counter.num_owns_filter(false), 1);
         assert_eq!(atomic_counter.num_owns(), 2);
