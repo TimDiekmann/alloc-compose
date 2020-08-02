@@ -16,7 +16,7 @@ pub struct Segregate<Small, Large, const THRESHOLD: usize> {
 }
 
 impl<Small, Large, const THRESHOLD: usize> Segregate<Small, Large, THRESHOLD> {
-    fn clamp_memory(memory: MemoryBlock) -> MemoryBlock {
+    fn clamped(memory: MemoryBlock) -> MemoryBlock {
         MemoryBlock {
             ptr: memory.ptr,
             size: cmp::min(memory.size, THRESHOLD),
@@ -32,7 +32,7 @@ where
     fn alloc(&mut self, layout: Layout, init: AllocInit) -> Result<MemoryBlock, AllocErr> {
         if layout.size() <= THRESHOLD {
             let memory = self.small.alloc(layout, init)?;
-            Ok(Self::clamp_memory(memory))
+            Ok(Self::clamped(memory))
         } else {
             self.large.alloc(layout, init)
         }
@@ -67,7 +67,7 @@ where
                 )
             } else {
                 let memory = self.small.grow(ptr, layout, new_size, placement, init)?;
-                Ok(Self::clamp_memory(memory))
+                Ok(Self::clamped(memory))
             }
         } else {
             self.large.grow(ptr, layout, new_size, placement, init)
@@ -83,7 +83,7 @@ where
     ) -> Result<MemoryBlock, AllocErr> {
         if layout.size() <= THRESHOLD {
             let memory = self.small.shrink(ptr, layout, new_size, placement)?;
-            Ok(Self::clamp_memory(memory))
+            Ok(Self::clamped(memory))
         } else if new_size <= THRESHOLD {
             // Move ownership to `self.small`
             let memory = shrink(
@@ -94,7 +94,7 @@ where
                 new_size,
                 placement,
             )?;
-            Ok(Self::clamp_memory(memory))
+            Ok(Self::clamped(memory))
         } else {
             self.large.shrink(ptr, layout, new_size, placement)
         }
@@ -108,7 +108,7 @@ where
     fn alloc_all(&mut self, layout: Layout, init: AllocInit) -> Result<MemoryBlock, AllocErr> {
         if layout.size() <= THRESHOLD {
             let memory = self.small.alloc_all(layout, init)?;
-            Ok(Self::clamp_memory(memory))
+            Ok(Self::clamped(memory))
         } else {
             self.large.alloc_all(layout, init)
         }
