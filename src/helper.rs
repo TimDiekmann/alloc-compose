@@ -22,8 +22,8 @@ impl AllocInit {
             "`offset` must be smaller than or equal to `ptr.len()`"
         );
         match self {
-            AllocInit::Uninitialized => (),
-            AllocInit::Zeroed => ptr
+            Self::Uninitialized => (),
+            Self::Zeroed => ptr
                 .as_non_null_ptr()
                 .as_ptr()
                 .add(offset)
@@ -56,19 +56,19 @@ pub(in crate) unsafe fn grow_fallback<A1: AllocRef, A2: AllocRef>(
     Ok(new_ptr)
 }
 
-// unsafe fn shrink_fallback<A1: AllocRef, A2: AllocRef>(
-//     a1: &mut A1,
-//     a2: &mut A2,
-//     ptr: NonNull<u8>,
-//     layout: Layout,
-//     new_size: usize,
-// ) -> Result<NonNull<[u8]>, AllocErr> {
-//     let new_layout = Layout::from_size_align_unchecked(new_size, layout.align());
-//     let new_ptr = a2.alloc(new_layout)?;
-//     ptr::copy_nonoverlapping(ptr.as_ptr(), new_ptr.as_mut_ptr(), new_size);
-//     a1.dealloc(ptr, layout);
-//     Ok(new_ptr)
-// }
+pub(in crate) unsafe fn shrink_fallback<A1: AllocRef, A2: AllocRef>(
+    a1: &mut A1,
+    a2: &mut A2,
+    ptr: NonNull<u8>,
+    layout: Layout,
+    new_size: usize,
+) -> Result<NonNull<[u8]>, AllocErr> {
+    let new_layout = Layout::from_size_align_unchecked(new_size, layout.align());
+    let new_ptr = a2.alloc(new_layout)?;
+    ptr::copy_nonoverlapping(ptr.as_ptr(), new_ptr.as_mut_ptr(), new_size);
+    a1.dealloc(ptr, layout);
+    Ok(new_ptr)
+}
 
 #[cfg(test)]
 pub fn tracker<A: AllocRef>(alloc: A) -> crate::Proxy<A, impl crate::CallbackRef> {

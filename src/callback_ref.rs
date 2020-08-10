@@ -132,13 +132,13 @@ pub unsafe trait CallbackRef {
 
     /// Called before [`grow_in_place`] was invoked.
     ///
-    /// [`grow_in_place`]: core::alloc::AllocRef::grow_in_place
+    /// [`grow_in_place`]: crate::ReallocInPlace::grow_in_place
     #[inline]
     fn before_grow_in_place(&self, ptr: NonNull<u8>, layout: Layout, new_size: usize) {}
 
     /// Called after [`grow_in_place`] was invoked.
     ///
-    /// [`grow_in_place`]: core::alloc::AllocRef::grow_in_place
+    /// [`grow_in_place`]: crate::ReallocInPlace::grow_in_place
     #[inline]
     fn after_grow_in_place(
         &self,
@@ -151,13 +151,13 @@ pub unsafe trait CallbackRef {
 
     /// Called before [`grow_in_place_zeroed`] was invoked.
     ///
-    /// [`grow_in_place_zeroed`]: core::alloc::AllocRef::grow_in_place_zeroed
+    /// [`grow_in_place_zeroed`]: crate::ReallocInPlace::grow_in_place_zeroed
     #[inline]
     fn before_grow_in_place_zeroed(&self, ptr: NonNull<u8>, layout: Layout, new_size: usize) {}
 
     /// Called after [`grow_in_place_zeroed`] was invoked.
     ///
-    /// [`grow_in_place_zeroed`]: core::alloc::AllocRef::grow_in_place_zeroed
+    /// [`grow_in_place_zeroed`]: crate::ReallocInPlace::grow_in_place_zeroed
     #[inline]
     fn after_grow_in_place_zeroed(
         &self,
@@ -189,13 +189,13 @@ pub unsafe trait CallbackRef {
 
     /// Called before [`shrink_in_place`] was invoked.
     ///
-    /// [`shrink_in_place`]: core::alloc::AllocRef::shrink_in_place
+    /// [`shrink_in_place`]: crate::ReallocInPlace::shrink_in_place
     #[inline]
     fn before_shrink_in_place(&self, ptr: NonNull<u8>, layout: Layout, new_size: usize) {}
 
     /// Called after [`shrink_in_place`] was invoked.
     ///
-    /// [`shrink_in_place`]: core::alloc::AllocRef::shrink_in_place
+    /// [`shrink_in_place`]: crate::ReallocInPlace::shrink_in_place
     #[inline]
     fn after_shrink_in_place(
         &self,

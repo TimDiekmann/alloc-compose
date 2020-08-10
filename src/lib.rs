@@ -36,7 +36,7 @@ mod fallback;
 mod null;
 mod proxy;
 mod region;
-// mod segregate;
+mod segregate;
 
 use core::{
     alloc::{AllocErr, Layout},
@@ -51,17 +51,8 @@ pub use self::{
     null::Null,
     proxy::Proxy,
     region::Region,
+    segregate::Segregate,
 };
-// pub use self::{
-//     affix::Affix,
-//     callback_ref::CallbackRef,
-//     chunk::Chunk,
-//     fallback::Fallback,
-//     null::Null,
-//     proxy::Proxy,
-//     region::Region,
-//     segregate::Segregate,
-// };
 
 #[cfg(feature = "intrinsics")]
 mod intrinsics {
@@ -70,6 +61,8 @@ mod intrinsics {
 
 #[cfg(not(feature = "intrinsics"))]
 mod intrinsics {
+    #![allow(clippy::missing_const_for_fn, clippy::inline_always)]
+
     #[inline(always)]
     pub fn unlikely(b: bool) -> bool {
         b
@@ -79,7 +72,8 @@ mod intrinsics {
     pub const unsafe fn assume(_: bool) {}
 }
 
-use crate::intrinsics::*;
+#[allow(unused_imports)]
+use crate::intrinsics::{assume, unlikely};
 
 #[allow(non_snake_case)]
 mod SIZE {}
@@ -284,7 +278,7 @@ pub trait Owns {
 }
 
 #[track_caller]
-#[inline(always)]
+#[inline]
 fn check_dealloc_precondition(ptr: NonNull<u8>, layout: Layout) {
     debug_assert!(
         ptr.as_ptr() as usize >= layout.align(),
@@ -295,7 +289,7 @@ fn check_dealloc_precondition(ptr: NonNull<u8>, layout: Layout) {
 }
 
 #[track_caller]
-#[inline(always)]
+#[inline]
 fn check_grow_precondition(ptr: NonNull<u8>, layout: Layout, new_size: usize) {
     debug_assert!(
         ptr.as_ptr() as usize >= layout.align(),
@@ -312,7 +306,7 @@ fn check_grow_precondition(ptr: NonNull<u8>, layout: Layout, new_size: usize) {
 }
 
 #[track_caller]
-#[inline(always)]
+#[inline]
 fn check_shrink_precondition(ptr: NonNull<u8>, layout: Layout, new_size: usize) {
     debug_assert!(
         ptr.as_ptr() as usize >= layout.align(),
