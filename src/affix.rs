@@ -1,5 +1,6 @@
+use crate::{helper::AllocInit, AllocAll, ReallocInPlace};
 use core::{
-    alloc::{AllocErr, AllocInit, AllocRef, Layout, MemoryBlock, ReallocPlacement},
+    alloc::{AllocErr, AllocRef, Layout},
     fmt,
     marker::PhantomData,
     mem::{self, MaybeUninit},
@@ -54,10 +55,12 @@ use core::{
 /// The memory layout differs depending on `Prefix` and `Suffix`:
 ///
 /// ```
+/// #![feature(slice_ptr_get, slice_ptr_len)]
 /// # #![feature(allocator_api)]
 /// # use alloc_compose::{Affix, Chunk};
 /// # use std::alloc::{Layout, System};
-/// use core::alloc::{AllocRef, AllocInit};
+///
+/// use core::alloc::AllocRef;
 /// # type Prefix = [u32; 3];
 /// # type Suffix = [u64; 2];
 /// # type Alloc = Affix<Chunk<System, 128>, Prefix, Suffix>;
@@ -70,14 +73,20 @@ use core::{
 /// // ┢┳┳┳┳┳┳┳┳┳┳┳╅┬┬┬╆┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳╈┳┳┳╈┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳╅┬┬╌╌╌╌┬┬┤
 /// // ┡┻┻┻┻┻┻┻┻┻┻┻┹┴┴┴╄┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻╇┻┻┻╇┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┹┴┴╌╌╌╌┴┴┘
 /// // │               ├┄┄┄┄┄┄ layout.size() ┄┄┄┄┄┄┘   │
-/// // │               ├┄┄┄┄┄┄┄┄┄ memory.size ┄┄┄┄┄┄┄┄┄┤
-/// // └→ prefix()     └→ memory.ptr                   └→ suffix()
-/// let memory = my_alloc.alloc(layout, AllocInit::Uninitialized)?;
+/// // │               ├┄┄┄┄┄┄┄┄ memory.len() ┄┄┄┄┄┄┄┄┄┤
+/// // └→ prefix()     └→ memory                       └→ suffix()
+/// let memory = my_alloc.alloc(layout)?;
 ///
-/// assert_eq!(memory.size, 32);
+/// assert_eq!(memory.len(), 32);
 /// unsafe {
-///     assert_eq!(Alloc::prefix(memory.ptr, layout).cast().as_ptr(), memory.ptr.as_ptr().sub(16));
-///     assert_eq!(Alloc::suffix(memory.ptr, layout).cast().as_ptr(), memory.ptr.as_ptr().add(32));
+///     assert_eq!(
+///         Alloc::prefix(memory.as_non_null_ptr(), layout).cast().as_ptr(),
+///         memory.as_mut_ptr().sub(16)
+///     );
+///     assert_eq!(
+///         Alloc::suffix(memory.as_non_null_ptr(), layout).cast().as_ptr(),
+///         memory.as_mut_ptr().add(32)
+///     );
 /// }
 /// # Ok::<(), core::alloc::AllocErr>(())
 /// ```
@@ -90,9 +99,9 @@ use core::{
 /// If `Suffix` is a zero-sized type, the space after the requested memory block can be used:
 ///
 /// ```
-/// # #![feature(allocator_api)]
+/// # #![feature(allocator_api, slice_ptr_get, slice_ptr_len)]
 /// # use alloc_compose::{Affix, Chunk};
-/// # use std::alloc::{Layout, System, AllocRef, AllocInit};
+/// # use std::alloc::{Layout, System, AllocRef};
 /// use core::ptr::NonNull;
 /// # type Prefix = [u32; 3];
 ///
@@ -107,14 +116,17 @@ use core::{
 /// // ┢┳┳┳┳┳┳┳┳┳┳┳╅┬┬┬╆┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳╈┳┳┳╈┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳╈┳┳╍╍╍╍┳┳┪
 /// // ┡┻┻┻┻┻┻┻┻┻┻┻┹┴┴┴╄┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻╇┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻╍╍╍╍┻┻┩
 /// // │               ├┄┄┄┄┄┄ layout.size() ┄┄┄┄┄┄┘                            │
-/// // │               ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄ memory.size ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┘
-/// // └→ prefix()     └→ memory.ptr
-/// let memory = my_alloc.alloc(layout, AllocInit::Uninitialized)?;
+/// // │               ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄ memory.len() ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┘
+/// // └→ prefix()     └→ memory
+/// let memory = my_alloc.alloc(layout)?;
 ///
-/// assert_eq!(memory.size, 112);
+/// assert_eq!(memory.len(), 112);
 /// unsafe {
-///     assert_eq!(Alloc::prefix(memory.ptr, layout).cast().as_ptr(), memory.ptr.as_ptr().sub(16));
-///     assert_eq!(Alloc::suffix(memory.ptr, layout), NonNull::dangling());
+///     assert_eq!(
+///         Alloc::prefix(memory.as_non_null_ptr(), layout).cast().as_ptr(),
+///         memory.as_mut_ptr().sub(16)
+///     );
+///     assert_eq!(Alloc::suffix(memory.as_non_null_ptr(), layout), NonNull::dangling());
 /// }
 /// # Ok::<(), core::alloc::AllocErr>(())
 /// ```
@@ -124,9 +136,9 @@ use core::{
 /// If `Prefix` is a zero-sized type, this results in a waste of memory:
 ///
 /// ```
-/// # #![feature(allocator_api)]
+/// # #![feature(allocator_api, slice_ptr_get, slice_ptr_len)]
 /// # use alloc_compose::{Affix, Chunk};
-/// # use std::alloc::{Layout, System, AllocRef, AllocInit};
+/// # use std::alloc::{Layout, System, AllocRef};
 /// # use core::ptr::NonNull;
 /// # type Suffix = [u64; 2];
 /// type Alloc = Affix<Chunk<System, 128>, (), Suffix>;
@@ -139,14 +151,17 @@ use core::{
 /// // ┢┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳╈┳┳┳╈┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳╅┬┬┬┬┬┬┬┬┬┬┬┬┬┬┬┼┬┬╌╌╌╌┬┬┤
 /// // ┡┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻╇┻┻┻╇┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┹┴┴┴┴┴┴┴┴┴┴┴┴┴┴┴┴┴┴╌╌╌╌┴┴┘
 /// // ├┄┄┄┄┄┄ layout.size() ┄┄┄┄┄┄┘   │
-/// // ├┄┄┄┄┄┄┄┄┄ memory.size ┄┄┄┄┄┄┄┄┄┤
-/// // └→ memory.ptr                   └→ suffix()
-/// let memory = my_alloc.alloc(layout, AllocInit::Uninitialized)?;
+/// // ├┄┄┄┄┄┄┄┄ memory.len() ┄┄┄┄┄┄┄┄┄┤
+/// // └→ memory                       └→ suffix()
+/// let memory = my_alloc.alloc(layout)?;
 ///
-/// assert_eq!(memory.size, 32);
+/// assert_eq!(memory.len(), 32);
 /// unsafe {
-///     assert_eq!(Alloc::prefix(memory.ptr, layout), NonNull::dangling());
-///     assert_eq!(Alloc::suffix(memory.ptr, layout).cast().as_ptr(), memory.ptr.as_ptr().add(32));
+///     assert_eq!(Alloc::prefix(memory.as_non_null_ptr(), layout), NonNull::dangling());
+///     assert_eq!(
+///         Alloc::suffix(memory.as_non_null_ptr(), layout).cast().as_ptr(),
+///         memory.as_mut_ptr().add(32)
+///     );
 /// }
 /// # Ok::<(), core::alloc::AllocErr>(())
 /// ```
@@ -157,9 +172,9 @@ use core::{
 /// If both, `Prefix` and `Suffix` are ZSTs, this behaves like the parent allocator:
 ///
 /// ```
-/// # #![feature(allocator_api)]
+/// # #![feature(allocator_api, slice_ptr_get, slice_ptr_len)]
 /// # use alloc_compose::{Affix, Chunk};
-/// # use std::alloc::{Layout, System, AllocRef, AllocInit};
+/// # use std::alloc::{Layout, System, AllocRef};
 /// # use core::ptr::NonNull;
 /// # type Suffix = [u64; 2];
 /// type Alloc = Affix<Chunk<System, 128>, (), ()>;
@@ -172,14 +187,14 @@ use core::{
 /// // ┢┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳╈┳┳┳╈┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳╈┳┳┳┳┳┳┳┳┳┳┳┳┳┳┳╈┳┳╍╍╍╍┳┳┪
 /// // ┡┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻╇┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻┻╍╍╍╍┻┻┩
 /// // ├┄┄┄┄┄┄ layout.size() ┄┄┄┄┄┄┘                                            │
-/// // ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄ memory.size ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┘
-/// // └→ memory.ptr
-/// let memory = my_alloc.alloc(layout, AllocInit::Uninitialized)?;
+/// // ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄ memory.len() ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┘
+/// // └→ memory
+/// let memory = my_alloc.alloc(layout)?;
 ///
-/// assert_eq!(memory.size, 128);
+/// assert_eq!(memory.len(), 128);
 /// unsafe {
-///     assert_eq!(Alloc::prefix(memory.ptr, layout), NonNull::dangling());
-///     assert_eq!(Alloc::suffix(memory.ptr, layout), NonNull::dangling());
+///     assert_eq!(Alloc::prefix(memory.as_non_null_ptr(), layout), NonNull::dangling());
+///     assert_eq!(Alloc::suffix(memory.as_non_null_ptr(), layout), NonNull::dangling());
 /// }
 /// # Ok::<(), core::alloc::AllocErr>(())
 /// ```
@@ -233,91 +248,10 @@ impl<Alloc, Prefix, Suffix> Affix<Alloc, Prefix, Suffix> {
         }
     }
 
-    const fn align(request: Layout) -> usize {
-        let prefix_align = mem::align_of::<Prefix>();
-        if prefix_align < request.align() {
-            request.align()
-        } else {
-            prefix_align
-        }
-    }
-
-    #[allow(clippy::question_mark)]
-    const fn allocation_layout(request: Layout) -> Option<(usize, Layout, usize)> {
-        let prefix_layout = Layout::new::<Prefix>();
-
-        let prefix_offset = if let Some(offset) = prefix_layout
-            .size()
-            .checked_add(prefix_layout.padding_needed_for(request.align()))
-        {
-            offset
-        } else {
-            return None;
-        };
-
-        let size = if let Some(size) = prefix_offset.checked_add(request.size()) {
-            size
-        } else {
-            return None;
-        };
-
-        let prefix_request_layout =
-            if let Ok(layout) = Layout::from_size_align(size, Self::align(request)) {
-                layout
-            } else {
-                return None;
-            };
-
-        let padding = prefix_request_layout.padding_needed_for(mem::align_of::<Suffix>());
-
-        let (_, prefix_suffix_offset) =
-            if let Some(prefix_suffix_offset) = prefix_request_layout.size().checked_add(padding) {
-                (
-                    prefix_suffix_offset.wrapping_sub(prefix_offset),
-                    prefix_suffix_offset,
-                )
-            } else {
-                return None;
-            };
-
-        let size = if let Some(size) = prefix_suffix_offset.checked_add(mem::size_of::<Suffix>()) {
-            size
-        } else {
-            return None;
-        };
-
-        let align = Self::align(request);
-
-        if let Ok(layout) = Layout::from_size_align(size, align) {
-            Some((prefix_offset, layout, prefix_suffix_offset))
-        } else {
-            None
-        }
-    }
-
-    const fn prefix_offset(request: Layout) -> usize {
-        let prefix = Layout::new::<Prefix>();
-        prefix.size() + prefix.padding_needed_for(request.align())
-    }
-
-    const unsafe fn suffix_offset(request: Layout) -> (usize, usize) {
-        let prefix_offset = Self::prefix_offset(request);
-        let prefix_request_layout =
-            Layout::from_size_align_unchecked(prefix_offset + request.size(), Self::align(request));
-
-        let padding = prefix_request_layout.padding_needed_for(mem::align_of::<Suffix>());
-
-        let prefix_suffix_offset = prefix_request_layout.size() + padding;
-        (prefix_suffix_offset - prefix_offset, prefix_suffix_offset)
-    }
-
-    const unsafe fn unchecked_allocation_layout(request: Layout) -> (usize, Layout, usize) {
-        let (_, prefix_suffix_offset) = Self::suffix_offset(request);
-        let size = prefix_suffix_offset + mem::size_of::<Suffix>();
-
-        let prefix_offset = Self::prefix_offset(request);
-        let layout = Layout::from_size_align_unchecked(size, Self::align(request));
-        (prefix_offset, layout, prefix_suffix_offset)
+    fn allocation_layout(layout: Layout) -> Option<(Layout, usize, usize)> {
+        let (layout, prefix_offset) = Layout::new::<Prefix>().extend(layout).ok()?;
+        let (layout, suffix_offset) = layout.extend(Layout::new::<Suffix>()).ok()?;
+        Some((layout, prefix_offset, suffix_offset))
     }
 
     /// Returns a pointer to the prefix.
@@ -333,7 +267,8 @@ impl<Alloc, Prefix, Suffix> Affix<Alloc, Prefix, Suffix> {
         if mem::size_of::<Prefix>() == 0 {
             NonNull::dangling()
         } else {
-            NonNull::new_unchecked(ptr.as_ptr().sub(Self::prefix_offset(layout))).cast()
+            let (_, prefix, _) = Self::allocation_layout(layout).unwrap();
+            NonNull::new_unchecked(ptr.as_ptr().sub(prefix)).cast()
         }
     }
 
@@ -350,8 +285,113 @@ impl<Alloc, Prefix, Suffix> Affix<Alloc, Prefix, Suffix> {
         if mem::size_of::<Suffix>() == 0 {
             NonNull::dangling()
         } else {
-            NonNull::new_unchecked(ptr.as_ptr().add(Self::suffix_offset(layout).0)).cast()
+            let (_, prefix, suffix) = Self::allocation_layout(layout).unwrap();
+            NonNull::new_unchecked(ptr.as_ptr().add(suffix - prefix)).cast()
         }
+    }
+
+    fn create_ptr(ptr: NonNull<[u8]>, offset_prefix: usize, offset_suffix: usize) -> NonNull<[u8]> {
+        let len = if mem::size_of::<Suffix>() == 0 {
+            ptr.len() - offset_prefix
+        } else {
+            offset_suffix - offset_prefix
+        };
+        let ptr = unsafe { NonNull::new_unchecked(ptr.as_mut_ptr().add(offset_prefix)) };
+
+        NonNull::slice_from_raw_parts(ptr, len)
+    }
+
+    #[inline]
+    fn alloc_impl(
+        layout: Layout,
+        alloc: impl FnOnce(Layout) -> Result<NonNull<[u8]>, AllocErr>,
+    ) -> Result<NonNull<[u8]>, AllocErr> {
+        let (layout, offset_prefix, offset_suffix) =
+            Self::allocation_layout(layout).ok_or(AllocErr)?;
+
+        Ok(Self::create_ptr(
+            alloc(layout)?,
+            offset_prefix,
+            offset_suffix,
+        ))
+    }
+
+    #[inline]
+    unsafe fn grow_impl(
+        old_ptr: NonNull<u8>,
+        old_layout: Layout,
+        new_size: usize,
+        init: AllocInit,
+        grow: impl FnOnce(NonNull<u8>, Layout, usize) -> Result<NonNull<[u8]>, AllocErr>,
+    ) -> Result<NonNull<[u8]>, AllocErr> {
+        let (old_alloc_layout, old_offset_prefix, old_offset_suffix) =
+            Self::allocation_layout(old_layout).ok_or(AllocErr)?;
+        let old_base_ptr = NonNull::new_unchecked(old_ptr.as_ptr().sub(old_offset_prefix));
+
+        let suffix = Self::suffix(old_ptr, old_layout)
+            .cast::<MaybeUninit<Suffix>>()
+            .as_ptr()
+            .read();
+
+        let new_layout =
+            Layout::from_size_align(new_size, old_layout.align()).map_err(|_| AllocErr)?;
+        let (new_alloc_layout, new_offset_prefix, new_offset_suffix) =
+            Self::allocation_layout(new_layout).ok_or(AllocErr)?;
+
+        let new_base_ptr = grow(old_base_ptr, old_alloc_layout, new_alloc_layout.size())?;
+
+        if init == AllocInit::Zeroed {
+            ptr::write_bytes(
+                new_base_ptr
+                    .as_non_null_ptr()
+                    .as_ptr()
+                    .add(old_offset_suffix),
+                0,
+                mem::size_of::<Suffix>(),
+            );
+        }
+
+        let new_ptr = Self::create_ptr(new_base_ptr, new_offset_prefix, new_offset_suffix);
+
+        Self::suffix(new_ptr.as_non_null_ptr(), new_layout)
+            .cast::<MaybeUninit<Suffix>>()
+            .as_ptr()
+            .write(suffix);
+
+        Ok(new_ptr)
+    }
+
+    #[inline]
+    unsafe fn shrink_impl(
+        old_ptr: NonNull<u8>,
+        old_layout: Layout,
+        new_size: usize,
+        shrink: impl FnOnce(NonNull<u8>, Layout, usize) -> Result<NonNull<[u8]>, AllocErr>,
+    ) -> Result<NonNull<[u8]>, AllocErr> {
+        let (old_alloc_layout, old_offset_prefix, _) =
+            Self::allocation_layout(old_layout).ok_or(AllocErr)?;
+        let old_base_ptr = NonNull::new_unchecked(old_ptr.as_ptr().sub(old_offset_prefix));
+
+        let suffix = Self::suffix(old_ptr, old_layout)
+            .cast::<MaybeUninit<Suffix>>()
+            .as_ptr()
+            .read();
+
+        let new_layout =
+            Layout::from_size_align(new_size, old_layout.align()).map_err(|_| AllocErr)?;
+        let (new_alloc_layout, new_offset_prefix, new_offset_suffix) =
+            Self::allocation_layout(new_layout).ok_or(AllocErr)?;
+
+        let new_base_ptr = shrink(old_base_ptr, old_alloc_layout, new_alloc_layout.size())?;
+
+        let new_ptr = Self::create_ptr(new_base_ptr, new_offset_prefix, new_offset_suffix);
+
+        Self::suffix(new_ptr.as_non_null_ptr(), new_layout)
+            .cast::<MaybeUninit<Suffix>>()
+            .as_ptr()
+            .write(suffix);
+
+        Ok(new_ptr)
     }
 }
 
@@ -359,132 +399,35 @@ unsafe impl<Alloc, Prefix, Suffix> AllocRef for Affix<Alloc, Prefix, Suffix>
 where
     Alloc: AllocRef,
 {
-    fn alloc(&mut self, layout: Layout, init: AllocInit) -> Result<MemoryBlock, AllocErr> {
-        let (offset_prefix, layout, offset_suffix) =
-            Self::allocation_layout(layout).ok_or(AllocErr)?;
-
-        let memory = self.parent.alloc(layout, init)?;
-
-        Ok(MemoryBlock {
-            ptr: unsafe { NonNull::new_unchecked(memory.ptr.as_ptr().add(offset_prefix)) },
-            size: if mem::size_of::<Suffix>() == 0 {
-                memory.size - offset_prefix
-            } else {
-                offset_suffix - offset_prefix
-            },
-        })
-    }
+    impl_alloc_ref!(parent);
 
     unsafe fn dealloc(&mut self, ptr: NonNull<u8>, layout: Layout) {
-        debug_assert_eq!(
-            Self::allocation_layout(layout).unwrap(),
-            Self::unchecked_allocation_layout(layout)
-        );
-
-        let (prefix_offset, layout, _) = Self::unchecked_allocation_layout(layout);
+        let (layout, prefix_offset, _) = Self::allocation_layout(layout).unwrap();
         let base_ptr = ptr.as_ptr().sub(prefix_offset);
         self.parent
             .dealloc(NonNull::new_unchecked(base_ptr), layout)
     }
+}
 
-    unsafe fn grow(
-        &mut self,
-        ptr: NonNull<u8>,
-        old_layout: Layout,
-        new_size: usize,
-        placement: ReallocPlacement,
-        init: AllocInit,
-    ) -> Result<MemoryBlock, AllocErr> {
-        debug_assert_eq!(
-            Self::allocation_layout(old_layout).unwrap(),
-            Self::unchecked_allocation_layout(old_layout)
-        );
+unsafe impl<Alloc, Prefix, Suffix> AllocAll for Affix<Alloc, Prefix, Suffix>
+where
+    Alloc: AllocAll,
+{
+    impl_alloc_all!(parent);
+}
 
-        let (old_offset_prefix, old_alloc_layout, old_offset_suffix) =
-            Self::unchecked_allocation_layout(old_layout);
-        let ptr = ptr.as_ptr().sub(old_offset_prefix);
-
-        let new_layout = Layout::from_size_align_unchecked(new_size, old_layout.align());
-        let (new_offset_prefix, new_alloc_layout, new_offset_suffix) =
-            Self::allocation_layout(new_layout).ok_or(AllocErr)?;
-
-        let suffix: MaybeUninit<Suffix> = ptr::read(ptr.add(old_offset_suffix) as *mut _);
-        let memory = self.parent.grow(
-            NonNull::new_unchecked(ptr),
-            old_alloc_layout,
-            new_alloc_layout.size(),
-            placement,
-            init,
-        )?;
-
-        if init == AllocInit::Zeroed {
-            ptr::write_bytes(
-                memory.ptr.as_ptr().add(old_offset_suffix),
-                0,
-                mem::size_of::<Suffix>(),
-            );
-        }
-        ptr::write(memory.ptr.as_ptr().add(new_offset_suffix) as *mut _, suffix);
-
-        Ok(MemoryBlock {
-            ptr: NonNull::new_unchecked(memory.ptr.as_ptr().add(new_offset_prefix)),
-            size: if mem::size_of::<Suffix>() == 0 {
-                memory.size - new_offset_prefix
-            } else {
-                new_offset_suffix - new_offset_prefix
-            },
-        })
-    }
-
-    unsafe fn shrink(
-        &mut self,
-        ptr: NonNull<u8>,
-        old_layout: Layout,
-        new_size: usize,
-        placement: ReallocPlacement,
-    ) -> Result<MemoryBlock, AllocErr> {
-        debug_assert_eq!(
-            Self::allocation_layout(old_layout).unwrap(),
-            Self::unchecked_allocation_layout(old_layout)
-        );
-
-        let (old_offset_prefix, old_alloc_layout, old_offset_suffix) =
-            Self::unchecked_allocation_layout(old_layout);
-        let ptr = ptr.as_ptr().sub(old_offset_prefix);
-
-        let new_layout = Layout::from_size_align_unchecked(new_size, old_layout.align());
-        let (new_offset_prefix, new_alloc_layout, new_offset_suffix) =
-            Self::unchecked_allocation_layout(new_layout);
-
-        let suffix: MaybeUninit<Suffix> = ptr::read(ptr.add(old_offset_suffix) as *mut _);
-        let memory = self.parent.shrink(
-            NonNull::new_unchecked(ptr),
-            old_alloc_layout,
-            new_alloc_layout.size(),
-            placement,
-        )?;
-
-        ptr::write(memory.ptr.as_ptr().add(new_offset_suffix) as *mut _, suffix);
-
-        Ok(MemoryBlock {
-            ptr: NonNull::new_unchecked(memory.ptr.as_ptr().add(new_offset_prefix)),
-            size: if mem::size_of::<Suffix>() == 0 {
-                memory.size - new_offset_prefix
-            } else {
-                new_offset_suffix - new_offset_prefix
-            },
-        })
-    }
+unsafe impl<Alloc, Prefix, Suffix> ReallocInPlace for Affix<Alloc, Prefix, Suffix>
+where
+    Alloc: ReallocInPlace,
+{
+    impl_realloc_in_place!(parent);
 }
 
 #[cfg(test)]
 mod tests {
     #![allow(clippy::wildcard_imports)]
     use super::*;
-    use crate::{
-        helper::{AsSlice, Tracker},
-        Proxy,
-    };
+    use crate::helper::tracker;
     use core::fmt;
     use std::alloc::System;
 
@@ -500,109 +443,90 @@ mod tests {
         Suffix: fmt::Debug + Copy + PartialEq,
     {
         unsafe {
-            let mut alloc = Proxy {
-                alloc: Affix::<System, Prefix, Suffix>::default(),
-                callbacks: Tracker::default(),
-            };
+            let mut alloc = tracker(Affix::<_, Prefix, Suffix>::new(tracker(System)));
             let memory = alloc
-                .alloc(layout, AllocInit::Zeroed)
+                .alloc_zeroed(layout)
                 .unwrap_or_else(|_| panic!("Could not allocate {} bytes", layout.size()));
 
             if mem::size_of::<Prefix>() == 0 {
                 assert_eq!(
-                    Affix::<System, Prefix, Suffix>::prefix(memory.ptr, layout),
+                    Affix::<System, Prefix, Suffix>::prefix(memory.as_non_null_ptr(), layout),
                     NonNull::dangling()
                 );
             } else {
                 assert_eq!(
-                    Affix::<System, Prefix, Suffix>::prefix(memory.ptr, layout)
+                    Affix::<System, Prefix, Suffix>::prefix(memory.as_non_null_ptr(), layout)
                         .cast()
                         .as_ptr(),
-                    memory.ptr.as_ptr().sub(offset_prefix)
+                    memory.as_mut_ptr().sub(offset_prefix)
                 );
             }
             if mem::size_of::<Suffix>() == 0 {
                 assert_eq!(
-                    Affix::<System, Prefix, Suffix>::suffix(memory.ptr, layout),
+                    Affix::<System, Prefix, Suffix>::suffix(memory.as_non_null_ptr(), layout),
                     NonNull::dangling()
                 );
             } else {
                 assert_eq!(
-                    Affix::<System, Prefix, Suffix>::suffix(memory.ptr, layout)
+                    Affix::<System, Prefix, Suffix>::suffix(memory.as_non_null_ptr(), layout)
                         .cast()
                         .as_ptr(),
-                    memory.ptr.as_ptr().add(offset_suffix)
+                    memory.as_mut_ptr().add(offset_suffix)
                 );
             }
 
-            Affix::<System, Prefix, Suffix>::prefix(memory.ptr, layout)
+            Affix::<System, Prefix, Suffix>::prefix(memory.as_non_null_ptr(), layout)
                 .as_ptr()
                 .write(prefix);
-            Affix::<System, Prefix, Suffix>::suffix(memory.ptr, layout)
+            Affix::<System, Prefix, Suffix>::suffix(memory.as_non_null_ptr(), layout)
                 .as_ptr()
                 .write(suffix);
 
             assert_eq!(
-                Affix::<System, Prefix, Suffix>::prefix(memory.ptr, layout).as_ref(),
+                Affix::<System, Prefix, Suffix>::prefix(memory.as_non_null_ptr(), layout).as_ref(),
                 &prefix
             );
             assert_eq!(
-                MaybeUninit::slice_get_ref(memory.as_slice()),
-                &vec![0_u8; memory.size][..]
-            );
-            assert_eq!(
-                Affix::<System, Prefix, Suffix>::suffix(memory.ptr, layout).as_ref(),
+                Affix::<System, Prefix, Suffix>::suffix(memory.as_non_null_ptr(), layout).as_ref(),
                 &suffix
             );
 
-            let growed_memory = alloc
-                .grow(
-                    memory.ptr,
-                    layout,
-                    memory.size * 2,
-                    ReallocPlacement::MayMove,
-                    AllocInit::Zeroed,
-                )
+            let old_size = memory.len();
+            let memory = alloc
+                .grow_zeroed(memory.as_non_null_ptr(), layout, memory.len() * 2)
                 .expect("Could not grow allocation");
-            let new_layout =
-                Layout::from_size_align(memory.size * 2, layout.align()).expect("Invalid layout");
+            let layout =
+                Layout::from_size_align(memory.len(), layout.align()).expect("Invalid layout");
+
+            for i in old_size..memory.len() {
+                assert_eq!(*memory.get_unchecked_mut(i).as_ref(), 0);
+            }
 
             assert_eq!(
-                Affix::<System, Prefix, Suffix>::prefix(growed_memory.ptr, new_layout).as_ref(),
+                Affix::<System, Prefix, Suffix>::prefix(memory.as_non_null_ptr(), layout).as_ref(),
                 &prefix
             );
             assert_eq!(
-                MaybeUninit::slice_get_ref(growed_memory.as_slice()),
-                &vec![0_u8; growed_memory.size][..]
-            );
-            assert_eq!(
-                Affix::<System, Prefix, Suffix>::suffix(growed_memory.ptr, new_layout).as_ref(),
+                Affix::<System, Prefix, Suffix>::suffix(memory.as_non_null_ptr(), layout).as_ref(),
                 &suffix
             );
 
             let memory = alloc
-                .shrink(
-                    growed_memory.ptr,
-                    new_layout,
-                    layout.size(),
-                    ReallocPlacement::MayMove,
-                )
+                .shrink(memory.as_non_null_ptr(), layout, layout.size())
                 .expect("Could not shrink allocation");
+            let layout =
+                Layout::from_size_align(memory.len(), layout.align()).expect("Invalid layout");
 
             assert_eq!(
-                Affix::<System, Prefix, Suffix>::prefix(memory.ptr, layout).as_ref(),
+                Affix::<System, Prefix, Suffix>::prefix(memory.as_non_null_ptr(), layout).as_ref(),
                 &prefix
             );
             assert_eq!(
-                MaybeUninit::slice_get_ref(memory.as_slice()),
-                &vec![0_u8; memory.size][..]
-            );
-            assert_eq!(
-                Affix::<System, Prefix, Suffix>::suffix(memory.ptr, layout).as_ref(),
+                Affix::<System, Prefix, Suffix>::suffix(memory.as_non_null_ptr(), layout).as_ref(),
                 &suffix
             );
 
-            alloc.dealloc(memory.ptr, layout);
+            alloc.dealloc(memory.as_non_null_ptr(), layout);
         }
     }
 
@@ -646,7 +570,7 @@ mod tests {
         test_alloc::<u16, AlignTo1024>(
             0xDEDE,
             Layout::new::<u32>(),
-            AlignTo1024 { a: 0xDEDE },
+            AlignTo1024 { a: 0xEFEF },
             4,
             1020,
         )

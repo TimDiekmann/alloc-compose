@@ -1,6 +1,6 @@
-use crate::{AllocAll, CallbackRef, Owns};
+use crate::{AllocAll, CallbackRef, Owns, ReallocInPlace};
 use core::{
-    alloc::{AllocErr, AllocInit, AllocRef, Layout, MemoryBlock, ReallocPlacement},
+    alloc::{AllocErr, AllocRef, Layout},
     ptr::NonNull,
 };
 
@@ -12,10 +12,10 @@ use core::{
 /// # Examples
 ///
 /// ```rust
-/// #![feature(allocator_api)]
+/// #![feature(allocator_api, slice_ptr_get)]
 ///
 /// use alloc_compose::{stats, CallbackRef, Proxy};
-/// use std::alloc::{AllocInit, AllocRef, Global, Layout};
+/// use std::alloc::{AllocRef, Global, Layout};
 ///
 /// let counter = stats::Counter::default();
 /// let mut alloc = Proxy {
@@ -24,8 +24,8 @@ use core::{
 /// };
 ///
 /// unsafe {
-///     let memory = alloc.alloc(Layout::new::<u32>(), AllocInit::Uninitialized)?;
-///     alloc.dealloc(memory.ptr, Layout::new::<u32>());
+///     let memory = alloc.alloc(Layout::new::<u32>())?;
+///     alloc.dealloc(memory.as_non_null_ptr(), Layout::new::<u32>());
 /// }
 ///
 /// assert_eq!(counter.num_allocs(), 1);
@@ -37,9 +37,9 @@ use core::{
 /// fine-grained callback:
 ///
 /// ```rust
-/// # #![feature(allocator_api)]
+/// # #![feature(allocator_api, slice_ptr_get)]
 /// # use alloc_compose::{stats, CallbackRef, Proxy};
-/// # use std::alloc::{AllocInit, AllocRef, Layout};
+/// # use std::alloc::{AllocRef, Layout};
 /// use alloc_compose::{
 ///     stats::{AllocInitFilter, ResultFilter},
 ///     Region,
@@ -54,12 +54,10 @@ use core::{
 /// };
 ///
 /// unsafe {
-///     let memory = alloc.alloc(Layout::new::<u32>(), AllocInit::Uninitialized)?;
-///     alloc.dealloc(memory.ptr, Layout::new::<u32>());
+///     let memory = alloc.alloc(Layout::new::<u32>())?;
+///     alloc.dealloc(memory.as_non_null_ptr(), Layout::new::<u32>());
 ///
-///     alloc
-///         .alloc(Layout::new::<[u32; 64]>(), AllocInit::Zeroed)
-///         .unwrap_err();
+///     alloc.alloc_zeroed(Layout::new::<[u32; 64]>()).unwrap_err();
 /// }
 ///
 /// assert_eq!(counter.num_allocs(), 2);
@@ -68,7 +66,7 @@ use core::{
 ///     1
 /// );
 /// assert_eq!(
-///     counter.num_allocs_filter(AllocInit::Zeroed, ResultFilter::Err),
+///     counter.num_allocs_filter(AllocInitFilter::Zeroed, ResultFilter::Err),
 ///     1
 /// );
 /// # Ok::<(), core::alloc::AllocErr>(())
@@ -81,15 +79,24 @@ pub struct Proxy<A, C> {
 
 unsafe impl<A: AllocRef, C: CallbackRef> AllocRef for Proxy<A, C> {
     #[track_caller]
-    fn alloc(&mut self, layout: Layout, init: AllocInit) -> Result<MemoryBlock, AllocErr> {
-        self.callbacks.before_alloc(layout, init);
-        let result = self.alloc.alloc(layout, init);
-        self.callbacks.after_alloc(layout, init, result);
+    fn alloc(&mut self, layout: Layout) -> Result<NonNull<[u8]>, AllocErr> {
+        self.callbacks.before_alloc(layout);
+        let result = self.alloc.alloc(layout);
+        self.callbacks.after_alloc(layout, result);
+        result
+    }
+
+    #[track_caller]
+    fn alloc_zeroed(&mut self, layout: Layout) -> Result<NonNull<[u8]>, AllocErr> {
+        self.callbacks.before_alloc_zeroed(layout);
+        let result = self.alloc.alloc_zeroed(layout);
+        self.callbacks.after_alloc_zeroed(layout, result);
         result
     }
 
     #[track_caller]
     unsafe fn dealloc(&mut self, ptr: NonNull<u8>, layout: Layout) {
+        crate::check_dealloc_precondition(ptr, layout);
         self.callbacks.before_dealloc(ptr, layout);
         self.alloc.dealloc(ptr, layout);
         self.callbacks.after_dealloc(ptr, layout);
@@ -101,14 +108,26 @@ unsafe impl<A: AllocRef, C: CallbackRef> AllocRef for Proxy<A, C> {
         ptr: NonNull<u8>,
         layout: Layout,
         new_size: usize,
-        placement: ReallocPlacement,
-        init: AllocInit,
-    ) -> Result<MemoryBlock, AllocErr> {
+    ) -> Result<NonNull<[u8]>, AllocErr> {
+        crate::check_grow_precondition(ptr, layout, new_size);
+        self.callbacks.before_grow(ptr, layout, new_size);
+        let result = self.alloc.grow(ptr, layout, new_size);
+        self.callbacks.after_grow(ptr, layout, new_size, result);
+        result
+    }
+
+    #[track_caller]
+    unsafe fn grow_zeroed(
+        &mut self,
+        ptr: NonNull<u8>,
+        layout: Layout,
+        new_size: usize,
+    ) -> Result<NonNull<[u8]>, AllocErr> {
+        crate::check_grow_precondition(ptr, layout, new_size);
+        self.callbacks.before_grow_zeroed(ptr, layout, new_size);
+        let result = self.alloc.grow_zeroed(ptr, layout, new_size);
         self.callbacks
-            .before_grow(ptr, layout, new_size, placement, init);
-        let result = self.alloc.grow(ptr, layout, new_size, placement, init);
-        self.callbacks
-            .after_grow(ptr, layout, new_size, placement, init, result);
+            .after_grow_zeroed(ptr, layout, new_size, result);
         result
     }
 
@@ -118,23 +137,29 @@ unsafe impl<A: AllocRef, C: CallbackRef> AllocRef for Proxy<A, C> {
         ptr: NonNull<u8>,
         layout: Layout,
         new_size: usize,
-        placement: ReallocPlacement,
-    ) -> Result<MemoryBlock, AllocErr> {
-        self.callbacks
-            .before_shrink(ptr, layout, new_size, placement);
-        let result = self.alloc.shrink(ptr, layout, new_size, placement);
-        self.callbacks
-            .after_shrink(ptr, layout, new_size, placement, result);
+    ) -> Result<NonNull<[u8]>, AllocErr> {
+        crate::check_shrink_precondition(ptr, layout, new_size);
+        self.callbacks.before_shrink(ptr, layout, new_size);
+        let result = self.alloc.shrink(ptr, layout, new_size);
+        self.callbacks.after_shrink(ptr, layout, new_size, result);
         result
     }
 }
 
-impl<A: AllocAll, C: CallbackRef> AllocAll for Proxy<A, C> {
+unsafe impl<A: AllocAll, C: CallbackRef> AllocAll for Proxy<A, C> {
     #[track_caller]
-    fn alloc_all(&mut self, layout: Layout, init: AllocInit) -> Result<MemoryBlock, AllocErr> {
-        self.callbacks.before_alloc_all(layout, init);
-        let result = self.alloc.alloc_all(layout, init);
-        self.callbacks.after_alloc_all(layout, init, result);
+    fn alloc_all(&mut self, layout: Layout) -> Result<NonNull<[u8]>, AllocErr> {
+        self.callbacks.before_alloc_all(layout);
+        let result = self.alloc.alloc_all(layout);
+        self.callbacks.after_alloc_all(layout, result);
+        result
+    }
+
+    #[track_caller]
+    fn alloc_all_zeroed(&mut self, layout: Layout) -> Result<NonNull<[u8]>, AllocErr> {
+        self.callbacks.before_alloc_all_zeroed(layout);
+        let result = self.alloc.alloc_all_zeroed(layout);
+        self.callbacks.after_alloc_all_zeroed(layout, result);
         result
     }
 
@@ -154,7 +179,7 @@ impl<A: AllocAll, C: CallbackRef> AllocAll for Proxy<A, C> {
     #[track_caller]
     #[inline]
     fn capacity_left(&self) -> usize {
-        self.alloc.capacity()
+        self.alloc.capacity_left()
     }
 
     #[track_caller]
@@ -170,10 +195,58 @@ impl<A: AllocAll, C: CallbackRef> AllocAll for Proxy<A, C> {
     }
 }
 
+unsafe impl<A: ReallocInPlace, C: CallbackRef> ReallocInPlace for Proxy<A, C> {
+    #[track_caller]
+    unsafe fn grow_in_place(
+        &mut self,
+        ptr: NonNull<u8>,
+        layout: Layout,
+        new_size: usize,
+    ) -> Result<usize, AllocErr> {
+        crate::check_grow_precondition(ptr, layout, new_size);
+        self.callbacks.before_grow_in_place(ptr, layout, new_size);
+        let result = self.alloc.grow_in_place(ptr, layout, new_size);
+        self.callbacks
+            .after_grow_in_place(ptr, layout, new_size, result);
+        result
+    }
+
+    #[track_caller]
+    unsafe fn grow_in_place_zeroed(
+        &mut self,
+        ptr: NonNull<u8>,
+        layout: Layout,
+        new_size: usize,
+    ) -> Result<usize, AllocErr> {
+        crate::check_grow_precondition(ptr, layout, new_size);
+        self.callbacks
+            .before_grow_in_place_zeroed(ptr, layout, new_size);
+        let result = self.alloc.grow_in_place_zeroed(ptr, layout, new_size);
+        self.callbacks
+            .after_grow_in_place_zeroed(ptr, layout, new_size, result);
+        result
+    }
+
+    #[track_caller]
+    unsafe fn shrink_in_place(
+        &mut self,
+        ptr: NonNull<u8>,
+        layout: Layout,
+        new_size: usize,
+    ) -> Result<usize, AllocErr> {
+        crate::check_shrink_precondition(ptr, layout, new_size);
+        self.callbacks.before_shrink_in_place(ptr, layout, new_size);
+        let result = self.alloc.shrink_in_place(ptr, layout, new_size);
+        self.callbacks
+            .after_shrink_in_place(ptr, layout, new_size, result);
+        result
+    }
+}
+
 impl<A: Owns, C: CallbackRef> Owns for Proxy<A, C> {
-    fn owns(&self, memory: MemoryBlock) -> bool {
+    fn owns(&self, ptr: NonNull<[u8]>) -> bool {
         self.callbacks.before_owns();
-        let owns = self.alloc.owns(memory);
+        let owns = self.alloc.owns(ptr);
         self.callbacks.after_owns(owns);
         owns
     }

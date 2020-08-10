@@ -1,6 +1,9 @@
-use crate::{grow, Owns};
+use crate::{
+    helper::{grow_fallback, AllocInit},
+    Owns,
+};
 use core::{
-    alloc::{AllocErr, AllocInit, AllocRef, Layout, MemoryBlock, ReallocPlacement},
+    alloc::{AllocErr, AllocRef, Layout},
     ptr::NonNull,
 };
 
@@ -19,11 +22,11 @@ use core::{
 /// # Example
 ///
 /// ```rust
-/// #![feature(allocator_api)]
+/// #![feature(allocator_api, slice_ptr_get)]
 ///
 /// use alloc_compose::{Fallback, Owns, Region};
 /// use std::{
-///     alloc::{AllocInit, AllocRef, Layout, System},
+///     alloc::{AllocRef, Layout, System},
 ///     mem::MaybeUninit,
 /// };
 ///
@@ -33,16 +36,16 @@ use core::{
 ///     secondary: System,
 /// };
 ///
-/// let small_memory = alloc.alloc(Layout::new::<u32>(), AllocInit::Uninitialized)?;
-/// let big_memory = alloc.alloc(Layout::new::<[u32; 64]>(), AllocInit::Uninitialized)?;
+/// let small_memory = alloc.alloc(Layout::new::<u32>())?;
+/// let big_memory = alloc.alloc(Layout::new::<[u32; 64]>())?;
 ///
 /// assert!(alloc.primary.owns(small_memory));
 /// assert!(!alloc.primary.owns(big_memory));
 ///
 /// unsafe {
 ///     // `big_memory` was allocated from `System`, we can dealloc it directly
-///     System.dealloc(big_memory.ptr, Layout::new::<[u32; 64]>());
-///     alloc.dealloc(small_memory.ptr, Layout::new::<u32>());
+///     System.dealloc(big_memory.as_non_null_ptr(), Layout::new::<[u32; 64]>());
+///     alloc.dealloc(small_memory.as_non_null_ptr(), Layout::new::<u32>());
 /// };
 /// # Ok::<(), core::alloc::AllocErr>(())
 /// ```
@@ -59,18 +62,25 @@ where
     Primary: AllocRef + Owns,
     Secondary: AllocRef,
 {
-    fn alloc(&mut self, layout: Layout, init: AllocInit) -> Result<MemoryBlock, AllocErr> {
-        match self.primary.alloc(layout, init) {
+    fn alloc(&mut self, layout: Layout) -> Result<NonNull<[u8]>, AllocErr> {
+        match self.primary.alloc(layout) {
             primary @ Ok(_) => primary,
-            Err(_) => self.secondary.alloc(layout, init),
+            Err(_) => self.secondary.alloc(layout),
+        }
+    }
+
+    fn alloc_zeroed(&mut self, layout: Layout) -> Result<NonNull<[u8]>, AllocErr> {
+        match self.primary.alloc_zeroed(layout) {
+            primary @ Ok(_) => primary,
+            Err(_) => self.secondary.alloc_zeroed(layout),
         }
     }
 
     unsafe fn dealloc(&mut self, ptr: NonNull<u8>, layout: Layout) {
-        if self.primary.owns(MemoryBlock {
-            ptr,
-            size: layout.size(),
-        }) {
+        if self
+            .primary
+            .owns(NonNull::slice_from_raw_parts(ptr, layout.size()))
+        {
             self.primary.dealloc(ptr, layout)
         } else {
             self.secondary.dealloc(ptr, layout)
@@ -82,28 +92,52 @@ where
         ptr: NonNull<u8>,
         layout: Layout,
         new_size: usize,
-        placement: ReallocPlacement,
-        init: AllocInit,
-    ) -> Result<MemoryBlock, AllocErr> {
-        if self.primary.owns(MemoryBlock {
-            ptr,
-            size: layout.size(),
-        }) {
-            if let Ok(memory) = self.primary.grow(ptr, layout, new_size, placement, init) {
+    ) -> Result<NonNull<[u8]>, AllocErr> {
+        if self
+            .primary
+            .owns(NonNull::slice_from_raw_parts(ptr, layout.size()))
+        {
+            if let Ok(memory) = self.primary.grow(ptr, layout, new_size) {
                 Ok(memory)
             } else {
-                grow(
+                grow_fallback(
                     &mut self.primary,
                     &mut self.secondary,
                     ptr,
                     layout,
                     new_size,
-                    placement,
-                    init,
+                    AllocInit::Uninitialized,
                 )
             }
         } else {
-            self.secondary.grow(ptr, layout, new_size, placement, init)
+            self.secondary.grow(ptr, layout, new_size)
+        }
+    }
+
+    unsafe fn grow_zeroed(
+        &mut self,
+        ptr: NonNull<u8>,
+        layout: Layout,
+        new_size: usize,
+    ) -> Result<NonNull<[u8]>, AllocErr> {
+        if self
+            .primary
+            .owns(NonNull::slice_from_raw_parts(ptr, layout.size()))
+        {
+            if let Ok(memory) = self.primary.grow_zeroed(ptr, layout, new_size) {
+                Ok(memory)
+            } else {
+                grow_fallback(
+                    &mut self.primary,
+                    &mut self.secondary,
+                    ptr,
+                    layout,
+                    new_size,
+                    AllocInit::Zeroed,
+                )
+            }
+        } else {
+            self.secondary.grow_zeroed(ptr, layout, new_size)
         }
     }
 
@@ -112,15 +146,14 @@ where
         ptr: NonNull<u8>,
         layout: Layout,
         new_size: usize,
-        placement: ReallocPlacement,
-    ) -> Result<MemoryBlock, AllocErr> {
-        if self.primary.owns(MemoryBlock {
-            ptr,
-            size: layout.size(),
-        }) {
-            self.primary.shrink(ptr, layout, new_size, placement)
+    ) -> Result<NonNull<[u8]>, AllocErr> {
+        if self
+            .primary
+            .owns(NonNull::slice_from_raw_parts(ptr, layout.size()))
+        {
+            self.primary.shrink(ptr, layout, new_size)
         } else {
-            self.secondary.shrink(ptr, layout, new_size, placement)
+            self.secondary.shrink(ptr, layout, new_size)
         }
     }
 }
@@ -130,7 +163,7 @@ where
     Primary: Owns,
     Secondary: Owns,
 {
-    fn owns(&self, memory: MemoryBlock) -> bool {
+    fn owns(&self, memory: NonNull<[u8]>) -> bool {
         self.primary.owns(memory) || self.secondary.owns(memory)
     }
 }
@@ -140,7 +173,7 @@ mod tests {
     use super::Fallback;
     use crate::{helper, Owns, Region};
     use std::{
-        alloc::{AllocInit, AllocRef, Layout, ReallocPlacement, System},
+        alloc::{AllocRef, Layout, System},
         mem::MaybeUninit,
     };
 
@@ -153,17 +186,17 @@ mod tests {
         };
 
         let small_memory = alloc
-            .alloc(Layout::new::<u32>(), AllocInit::Uninitialized)
+            .alloc(Layout::new::<u32>())
             .expect("Could not allocate 4 bytes");
         let big_memory = alloc
-            .alloc(Layout::new::<[u8; 64]>(), AllocInit::Uninitialized)
+            .alloc(Layout::new::<[u8; 64]>())
             .expect("Could not allocate 64 bytes");
 
         assert!(alloc.primary.owns(small_memory));
         assert!(!alloc.primary.owns(big_memory));
         unsafe {
-            alloc.dealloc(small_memory.ptr, Layout::new::<u32>());
-            alloc.dealloc(big_memory.ptr, Layout::new::<[u8; 64]>());
+            alloc.dealloc(small_memory.as_non_null_ptr(), Layout::new::<u32>());
+            alloc.dealloc(big_memory.as_non_null_ptr(), Layout::new::<[u8; 64]>());
         };
     }
 
@@ -176,57 +209,33 @@ mod tests {
         };
 
         let memory = alloc
-            .alloc(Layout::new::<[u8; 32]>(), AllocInit::Uninitialized)
+            .alloc(Layout::new::<[u8; 32]>())
             .expect("Could not allocate 32 bytes");
         assert!(alloc.primary.owns(memory));
 
         unsafe {
             let memory = alloc
-                .grow(
-                    memory.ptr,
-                    Layout::new::<[u8; 32]>(),
-                    64,
-                    ReallocPlacement::MayMove,
-                    AllocInit::Uninitialized,
-                )
+                .grow(memory.as_non_null_ptr(), Layout::new::<[u8; 32]>(), 64)
                 .expect("Could not grow to 64 bytes");
             assert!(alloc.primary.owns(memory));
-            assert_eq!(memory.size, 64);
+            assert_eq!(memory.len(), 64);
 
             let memory = alloc
-                .grow(
-                    memory.ptr,
-                    Layout::new::<[u8; 64]>(),
-                    80,
-                    ReallocPlacement::MayMove,
-                    AllocInit::Uninitialized,
-                )
+                .grow(memory.as_non_null_ptr(), Layout::new::<[u8; 64]>(), 80)
                 .expect("Could not grow to 80 bytes");
             assert!(alloc.primary.owns(memory));
 
             let memory = alloc
-                .grow(
-                    memory.ptr,
-                    Layout::new::<[u8; 80]>(),
-                    96,
-                    ReallocPlacement::MayMove,
-                    AllocInit::Uninitialized,
-                )
+                .grow(memory.as_non_null_ptr(), Layout::new::<[u8; 80]>(), 96)
                 .expect("Could not grow to 96 bytes");
             assert!(!alloc.primary.owns(memory));
 
             let memory = alloc
-                .grow(
-                    memory.ptr,
-                    Layout::new::<[u8; 96]>(),
-                    128,
-                    ReallocPlacement::MayMove,
-                    AllocInit::Uninitialized,
-                )
+                .grow(memory.as_non_null_ptr(), Layout::new::<[u8; 96]>(), 128)
                 .expect("Could not grow to 128 bytes");
             assert!(!alloc.primary.owns(memory));
 
-            alloc.dealloc(memory.ptr, Layout::new::<[u8; 128]>());
+            alloc.dealloc(memory.as_non_null_ptr(), Layout::new::<[u8; 128]>());
         };
     }
 
@@ -239,43 +248,27 @@ mod tests {
         };
 
         let memory = alloc
-            .alloc(Layout::new::<[u8; 64]>(), AllocInit::Uninitialized)
+            .alloc(Layout::new::<[u8; 64]>())
             .expect("Could not allocate 64 bytes");
         assert!(alloc.primary.owns(memory));
 
         unsafe {
             let memory = alloc
-                .shrink(
-                    memory.ptr,
-                    Layout::new::<[u8; 64]>(),
-                    32,
-                    ReallocPlacement::MayMove,
-                )
+                .shrink(memory.as_non_null_ptr(), Layout::new::<[u8; 64]>(), 32)
                 .expect("Could not shrink to 32 bytes");
             assert!(alloc.primary.owns(memory));
 
             let memory = alloc
-                .grow(
-                    memory.ptr,
-                    Layout::new::<[u8; 32]>(),
-                    128,
-                    ReallocPlacement::MayMove,
-                    AllocInit::Uninitialized,
-                )
+                .grow(memory.as_non_null_ptr(), Layout::new::<[u8; 32]>(), 128)
                 .expect("Could not grow to 128 bytes");
             assert!(!alloc.primary.owns(memory));
 
             let memory = alloc
-                .shrink(
-                    memory.ptr,
-                    Layout::new::<[u8; 128]>(),
-                    96,
-                    ReallocPlacement::MayMove,
-                )
+                .shrink(memory.as_non_null_ptr(), Layout::new::<[u8; 128]>(), 96)
                 .expect("Could not shrink to 96 bytes");
             assert!(!alloc.primary.owns(memory));
 
-            alloc.dealloc(memory.ptr, Layout::new::<[u8; 96]>());
+            alloc.dealloc(memory.as_non_null_ptr(), Layout::new::<[u8; 96]>());
         }
     }
 
@@ -289,13 +282,13 @@ mod tests {
         };
 
         let memory = alloc
-            .alloc(Layout::new::<[u8; 32]>(), AllocInit::Uninitialized)
+            .alloc(Layout::new::<[u8; 32]>())
             .expect("Could not allocate 32 bytes");
         assert!(alloc.primary.owns(memory));
         assert!(alloc.owns(memory));
 
         let memory = alloc
-            .alloc(Layout::new::<[u8; 64]>(), AllocInit::Uninitialized)
+            .alloc(Layout::new::<[u8; 64]>())
             .expect("Could not allocate 64 bytes");
         assert!(alloc.secondary.owns(memory));
         assert!(alloc.owns(memory));
