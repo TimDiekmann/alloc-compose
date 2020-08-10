@@ -294,17 +294,13 @@
 <span id="294">294</span>
 <span id="295">295</span>
 <span id="296">296</span>
-<span id="297">297</span>
-<span id="298">298</span>
-<span id="299">299</span>
-<span id="300">300</span>
-<span id="301">301</span>
-<span id="302">302</span>
-<span id="303">303</span>
 </pre><div class="example-wrap"><pre class="rust ">
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">grow</span>, <span class="ident">Owns</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::{
+    <span class="ident">helper</span>::{<span class="ident">grow_fallback</span>, <span class="ident">AllocInit</span>},
+    <span class="ident">Owns</span>,
+};
 <span class="kw">use</span> <span class="ident">core</span>::{
-    <span class="ident">alloc</span>::{<span class="ident">AllocErr</span>, <span class="ident">AllocInit</span>, <span class="ident">AllocRef</span>, <span class="ident">Layout</span>, <span class="ident">MemoryBlock</span>, <span class="ident">ReallocPlacement</span>},
+    <span class="ident">alloc</span>::{<span class="ident">AllocErr</span>, <span class="ident">AllocRef</span>, <span class="ident">Layout</span>},
     <span class="ident">ptr</span>::<span class="ident">NonNull</span>,
 };
 
@@ -323,11 +319,11 @@
 <span class="doccomment">/// # Example</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// ```rust</span>
-<span class="doccomment">/// #![feature(allocator_api)]</span>
+<span class="doccomment">/// #![feature(allocator_api, slice_ptr_get)]</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// use alloc_compose::{Fallback, Owns, Region};</span>
 <span class="doccomment">/// use std::{</span>
-<span class="doccomment">///     alloc::{AllocInit, AllocRef, Layout, System},</span>
+<span class="doccomment">///     alloc::{AllocRef, Layout, System},</span>
 <span class="doccomment">///     mem::MaybeUninit,</span>
 <span class="doccomment">/// };</span>
 <span class="doccomment">///</span>
@@ -337,16 +333,16 @@
 <span class="doccomment">///     secondary: System,</span>
 <span class="doccomment">/// };</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// let small_memory = alloc.alloc(Layout::new::&lt;u32&gt;(), AllocInit::Uninitialized)?;</span>
-<span class="doccomment">/// let big_memory = alloc.alloc(Layout::new::&lt;[u32; 64]&gt;(), AllocInit::Uninitialized)?;</span>
+<span class="doccomment">/// let small_memory = alloc.alloc(Layout::new::&lt;u32&gt;())?;</span>
+<span class="doccomment">/// let big_memory = alloc.alloc(Layout::new::&lt;[u32; 64]&gt;())?;</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// assert!(alloc.primary.owns(small_memory));</span>
 <span class="doccomment">/// assert!(!alloc.primary.owns(big_memory));</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// unsafe {</span>
 <span class="doccomment">///     // `big_memory` was allocated from `System`, we can dealloc it directly</span>
-<span class="doccomment">///     System.dealloc(big_memory.ptr, Layout::new::&lt;[u32; 64]&gt;());</span>
-<span class="doccomment">///     alloc.dealloc(small_memory.ptr, Layout::new::&lt;u32&gt;());</span>
+<span class="doccomment">///     System.dealloc(big_memory.as_non_null_ptr(), Layout::new::&lt;[u32; 64]&gt;());</span>
+<span class="doccomment">///     alloc.dealloc(small_memory.as_non_null_ptr(), Layout::new::&lt;u32&gt;());</span>
 <span class="doccomment">/// };</span>
 <span class="doccomment">/// # Ok::&lt;(), core::alloc::AllocErr&gt;(())</span>
 <span class="doccomment">/// ```</span>
@@ -363,18 +359,25 @@
     <span class="ident">Primary</span>: <span class="ident">AllocRef</span> <span class="op">+</span> <span class="ident">Owns</span>,
     <span class="ident">Secondary</span>: <span class="ident">AllocRef</span>,
 {
-    <span class="kw">fn</span> <span class="ident">alloc</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>, <span class="ident">init</span>: <span class="ident">AllocInit</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MemoryBlock</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span> {
-        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">primary</span>.<span class="ident">alloc</span>(<span class="ident">layout</span>, <span class="ident">init</span>) {
+    <span class="kw">fn</span> <span class="ident">alloc</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NonNull</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span> {
+        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">primary</span>.<span class="ident">alloc</span>(<span class="ident">layout</span>) {
             <span class="ident">primary</span> @ <span class="prelude-val">Ok</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> <span class="ident">primary</span>,
-            <span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> <span class="self">self</span>.<span class="ident">secondary</span>.<span class="ident">alloc</span>(<span class="ident">layout</span>, <span class="ident">init</span>),
+            <span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> <span class="self">self</span>.<span class="ident">secondary</span>.<span class="ident">alloc</span>(<span class="ident">layout</span>),
+        }
+    }
+
+    <span class="kw">fn</span> <span class="ident">alloc_zeroed</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NonNull</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span> {
+        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">primary</span>.<span class="ident">alloc_zeroed</span>(<span class="ident">layout</span>) {
+            <span class="ident">primary</span> @ <span class="prelude-val">Ok</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> <span class="ident">primary</span>,
+            <span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> <span class="self">self</span>.<span class="ident">secondary</span>.<span class="ident">alloc_zeroed</span>(<span class="ident">layout</span>),
         }
     }
 
     <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">dealloc</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>) {
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">primary</span>.<span class="ident">owns</span>(<span class="ident">MemoryBlock</span> {
-            <span class="ident">ptr</span>,
-            <span class="ident">size</span>: <span class="ident">layout</span>.<span class="ident">size</span>(),
-        }) {
+        <span class="kw">if</span> <span class="self">self</span>
+            .<span class="ident">primary</span>
+            .<span class="ident">owns</span>(<span class="ident">NonNull</span>::<span class="ident">slice_from_raw_parts</span>(<span class="ident">ptr</span>, <span class="ident">layout</span>.<span class="ident">size</span>()))
+        {
             <span class="self">self</span>.<span class="ident">primary</span>.<span class="ident">dealloc</span>(<span class="ident">ptr</span>, <span class="ident">layout</span>)
         } <span class="kw">else</span> {
             <span class="self">self</span>.<span class="ident">secondary</span>.<span class="ident">dealloc</span>(<span class="ident">ptr</span>, <span class="ident">layout</span>)
@@ -386,28 +389,52 @@
         <span class="ident">ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
         <span class="ident">layout</span>: <span class="ident">Layout</span>,
         <span class="ident">new_size</span>: <span class="ident">usize</span>,
-        <span class="ident">placement</span>: <span class="ident">ReallocPlacement</span>,
-        <span class="ident">init</span>: <span class="ident">AllocInit</span>,
-    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MemoryBlock</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">primary</span>.<span class="ident">owns</span>(<span class="ident">MemoryBlock</span> {
-            <span class="ident">ptr</span>,
-            <span class="ident">size</span>: <span class="ident">layout</span>.<span class="ident">size</span>(),
-        }) {
-            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">memory</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">primary</span>.<span class="ident">grow</span>(<span class="ident">ptr</span>, <span class="ident">layout</span>, <span class="ident">new_size</span>, <span class="ident">placement</span>, <span class="ident">init</span>) {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NonNull</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span> {
+        <span class="kw">if</span> <span class="self">self</span>
+            .<span class="ident">primary</span>
+            .<span class="ident">owns</span>(<span class="ident">NonNull</span>::<span class="ident">slice_from_raw_parts</span>(<span class="ident">ptr</span>, <span class="ident">layout</span>.<span class="ident">size</span>()))
+        {
+            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">memory</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">primary</span>.<span class="ident">grow</span>(<span class="ident">ptr</span>, <span class="ident">layout</span>, <span class="ident">new_size</span>) {
                 <span class="prelude-val">Ok</span>(<span class="ident">memory</span>)
             } <span class="kw">else</span> {
-                <span class="ident">grow</span>(
+                <span class="ident">grow_fallback</span>(
                     <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">primary</span>,
                     <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">secondary</span>,
                     <span class="ident">ptr</span>,
                     <span class="ident">layout</span>,
                     <span class="ident">new_size</span>,
-                    <span class="ident">placement</span>,
-                    <span class="ident">init</span>,
+                    <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>,
                 )
             }
         } <span class="kw">else</span> {
-            <span class="self">self</span>.<span class="ident">secondary</span>.<span class="ident">grow</span>(<span class="ident">ptr</span>, <span class="ident">layout</span>, <span class="ident">new_size</span>, <span class="ident">placement</span>, <span class="ident">init</span>)
+            <span class="self">self</span>.<span class="ident">secondary</span>.<span class="ident">grow</span>(<span class="ident">ptr</span>, <span class="ident">layout</span>, <span class="ident">new_size</span>)
+        }
+    }
+
+    <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">grow_zeroed</span>(
+        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
+        <span class="ident">ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
+        <span class="ident">layout</span>: <span class="ident">Layout</span>,
+        <span class="ident">new_size</span>: <span class="ident">usize</span>,
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NonNull</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span> {
+        <span class="kw">if</span> <span class="self">self</span>
+            .<span class="ident">primary</span>
+            .<span class="ident">owns</span>(<span class="ident">NonNull</span>::<span class="ident">slice_from_raw_parts</span>(<span class="ident">ptr</span>, <span class="ident">layout</span>.<span class="ident">size</span>()))
+        {
+            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">memory</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">primary</span>.<span class="ident">grow_zeroed</span>(<span class="ident">ptr</span>, <span class="ident">layout</span>, <span class="ident">new_size</span>) {
+                <span class="prelude-val">Ok</span>(<span class="ident">memory</span>)
+            } <span class="kw">else</span> {
+                <span class="ident">grow_fallback</span>(
+                    <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">primary</span>,
+                    <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">secondary</span>,
+                    <span class="ident">ptr</span>,
+                    <span class="ident">layout</span>,
+                    <span class="ident">new_size</span>,
+                    <span class="ident">AllocInit</span>::<span class="ident">Zeroed</span>,
+                )
+            }
+        } <span class="kw">else</span> {
+            <span class="self">self</span>.<span class="ident">secondary</span>.<span class="ident">grow_zeroed</span>(<span class="ident">ptr</span>, <span class="ident">layout</span>, <span class="ident">new_size</span>)
         }
     }
 
@@ -416,15 +443,14 @@
         <span class="ident">ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
         <span class="ident">layout</span>: <span class="ident">Layout</span>,
         <span class="ident">new_size</span>: <span class="ident">usize</span>,
-        <span class="ident">placement</span>: <span class="ident">ReallocPlacement</span>,
-    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MemoryBlock</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">primary</span>.<span class="ident">owns</span>(<span class="ident">MemoryBlock</span> {
-            <span class="ident">ptr</span>,
-            <span class="ident">size</span>: <span class="ident">layout</span>.<span class="ident">size</span>(),
-        }) {
-            <span class="self">self</span>.<span class="ident">primary</span>.<span class="ident">shrink</span>(<span class="ident">ptr</span>, <span class="ident">layout</span>, <span class="ident">new_size</span>, <span class="ident">placement</span>)
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NonNull</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span> {
+        <span class="kw">if</span> <span class="self">self</span>
+            .<span class="ident">primary</span>
+            .<span class="ident">owns</span>(<span class="ident">NonNull</span>::<span class="ident">slice_from_raw_parts</span>(<span class="ident">ptr</span>, <span class="ident">layout</span>.<span class="ident">size</span>()))
+        {
+            <span class="self">self</span>.<span class="ident">primary</span>.<span class="ident">shrink</span>(<span class="ident">ptr</span>, <span class="ident">layout</span>, <span class="ident">new_size</span>)
         } <span class="kw">else</span> {
-            <span class="self">self</span>.<span class="ident">secondary</span>.<span class="ident">shrink</span>(<span class="ident">ptr</span>, <span class="ident">layout</span>, <span class="ident">new_size</span>, <span class="ident">placement</span>)
+            <span class="self">self</span>.<span class="ident">secondary</span>.<span class="ident">shrink</span>(<span class="ident">ptr</span>, <span class="ident">layout</span>, <span class="ident">new_size</span>)
         }
     }
 }
@@ -434,7 +460,7 @@
     <span class="ident">Primary</span>: <span class="ident">Owns</span>,
     <span class="ident">Secondary</span>: <span class="ident">Owns</span>,
 {
-    <span class="kw">fn</span> <span class="ident">owns</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">memory</span>: <span class="ident">MemoryBlock</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">fn</span> <span class="ident">owns</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">memory</span>: <span class="ident">NonNull</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
         <span class="self">self</span>.<span class="ident">primary</span>.<span class="ident">owns</span>(<span class="ident">memory</span>) <span class="op">||</span> <span class="self">self</span>.<span class="ident">secondary</span>.<span class="ident">owns</span>(<span class="ident">memory</span>)
     }
 }
@@ -444,7 +470,7 @@
     <span class="kw">use</span> <span class="kw">super</span>::<span class="ident">Fallback</span>;
     <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">helper</span>, <span class="ident">Owns</span>, <span class="ident">Region</span>};
     <span class="kw">use</span> <span class="ident">std</span>::{
-        <span class="ident">alloc</span>::{<span class="ident">AllocInit</span>, <span class="ident">AllocRef</span>, <span class="ident">Layout</span>, <span class="ident">ReallocPlacement</span>, <span class="ident">System</span>},
+        <span class="ident">alloc</span>::{<span class="ident">AllocRef</span>, <span class="ident">Layout</span>, <span class="ident">System</span>},
         <span class="ident">mem</span>::<span class="ident">MaybeUninit</span>,
     };
 
@@ -457,17 +483,17 @@
         };
 
         <span class="kw">let</span> <span class="ident">small_memory</span> <span class="op">=</span> <span class="ident">alloc</span>
-            .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>(), <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>)
+            .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>())
             .<span class="ident">expect</span>(<span class="string">&quot;Could not allocate 4 bytes&quot;</span>);
         <span class="kw">let</span> <span class="ident">big_memory</span> <span class="op">=</span> <span class="ident">alloc</span>
-            .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">64</span>]<span class="op">&gt;</span>(), <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>)
+            .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">64</span>]<span class="op">&gt;</span>())
             .<span class="ident">expect</span>(<span class="string">&quot;Could not allocate 64 bytes&quot;</span>);
 
         <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">alloc</span>.<span class="ident">primary</span>.<span class="ident">owns</span>(<span class="ident">small_memory</span>));
         <span class="macro">assert</span><span class="macro">!</span>(<span class="op">!</span><span class="ident">alloc</span>.<span class="ident">primary</span>.<span class="ident">owns</span>(<span class="ident">big_memory</span>));
         <span class="kw">unsafe</span> {
-            <span class="ident">alloc</span>.<span class="ident">dealloc</span>(<span class="ident">small_memory</span>.<span class="ident">ptr</span>, <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>());
-            <span class="ident">alloc</span>.<span class="ident">dealloc</span>(<span class="ident">big_memory</span>.<span class="ident">ptr</span>, <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">64</span>]<span class="op">&gt;</span>());
+            <span class="ident">alloc</span>.<span class="ident">dealloc</span>(<span class="ident">small_memory</span>.<span class="ident">as_non_null_ptr</span>(), <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>());
+            <span class="ident">alloc</span>.<span class="ident">dealloc</span>(<span class="ident">big_memory</span>.<span class="ident">as_non_null_ptr</span>(), <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">64</span>]<span class="op">&gt;</span>());
         };
     }
 
@@ -480,57 +506,33 @@
         };
 
         <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
-            .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">32</span>]<span class="op">&gt;</span>(), <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>)
+            .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">32</span>]<span class="op">&gt;</span>())
             .<span class="ident">expect</span>(<span class="string">&quot;Could not allocate 32 bytes&quot;</span>);
         <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">alloc</span>.<span class="ident">primary</span>.<span class="ident">owns</span>(<span class="ident">memory</span>));
 
         <span class="kw">unsafe</span> {
             <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
-                .<span class="ident">grow</span>(
-                    <span class="ident">memory</span>.<span class="ident">ptr</span>,
-                    <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">32</span>]<span class="op">&gt;</span>(),
-                    <span class="number">64</span>,
-                    <span class="ident">ReallocPlacement</span>::<span class="ident">MayMove</span>,
-                    <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>,
-                )
+                .<span class="ident">grow</span>(<span class="ident">memory</span>.<span class="ident">as_non_null_ptr</span>(), <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">32</span>]<span class="op">&gt;</span>(), <span class="number">64</span>)
                 .<span class="ident">expect</span>(<span class="string">&quot;Could not grow to 64 bytes&quot;</span>);
             <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">alloc</span>.<span class="ident">primary</span>.<span class="ident">owns</span>(<span class="ident">memory</span>));
-            <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">memory</span>.<span class="ident">size</span>, <span class="number">64</span>);
+            <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">memory</span>.<span class="ident">len</span>(), <span class="number">64</span>);
 
             <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
-                .<span class="ident">grow</span>(
-                    <span class="ident">memory</span>.<span class="ident">ptr</span>,
-                    <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">64</span>]<span class="op">&gt;</span>(),
-                    <span class="number">80</span>,
-                    <span class="ident">ReallocPlacement</span>::<span class="ident">MayMove</span>,
-                    <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>,
-                )
+                .<span class="ident">grow</span>(<span class="ident">memory</span>.<span class="ident">as_non_null_ptr</span>(), <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">64</span>]<span class="op">&gt;</span>(), <span class="number">80</span>)
                 .<span class="ident">expect</span>(<span class="string">&quot;Could not grow to 80 bytes&quot;</span>);
             <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">alloc</span>.<span class="ident">primary</span>.<span class="ident">owns</span>(<span class="ident">memory</span>));
 
             <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
-                .<span class="ident">grow</span>(
-                    <span class="ident">memory</span>.<span class="ident">ptr</span>,
-                    <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">80</span>]<span class="op">&gt;</span>(),
-                    <span class="number">96</span>,
-                    <span class="ident">ReallocPlacement</span>::<span class="ident">MayMove</span>,
-                    <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>,
-                )
+                .<span class="ident">grow</span>(<span class="ident">memory</span>.<span class="ident">as_non_null_ptr</span>(), <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">80</span>]<span class="op">&gt;</span>(), <span class="number">96</span>)
                 .<span class="ident">expect</span>(<span class="string">&quot;Could not grow to 96 bytes&quot;</span>);
             <span class="macro">assert</span><span class="macro">!</span>(<span class="op">!</span><span class="ident">alloc</span>.<span class="ident">primary</span>.<span class="ident">owns</span>(<span class="ident">memory</span>));
 
             <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
-                .<span class="ident">grow</span>(
-                    <span class="ident">memory</span>.<span class="ident">ptr</span>,
-                    <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">96</span>]<span class="op">&gt;</span>(),
-                    <span class="number">128</span>,
-                    <span class="ident">ReallocPlacement</span>::<span class="ident">MayMove</span>,
-                    <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>,
-                )
+                .<span class="ident">grow</span>(<span class="ident">memory</span>.<span class="ident">as_non_null_ptr</span>(), <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">96</span>]<span class="op">&gt;</span>(), <span class="number">128</span>)
                 .<span class="ident">expect</span>(<span class="string">&quot;Could not grow to 128 bytes&quot;</span>);
             <span class="macro">assert</span><span class="macro">!</span>(<span class="op">!</span><span class="ident">alloc</span>.<span class="ident">primary</span>.<span class="ident">owns</span>(<span class="ident">memory</span>));
 
-            <span class="ident">alloc</span>.<span class="ident">dealloc</span>(<span class="ident">memory</span>.<span class="ident">ptr</span>, <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">128</span>]<span class="op">&gt;</span>());
+            <span class="ident">alloc</span>.<span class="ident">dealloc</span>(<span class="ident">memory</span>.<span class="ident">as_non_null_ptr</span>(), <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">128</span>]<span class="op">&gt;</span>());
         };
     }
 
@@ -543,43 +545,27 @@
         };
 
         <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
-            .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">64</span>]<span class="op">&gt;</span>(), <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>)
+            .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">64</span>]<span class="op">&gt;</span>())
             .<span class="ident">expect</span>(<span class="string">&quot;Could not allocate 64 bytes&quot;</span>);
         <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">alloc</span>.<span class="ident">primary</span>.<span class="ident">owns</span>(<span class="ident">memory</span>));
 
         <span class="kw">unsafe</span> {
             <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
-                .<span class="ident">shrink</span>(
-                    <span class="ident">memory</span>.<span class="ident">ptr</span>,
-                    <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">64</span>]<span class="op">&gt;</span>(),
-                    <span class="number">32</span>,
-                    <span class="ident">ReallocPlacement</span>::<span class="ident">MayMove</span>,
-                )
+                .<span class="ident">shrink</span>(<span class="ident">memory</span>.<span class="ident">as_non_null_ptr</span>(), <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">64</span>]<span class="op">&gt;</span>(), <span class="number">32</span>)
                 .<span class="ident">expect</span>(<span class="string">&quot;Could not shrink to 32 bytes&quot;</span>);
             <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">alloc</span>.<span class="ident">primary</span>.<span class="ident">owns</span>(<span class="ident">memory</span>));
 
             <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
-                .<span class="ident">grow</span>(
-                    <span class="ident">memory</span>.<span class="ident">ptr</span>,
-                    <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">32</span>]<span class="op">&gt;</span>(),
-                    <span class="number">128</span>,
-                    <span class="ident">ReallocPlacement</span>::<span class="ident">MayMove</span>,
-                    <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>,
-                )
+                .<span class="ident">grow</span>(<span class="ident">memory</span>.<span class="ident">as_non_null_ptr</span>(), <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">32</span>]<span class="op">&gt;</span>(), <span class="number">128</span>)
                 .<span class="ident">expect</span>(<span class="string">&quot;Could not grow to 128 bytes&quot;</span>);
             <span class="macro">assert</span><span class="macro">!</span>(<span class="op">!</span><span class="ident">alloc</span>.<span class="ident">primary</span>.<span class="ident">owns</span>(<span class="ident">memory</span>));
 
             <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
-                .<span class="ident">shrink</span>(
-                    <span class="ident">memory</span>.<span class="ident">ptr</span>,
-                    <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">128</span>]<span class="op">&gt;</span>(),
-                    <span class="number">96</span>,
-                    <span class="ident">ReallocPlacement</span>::<span class="ident">MayMove</span>,
-                )
+                .<span class="ident">shrink</span>(<span class="ident">memory</span>.<span class="ident">as_non_null_ptr</span>(), <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">128</span>]<span class="op">&gt;</span>(), <span class="number">96</span>)
                 .<span class="ident">expect</span>(<span class="string">&quot;Could not shrink to 96 bytes&quot;</span>);
             <span class="macro">assert</span><span class="macro">!</span>(<span class="op">!</span><span class="ident">alloc</span>.<span class="ident">primary</span>.<span class="ident">owns</span>(<span class="ident">memory</span>));
 
-            <span class="ident">alloc</span>.<span class="ident">dealloc</span>(<span class="ident">memory</span>.<span class="ident">ptr</span>, <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">96</span>]<span class="op">&gt;</span>());
+            <span class="ident">alloc</span>.<span class="ident">dealloc</span>(<span class="ident">memory</span>.<span class="ident">as_non_null_ptr</span>(), <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">96</span>]<span class="op">&gt;</span>());
         }
     }
 
@@ -593,13 +579,13 @@
         };
 
         <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
-            .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">32</span>]<span class="op">&gt;</span>(), <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>)
+            .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">32</span>]<span class="op">&gt;</span>())
             .<span class="ident">expect</span>(<span class="string">&quot;Could not allocate 32 bytes&quot;</span>);
         <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">alloc</span>.<span class="ident">primary</span>.<span class="ident">owns</span>(<span class="ident">memory</span>));
         <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">alloc</span>.<span class="ident">owns</span>(<span class="ident">memory</span>));
 
         <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
-            .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">64</span>]<span class="op">&gt;</span>(), <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>)
+            .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">64</span>]<span class="op">&gt;</span>())
             .<span class="ident">expect</span>(<span class="string">&quot;Could not allocate 64 bytes&quot;</span>);
         <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">alloc</span>.<span class="ident">secondary</span>.<span class="ident">owns</span>(<span class="ident">memory</span>));
         <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">alloc</span>.<span class="ident">owns</span>(<span class="ident">memory</span>));

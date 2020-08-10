@@ -299,10 +299,39 @@
 <span id="299">299</span>
 <span id="300">300</span>
 <span id="301">301</span>
+<span id="302">302</span>
+<span id="303">303</span>
+<span id="304">304</span>
+<span id="305">305</span>
+<span id="306">306</span>
+<span id="307">307</span>
+<span id="308">308</span>
+<span id="309">309</span>
+<span id="310">310</span>
+<span id="311">311</span>
+<span id="312">312</span>
+<span id="313">313</span>
+<span id="314">314</span>
+<span id="315">315</span>
+<span id="316">316</span>
+<span id="317">317</span>
+<span id="318">318</span>
+<span id="319">319</span>
+<span id="320">320</span>
+<span id="321">321</span>
+<span id="322">322</span>
+<span id="323">323</span>
+<span id="324">324</span>
+<span id="325">325</span>
+<span id="326">326</span>
+<span id="327">327</span>
+<span id="328">328</span>
+<span id="329">329</span>
+<span id="330">330</span>
 </pre><div class="example-wrap"><pre class="rust ">
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">Owns</span>;
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">helper</span>::<span class="ident">AllocInit</span>, <span class="ident">intrinsics</span>, <span class="ident">AllocAll</span>, <span class="ident">Owns</span>, <span class="ident">ReallocInPlace</span>};
 <span class="kw">use</span> <span class="ident">core</span>::{
-    <span class="ident">alloc</span>::{<span class="ident">AllocErr</span>, <span class="ident">AllocInit</span>, <span class="ident">AllocRef</span>, <span class="ident">Layout</span>, <span class="ident">MemoryBlock</span>, <span class="ident">ReallocPlacement</span>},
+    <span class="ident">alloc</span>::{<span class="ident">AllocErr</span>, <span class="ident">AllocRef</span>, <span class="ident">Layout</span>},
     <span class="ident">ptr</span>::<span class="ident">NonNull</span>,
 };
 
@@ -311,16 +340,19 @@
 <span class="doccomment">/// # Examples</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// ```rust</span>
-<span class="doccomment">/// #![feature(allocator_api)]</span>
+<span class="doccomment">/// #![feature(allocator_api, slice_ptr_len)]</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// use alloc_compose::Chunk;</span>
-<span class="doccomment">/// use std::alloc::{AllocInit, AllocRef, Layout, System};</span>
+<span class="doccomment">/// use alloc_compose::{Chunk, Region};</span>
+<span class="doccomment">/// use std::{</span>
+<span class="doccomment">///     alloc::{AllocRef, Layout},</span>
+<span class="doccomment">///     mem::MaybeUninit,</span>
+<span class="doccomment">/// };</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// let mut data = [0; 64];</span>
-<span class="doccomment">/// let mut alloc = Chunk::&lt;_, 64&gt;(System);</span>
-<span class="doccomment">/// let memory = alloc.alloc(Layout::new::&lt;[u8; 16]&gt;(), AllocInit::Uninitialized)?;</span>
-<span class="doccomment">/// assert_eq!(memory.size % 32, 0);</span>
-<span class="doccomment">/// assert!(memory.size &gt;= 32);</span>
+<span class="doccomment">/// let mut data = [MaybeUninit::new(0); 64];</span>
+<span class="doccomment">/// let mut alloc = Chunk::&lt;_, 64&gt;(Region::new(&amp;mut data));</span>
+<span class="doccomment">/// let ptr = alloc.alloc(Layout::new::&lt;[u8; 16]&gt;())?;</span>
+<span class="doccomment">/// assert_eq!(ptr.len() % 32, 0);</span>
+<span class="doccomment">/// assert!(ptr.len() &gt;= 32);</span>
 <span class="doccomment">/// # Ok::&lt;(), core::alloc::AllocErr&gt;(())</span>
 <span class="doccomment">/// ```</span>
 <span class="doccomment">///</span>
@@ -328,124 +360,163 @@
 <span class="doccomment">/// the memory in place before delegating to the underlying allocator.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// ```rust</span>
-<span class="doccomment">/// # #![feature(allocator_api)]</span>
-<span class="doccomment">/// # use alloc_compose::Chunk;</span>
-<span class="doccomment">/// # use std::alloc::{AllocInit, AllocRef, System, Layout};</span>
-<span class="doccomment">/// # let mut data = [0; 64];</span>
-<span class="doccomment">/// # let mut alloc = Chunk::&lt;_, 64&gt;(System);</span>
-<span class="doccomment">/// # let memory = alloc.alloc(Layout::new::&lt;[u8; 16]&gt;(), AllocInit::Uninitialized)?;</span>
-<span class="doccomment">/// use std::alloc::ReallocPlacement;</span>
-<span class="doccomment">/// let memory = unsafe {</span>
-<span class="doccomment">///     alloc.grow(</span>
-<span class="doccomment">///         memory.ptr,</span>
-<span class="doccomment">///         Layout::new::&lt;[u8; 16]&gt;(),</span>
-<span class="doccomment">///         24,</span>
-<span class="doccomment">///         ReallocPlacement::InPlace,</span>
-<span class="doccomment">///         AllocInit::Uninitialized,</span>
-<span class="doccomment">///     )?</span>
-<span class="doccomment">/// };</span>
-<span class="doccomment">/// assert_eq!(memory.size % 32, 0);</span>
-<span class="doccomment">/// assert!(memory.size &gt;= 32);</span>
+<span class="doccomment">/// #![feature(slice_ptr_get)]</span>
+<span class="doccomment">/// # #![feature(allocator_api, slice_ptr_len)]</span>
+<span class="doccomment">/// # use alloc_compose::{Chunk, Region};</span>
+<span class="doccomment">/// # use std::{alloc::{AllocRef, Layout}, mem::MaybeUninit};</span>
+<span class="doccomment">/// # let mut data = [MaybeUninit::new(0); 64];</span>
+<span class="doccomment">/// # let mut alloc = Chunk::&lt;_, 64&gt;(Region::new(&amp;mut data));</span>
+<span class="doccomment">/// # let ptr = alloc.alloc(Layout::new::&lt;[u8; 16]&gt;())?;</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// use alloc_compose::ReallocInPlace;</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// let len = unsafe { alloc.grow_in_place(ptr.as_non_null_ptr(), Layout::new::&lt;[u8; 16]&gt;(), 24)? };</span>
+<span class="doccomment">/// assert_eq!(len % 32, 0);</span>
+<span class="doccomment">/// assert!(len &gt;= 32);</span>
 <span class="doccomment">/// # Ok::&lt;(), core::alloc::AllocErr&gt;(())</span>
 <span class="doccomment">/// ```</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Default</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Chunk</span><span class="op">&lt;</span><span class="ident">A</span>, <span class="kw">const</span> <span class="ident">SIZE</span>: <span class="ident">usize</span><span class="op">&gt;</span>(<span class="kw">pub</span> <span class="ident">A</span>);
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">A</span>, <span class="kw">const</span> <span class="ident">SIZE</span>: <span class="ident">usize</span><span class="op">&gt;</span> <span class="ident">Chunk</span><span class="op">&lt;</span><span class="ident">A</span>, <span class="ident">SIZE</span><span class="op">&gt;</span> {
-    <span class="kw">const</span> <span class="kw">fn</span> <span class="ident">assert_alignment</span>() {
-        <span class="macro">assert</span><span class="macro">!</span>(
-            <span class="ident">usize</span>::<span class="ident">is_power_of_two</span>(<span class="ident">SIZE</span>),
-            <span class="string">&quot;`SIZE` must be a power of two&quot;</span>
-        );
+<span class="kw">mod</span> <span class="ident">sealed</span> {
+    <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">SizeIsPowerOfTwo</span> {}
+}
+<span class="kw">use</span> <span class="ident">sealed</span>::<span class="ident">SizeIsPowerOfTwo</span>;
+
+<span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">is_power_of_two</span> {
+    ($(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">N</span>:<span class="ident">literal</span>)<span class="op">+</span>) <span class="op">=&gt;</span> {
+        $(
+            <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span> <span class="ident">SizeIsPowerOfTwo</span> <span class="kw">for</span> <span class="kw">super</span>::<span class="ident">Chunk</span><span class="op">&lt;</span><span class="ident">A</span>, { <span class="ident">usize</span>::<span class="ident">pow</span>(<span class="number">2</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">N</span>) }<span class="op">&gt;</span> {}
+        )<span class="op">+</span>
+    };
+}
+
+<span class="macro">is_power_of_two</span><span class="macro">!</span>(<span class="number">1</span> <span class="number">2</span> <span class="number">3</span> <span class="number">4</span> <span class="number">5</span> <span class="number">6</span> <span class="number">7</span>);
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(
+    <span class="ident">target_pointer_width</span> <span class="op">=</span> <span class="string">&quot;16&quot;</span>,
+    <span class="ident">target_pointer_width</span> <span class="op">=</span> <span class="string">&quot;32&quot;</span>,
+    <span class="ident">target_pointer_width</span> <span class="op">=</span> <span class="string">&quot;64&quot;</span>
+))]</span>
+<span class="macro">is_power_of_two</span><span class="macro">!</span>(<span class="number">8</span> <span class="number">9</span> <span class="number">10</span> <span class="number">11</span> <span class="number">12</span> <span class="number">13</span> <span class="number">14</span> <span class="number">15</span>);
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">target_pointer_width</span> <span class="op">=</span> <span class="string">&quot;32&quot;</span>, <span class="ident">target_pointer_width</span> <span class="op">=</span> <span class="string">&quot;64&quot;</span>))]</span>
+<span class="macro">is_power_of_two</span><span class="macro">!</span>(<span class="number">16</span> <span class="number">17</span> <span class="number">18</span> <span class="number">19</span> <span class="number">20</span> <span class="number">21</span> <span class="number">22</span> <span class="number">23</span> <span class="number">24</span> <span class="number">25</span> <span class="number">26</span> <span class="number">27</span> <span class="number">28</span> <span class="number">29</span> <span class="number">30</span> <span class="number">31</span>);
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">target_pointer_width</span> <span class="op">=</span> <span class="string">&quot;64&quot;</span>)]</span>
+<span class="macro">is_power_of_two</span><span class="macro">!</span>(<span class="number">32</span> <span class="number">33</span> <span class="number">34</span> <span class="number">35</span> <span class="number">36</span> <span class="number">37</span> <span class="number">38</span> <span class="number">39</span> <span class="number">40</span> <span class="number">41</span> <span class="number">42</span> <span class="number">43</span> <span class="number">44</span> <span class="number">45</span> <span class="number">46</span> <span class="number">47</span> <span class="number">48</span> <span class="number">49</span> <span class="number">50</span> <span class="number">51</span> <span class="number">52</span> <span class="number">53</span> <span class="number">54</span> <span class="number">55</span> <span class="number">56</span> <span class="number">57</span> <span class="number">58</span> <span class="number">59</span> <span class="number">60</span> <span class="number">61</span> <span class="number">62</span> <span class="number">63</span>);
+
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">A</span>, <span class="kw">const</span> <span class="ident">SIZE</span>: <span class="ident">usize</span><span class="op">&gt;</span> <span class="ident">Chunk</span><span class="op">&lt;</span><span class="ident">A</span>, <span class="ident">SIZE</span><span class="op">&gt;</span>
+<span class="kw">where</span>
+    <span class="self">Self</span>: <span class="ident">SizeIsPowerOfTwo</span>,
+{
+    <span class="kw">fn</span> <span class="ident">round_up</span>(<span class="ident">size</span>: <span class="ident">usize</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">usize</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span> {
+        <span class="prelude-val">Ok</span>((<span class="ident">size</span>.<span class="ident">checked_add</span>(<span class="ident">SIZE</span>).<span class="ident">ok_or</span>(<span class="ident">AllocErr</span>)<span class="question-mark">?</span> <span class="op">-</span> <span class="number">1</span>) <span class="op">&amp;</span> <span class="op">!</span>(<span class="ident">SIZE</span> <span class="op">-</span> <span class="number">1</span>))
     }
 
-    <span class="kw">const</span> <span class="kw">fn</span> <span class="ident">next_multiple</span>(<span class="ident">size</span>: <span class="ident">usize</span>) <span class="op">-&gt;</span> <span class="ident">usize</span> {
-        ((<span class="ident">size</span> <span class="op">+</span> <span class="ident">SIZE</span> <span class="op">-</span> <span class="number">1</span>) <span class="op">/</span> <span class="ident">SIZE</span>) <span class="op">*</span> <span class="ident">SIZE</span>
+    <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">round_up_unchecked</span>(<span class="ident">size</span>: <span class="ident">usize</span>) <span class="op">-&gt;</span> <span class="ident">usize</span> {
+        <span class="kw">let</span> <span class="ident">new_size</span> <span class="op">=</span> (<span class="ident">size</span>.<span class="ident">wrapping_add</span>(<span class="ident">SIZE</span>) <span class="op">-</span> <span class="number">1</span>) <span class="op">&amp;</span> <span class="op">!</span>(<span class="ident">SIZE</span> <span class="op">-</span> <span class="number">1</span>);
+        <span class="macro">debug_assert_eq</span><span class="macro">!</span>(<span class="ident">new_size</span>, <span class="self">Self</span>::<span class="ident">round_up</span>(<span class="ident">size</span>).<span class="ident">unwrap</span>());
+        <span class="ident">new_size</span>
+    }
+
+    <span class="kw">const</span> <span class="kw">fn</span> <span class="ident">round_down</span>(<span class="ident">size</span>: <span class="ident">usize</span>) <span class="op">-&gt;</span> <span class="ident">usize</span> {
+        <span class="ident">size</span> <span class="op">&amp;</span> <span class="op">!</span>(<span class="ident">SIZE</span> <span class="op">-</span> <span class="number">1</span>)
+    }
+
+    <span class="kw">const</span> <span class="kw">fn</span> <span class="ident">round_down_ptr</span>(<span class="ident">ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="ident">NonNull</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span> {
+        <span class="ident">NonNull</span>::<span class="ident">slice_from_raw_parts</span>(<span class="ident">ptr</span>.<span class="ident">as_non_null_ptr</span>(), <span class="self">Self</span>::<span class="ident">round_down</span>(<span class="ident">ptr</span>.<span class="ident">len</span>()))
+    }
+
+    <span class="kw">fn</span> <span class="ident">layout</span>(<span class="ident">layout</span>: <span class="ident">Layout</span>, <span class="ident">size</span>: <span class="ident">usize</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Layout</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span> {
+        <span class="comment">// SAFETY: layout already has valid alignment</span>
+        <span class="kw">unsafe</span> {
+            <span class="ident">intrinsics</span>::<span class="ident">assume</span>(<span class="ident">layout</span>.<span class="ident">align</span>().<span class="ident">is_power_of_two</span>());
+        }
+
+        <span class="ident">Layout</span>::<span class="ident">from_size_align</span>(<span class="ident">size</span>, <span class="ident">layout</span>.<span class="ident">align</span>()).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">AllocErr</span>)
+    }
+
+    <span class="attribute">#[<span class="ident">inline</span>]</span>
+    <span class="kw">fn</span> <span class="ident">alloc_impl</span>(
+        <span class="ident">old_layout</span>: <span class="ident">Layout</span>,
+        <span class="ident">alloc</span>: <span class="kw">impl</span> <span class="ident">FnOnce</span>(<span class="ident">Layout</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NonNull</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span>,
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NonNull</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">new_size</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">round_up</span>(<span class="ident">old_layout</span>.<span class="ident">size</span>())<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">new_layout</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">layout</span>(<span class="ident">old_layout</span>, <span class="ident">new_size</span>)<span class="question-mark">?</span>;
+
+        <span class="ident">alloc</span>(<span class="ident">new_layout</span>).<span class="ident">map</span>(<span class="self">Self</span>::<span class="ident">round_down_ptr</span>)
+    }
+
+    <span class="attribute">#[<span class="ident">inline</span>]</span>
+    <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">grow_impl</span>(
+        <span class="ident">old_ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
+        <span class="ident">layout</span>: <span class="ident">Layout</span>,
+        <span class="ident">new_size</span>: <span class="ident">usize</span>,
+        <span class="ident">init</span>: <span class="ident">AllocInit</span>,
+        <span class="ident">grow</span>: <span class="kw">impl</span> <span class="ident">FnOnce</span>(<span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">Layout</span>, <span class="ident">usize</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NonNull</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span>,
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NonNull</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">current_size</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">round_up_unchecked</span>(<span class="ident">layout</span>.<span class="ident">size</span>());
+        <span class="kw">if</span> <span class="ident">new_size</span> <span class="op">&lt;=</span> <span class="ident">current_size</span> {
+            <span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="ident">NonNull</span>::<span class="ident">slice_from_raw_parts</span>(<span class="ident">old_ptr</span>, <span class="ident">current_size</span>);
+            <span class="ident">init</span>.<span class="ident">init_offset</span>(<span class="ident">ptr</span>, <span class="ident">layout</span>.<span class="ident">size</span>());
+            <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">ptr</span>);
+        }
+
+        <span class="ident">grow</span>(<span class="ident">old_ptr</span>, <span class="ident">layout</span>, <span class="self">Self</span>::<span class="ident">round_up</span>(<span class="ident">new_size</span>)<span class="question-mark">?</span>).<span class="ident">map</span>(<span class="self">Self</span>::<span class="ident">round_down_ptr</span>)
+    }
+
+    <span class="attribute">#[<span class="ident">inline</span>]</span>
+    <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">shrink_impl</span>(
+        <span class="ident">old_ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
+        <span class="ident">layout</span>: <span class="ident">Layout</span>,
+        <span class="ident">new_size</span>: <span class="ident">usize</span>,
+        <span class="ident">shrink</span>: <span class="kw">impl</span> <span class="ident">FnOnce</span>(<span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">Layout</span>, <span class="ident">usize</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NonNull</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span>,
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NonNull</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">current_size</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">round_up_unchecked</span>(<span class="ident">layout</span>.<span class="ident">size</span>());
+        <span class="kw">if</span> <span class="ident">new_size</span> <span class="op">&gt;</span> <span class="ident">current_size</span> <span class="op">-</span> <span class="ident">SIZE</span> {
+            <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">NonNull</span>::<span class="ident">slice_from_raw_parts</span>(<span class="ident">old_ptr</span>, <span class="ident">current_size</span>));
+        }
+
+        <span class="ident">shrink</span>(<span class="ident">old_ptr</span>, <span class="ident">layout</span>, <span class="self">Self</span>::<span class="ident">round_up_unchecked</span>(<span class="ident">new_size</span>)).<span class="ident">map</span>(<span class="self">Self</span>::<span class="ident">round_down_ptr</span>)
     }
 }
 
-<span class="kw">unsafe</span> <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">AllocRef</span>, <span class="kw">const</span> <span class="ident">SIZE</span>: <span class="ident">usize</span><span class="op">&gt;</span> <span class="ident">AllocRef</span> <span class="kw">for</span> <span class="ident">Chunk</span><span class="op">&lt;</span><span class="ident">A</span>, <span class="ident">SIZE</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">alloc</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>, <span class="ident">init</span>: <span class="ident">AllocInit</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MemoryBlock</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span> {
-        <span class="self">Self</span>::<span class="ident">assert_alignment</span>();
-        <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">alloc</span>(
-            <span class="kw">unsafe</span> {
-                <span class="ident">Layout</span>::<span class="ident">from_size_align_unchecked</span>(
-                    <span class="self">Self</span>::<span class="ident">next_multiple</span>(<span class="ident">layout</span>.<span class="ident">size</span>()),
-                    <span class="ident">layout</span>.<span class="ident">align</span>(),
-                )
-            },
-            <span class="ident">init</span>,
-        )<span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(<span class="ident">MemoryBlock</span> {
-            <span class="ident">ptr</span>: <span class="ident">memory</span>.<span class="ident">ptr</span>,
-            <span class="ident">size</span>: <span class="ident">memory</span>.<span class="ident">size</span> <span class="op">-</span> (<span class="ident">memory</span>.<span class="ident">size</span> <span class="op">%</span> <span class="ident">SIZE</span>),
-        })
-    }
+<span class="kw">unsafe</span> <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">AllocRef</span>, <span class="kw">const</span> <span class="ident">SIZE</span>: <span class="ident">usize</span><span class="op">&gt;</span> <span class="ident">AllocRef</span> <span class="kw">for</span> <span class="ident">Chunk</span><span class="op">&lt;</span><span class="ident">A</span>, <span class="ident">SIZE</span><span class="op">&gt;</span>
+<span class="kw">where</span>
+    <span class="self">Self</span>: <span class="ident">SizeIsPowerOfTwo</span>,
+{
+    <span class="macro">impl_alloc_ref</span><span class="macro">!</span>(<span class="number">0</span>);
+
     <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">dealloc</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>) {
+        <span class="kw">crate</span>::<span class="ident">check_dealloc_precondition</span>(<span class="ident">ptr</span>, <span class="ident">layout</span>);
+
         <span class="self">self</span>.<span class="number">0</span>.<span class="ident">dealloc</span>(
             <span class="ident">ptr</span>,
-            <span class="ident">Layout</span>::<span class="ident">from_size_align_unchecked</span>(<span class="self">Self</span>::<span class="ident">next_multiple</span>(<span class="ident">layout</span>.<span class="ident">size</span>()), <span class="ident">layout</span>.<span class="ident">align</span>()),
+            <span class="ident">Layout</span>::<span class="ident">from_size_align_unchecked</span>(
+                <span class="self">Self</span>::<span class="ident">round_up_unchecked</span>(<span class="ident">layout</span>.<span class="ident">size</span>()),
+                <span class="ident">layout</span>.<span class="ident">align</span>(),
+            ),
         )
-    }
-    <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">grow</span>(
-        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
-        <span class="ident">ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-        <span class="ident">layout</span>: <span class="ident">Layout</span>,
-        <span class="ident">new_size</span>: <span class="ident">usize</span>,
-        <span class="ident">placement</span>: <span class="ident">ReallocPlacement</span>,
-        <span class="ident">init</span>: <span class="ident">AllocInit</span>,
-    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MemoryBlock</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">next_multiple</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">next_multiple</span>(<span class="ident">layout</span>.<span class="ident">size</span>());
-        <span class="kw">if</span> <span class="ident">new_size</span> <span class="op">&lt;=</span> <span class="ident">next_multiple</span> {
-            <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">MemoryBlock</span> {
-                <span class="ident">ptr</span>,
-                <span class="ident">size</span>: <span class="ident">next_multiple</span>,
-            });
-        }
-
-        <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">grow</span>(
-            <span class="ident">ptr</span>,
-            <span class="ident">Layout</span>::<span class="ident">from_size_align_unchecked</span>(<span class="ident">next_multiple</span>, <span class="ident">layout</span>.<span class="ident">align</span>()),
-            <span class="self">Self</span>::<span class="ident">next_multiple</span>(<span class="ident">new_size</span>),
-            <span class="ident">placement</span>,
-            <span class="ident">init</span>,
-        )<span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(<span class="ident">MemoryBlock</span> {
-            <span class="ident">ptr</span>: <span class="ident">memory</span>.<span class="ident">ptr</span>,
-            <span class="ident">size</span>: <span class="ident">memory</span>.<span class="ident">size</span> <span class="op">-</span> (<span class="ident">memory</span>.<span class="ident">size</span> <span class="op">%</span> <span class="ident">SIZE</span>),
-        })
-    }
-    <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">shrink</span>(
-        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
-        <span class="ident">ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-        <span class="ident">layout</span>: <span class="ident">Layout</span>,
-        <span class="ident">new_size</span>: <span class="ident">usize</span>,
-        <span class="ident">placement</span>: <span class="ident">ReallocPlacement</span>,
-    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MemoryBlock</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">next_multiple</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">next_multiple</span>(<span class="ident">layout</span>.<span class="ident">size</span>());
-        <span class="kw">let</span> <span class="ident">previous_multiple</span> <span class="op">=</span> <span class="ident">next_multiple</span> <span class="op">-</span> <span class="ident">SIZE</span>;
-        <span class="kw">if</span> <span class="ident">new_size</span> <span class="op">&gt;</span> <span class="ident">previous_multiple</span> {
-            <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">MemoryBlock</span> {
-                <span class="ident">ptr</span>,
-                <span class="ident">size</span>: <span class="ident">next_multiple</span>,
-            });
-        }
-
-        <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">shrink</span>(
-            <span class="ident">ptr</span>,
-            <span class="ident">Layout</span>::<span class="ident">from_size_align_unchecked</span>(<span class="ident">next_multiple</span>, <span class="ident">layout</span>.<span class="ident">align</span>()),
-            <span class="self">Self</span>::<span class="ident">next_multiple</span>(<span class="ident">new_size</span>),
-            <span class="ident">placement</span>,
-        )<span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(<span class="ident">MemoryBlock</span> {
-            <span class="ident">ptr</span>: <span class="ident">memory</span>.<span class="ident">ptr</span>,
-            <span class="ident">size</span>: <span class="ident">memory</span>.<span class="ident">size</span> <span class="op">-</span> (<span class="ident">memory</span>.<span class="ident">size</span> <span class="op">%</span> <span class="ident">SIZE</span>),
-        })
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Owns</span>, <span class="kw">const</span> <span class="ident">SIZE</span>: <span class="ident">usize</span><span class="op">&gt;</span> <span class="ident">Owns</span> <span class="kw">for</span> <span class="ident">Chunk</span><span class="op">&lt;</span><span class="ident">A</span>, <span class="ident">SIZE</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">owns</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">memory</span>: <span class="ident">MemoryBlock</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
+<span class="kw">unsafe</span> <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">AllocAll</span>, <span class="kw">const</span> <span class="ident">SIZE</span>: <span class="ident">usize</span><span class="op">&gt;</span> <span class="ident">AllocAll</span> <span class="kw">for</span> <span class="ident">Chunk</span><span class="op">&lt;</span><span class="ident">A</span>, <span class="ident">SIZE</span><span class="op">&gt;</span>
+<span class="kw">where</span>
+    <span class="self">Self</span>: <span class="ident">SizeIsPowerOfTwo</span>,
+{
+    <span class="macro">impl_alloc_all</span><span class="macro">!</span>(<span class="number">0</span>);
+}
+
+<span class="kw">unsafe</span> <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">ReallocInPlace</span>, <span class="kw">const</span> <span class="ident">SIZE</span>: <span class="ident">usize</span><span class="op">&gt;</span> <span class="ident">ReallocInPlace</span> <span class="kw">for</span> <span class="ident">Chunk</span><span class="op">&lt;</span><span class="ident">A</span>, <span class="ident">SIZE</span><span class="op">&gt;</span>
+<span class="kw">where</span>
+    <span class="self">Self</span>: <span class="ident">SizeIsPowerOfTwo</span>,
+{
+    <span class="macro">impl_realloc_in_place</span><span class="macro">!</span>(<span class="number">0</span>);
+}
+
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Owns</span>, <span class="kw">const</span> <span class="ident">SIZE</span>: <span class="ident">usize</span><span class="op">&gt;</span> <span class="ident">Owns</span> <span class="kw">for</span> <span class="ident">Chunk</span><span class="op">&lt;</span><span class="ident">A</span>, <span class="ident">SIZE</span><span class="op">&gt;</span>
+<span class="kw">where</span>
+    <span class="self">Self</span>: <span class="ident">SizeIsPowerOfTwo</span>,
+{
+    <span class="kw">fn</span> <span class="ident">owns</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">memory</span>: <span class="ident">NonNull</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
         <span class="self">self</span>.<span class="number">0</span>.<span class="ident">owns</span>(<span class="ident">memory</span>)
     }
 }
@@ -453,27 +524,23 @@
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">tests</span> {
     <span class="kw">use</span> <span class="kw">super</span>::<span class="ident">Chunk</span>;
-    <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">helper</span>;
-    <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">alloc</span>::{<span class="ident">AllocInit</span>, <span class="ident">AllocRef</span>, <span class="ident">Layout</span>, <span class="ident">ReallocPlacement</span>, <span class="ident">System</span>};
-
-    <span class="attribute">#[<span class="ident">test</span>]</span>
-    <span class="attribute">#[<span class="ident">should_panic</span> <span class="op">=</span> <span class="string">&quot;`SIZE` must be a power of two&quot;</span>]</span>
-    <span class="kw">fn</span> <span class="ident">wrong_size</span>() {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">alloc</span> <span class="op">=</span> <span class="ident">Chunk</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="number">63</span><span class="op">&gt;</span>(<span class="ident">System</span>);
-        <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">alloc</span>.<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>(), <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>);
-    }
+    <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">helper</span>, <span class="ident">AllocAll</span>, <span class="ident">ReallocInPlace</span>, <span class="ident">Region</span>};
+    <span class="kw">use</span> <span class="ident">std</span>::{
+        <span class="ident">alloc</span>::{<span class="ident">AllocRef</span>, <span class="ident">Layout</span>, <span class="ident">System</span>},
+        <span class="ident">mem</span>::<span class="ident">MaybeUninit</span>,
+    };
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">alloc</span>() {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">alloc</span> <span class="op">=</span> <span class="ident">helper</span>::<span class="ident">tracker</span>(<span class="ident">Chunk</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="number">64</span><span class="op">&gt;</span>(<span class="ident">System</span>));
         <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
-            .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>(), <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>)
+            .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>())
             .<span class="ident">expect</span>(<span class="string">&quot;Could not allocate 64 bytes&quot;</span>);
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">memory</span>.<span class="ident">size</span> <span class="op">%</span> <span class="number">64</span>, <span class="number">0</span>);
-        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">memory</span>.<span class="ident">size</span> <span class="op">&gt;=</span> <span class="number">64</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">memory</span>.<span class="ident">len</span>() <span class="op">%</span> <span class="number">64</span>, <span class="number">0</span>);
+        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">memory</span>.<span class="ident">len</span>() <span class="op">&gt;=</span> <span class="number">64</span>);
 
         <span class="kw">unsafe</span> {
-            <span class="ident">alloc</span>.<span class="ident">dealloc</span>(<span class="ident">memory</span>.<span class="ident">ptr</span>, <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>());
+            <span class="ident">alloc</span>.<span class="ident">dealloc</span>(<span class="ident">memory</span>.<span class="ident">as_non_null_ptr</span>(), <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>());
         }
     }
 
@@ -483,121 +550,112 @@
 
         <span class="kw">unsafe</span> {
             <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
-                .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>(), <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>)
+                .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>())
                 .<span class="ident">expect</span>(<span class="string">&quot;Could not allocate 4 bytes&quot;</span>);
-            <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">memory</span>.<span class="ident">size</span> <span class="op">%</span> <span class="number">64</span>, <span class="number">0</span>);
-            <span class="ident">alloc</span>.<span class="ident">dealloc</span>(<span class="ident">memory</span>.<span class="ident">ptr</span>, <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>());
+            <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">memory</span>.<span class="ident">len</span>() <span class="op">%</span> <span class="number">64</span>, <span class="number">0</span>);
+            <span class="ident">alloc</span>.<span class="ident">dealloc</span>(<span class="ident">memory</span>.<span class="ident">as_non_null_ptr</span>(), <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>());
 
             <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
-                .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>(), <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>)
+                .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>())
                 .<span class="ident">expect</span>(<span class="string">&quot;Could not allocate 4 bytes&quot;</span>);
-            <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">memory</span>.<span class="ident">size</span> <span class="op">%</span> <span class="number">64</span>, <span class="number">0</span>);
-            <span class="ident">alloc</span>.<span class="ident">dealloc</span>(<span class="ident">memory</span>.<span class="ident">ptr</span>, <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">32</span>]<span class="op">&gt;</span>());
+            <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">memory</span>.<span class="ident">len</span>() <span class="op">%</span> <span class="number">64</span>, <span class="number">0</span>);
+            <span class="ident">alloc</span>.<span class="ident">dealloc</span>(<span class="ident">memory</span>.<span class="ident">as_non_null_ptr</span>(), <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">32</span>]<span class="op">&gt;</span>());
 
             <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
-                .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>(), <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>)
+                .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>())
                 .<span class="ident">expect</span>(<span class="string">&quot;Could not allocate 4 bytes&quot;</span>);
-            <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">memory</span>.<span class="ident">size</span> <span class="op">%</span> <span class="number">64</span>, <span class="number">0</span>);
-            <span class="ident">alloc</span>.<span class="ident">dealloc</span>(<span class="ident">memory</span>.<span class="ident">ptr</span>, <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">64</span>]<span class="op">&gt;</span>());
+            <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">memory</span>.<span class="ident">len</span>() <span class="op">%</span> <span class="number">64</span>, <span class="number">0</span>);
+            <span class="ident">alloc</span>.<span class="ident">dealloc</span>(<span class="ident">memory</span>.<span class="ident">as_non_null_ptr</span>(), <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">64</span>]<span class="op">&gt;</span>());
 
             <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
-                .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>(), <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>)
+                .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>())
                 .<span class="ident">expect</span>(<span class="string">&quot;Could not allocate 4 bytes&quot;</span>);
-            <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">memory</span>.<span class="ident">size</span> <span class="op">%</span> <span class="number">64</span>, <span class="number">0</span>);
-            <span class="ident">alloc</span>.<span class="ident">dealloc</span>(<span class="ident">memory</span>.<span class="ident">ptr</span>, <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">64</span>]<span class="op">&gt;</span>());
+            <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">memory</span>.<span class="ident">len</span>() <span class="op">%</span> <span class="number">64</span>, <span class="number">0</span>);
+            <span class="ident">alloc</span>.<span class="ident">dealloc</span>(<span class="ident">memory</span>.<span class="ident">as_non_null_ptr</span>(), <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">64</span>]<span class="op">&gt;</span>());
         }
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">grow</span>() {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">alloc</span> <span class="op">=</span> <span class="ident">helper</span>::<span class="ident">tracker</span>(<span class="ident">Chunk</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="number">64</span><span class="op">&gt;</span>(<span class="ident">System</span>));
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">data</span> <span class="op">=</span> [<span class="ident">MaybeUninit</span>::<span class="ident">new</span>(<span class="number">0</span>); <span class="number">256</span>];
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">alloc</span> <span class="op">=</span> <span class="ident">helper</span>::<span class="ident">tracker</span>(<span class="ident">Chunk</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="number">64</span><span class="op">&gt;</span>(<span class="ident">Region</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">data</span>)));
+
+        <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
+            .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>())
+            .<span class="ident">expect</span>(<span class="string">&quot;Could not allocate 4 bytes&quot;</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">memory</span>.<span class="ident">len</span>() <span class="op">%</span> <span class="number">64</span>, <span class="number">0</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">alloc</span>.<span class="ident">capacity_left</span>(), <span class="number">192</span>);
+
+        <span class="kw">let</span> <span class="ident">_cannot_grow_in_place</span> <span class="op">=</span> <span class="ident">alloc</span>
+            .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">1</span>]<span class="op">&gt;</span>())
+            .<span class="ident">expect</span>(<span class="string">&quot;Could not allocate 64 bytes&quot;</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">alloc</span>.<span class="ident">capacity_left</span>(), <span class="number">128</span>);
 
         <span class="kw">unsafe</span> {
-            <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
-                .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>(), <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>)
-                .<span class="ident">expect</span>(<span class="string">&quot;Could not allocate 4 bytes&quot;</span>);
-            <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">memory</span>.<span class="ident">size</span> <span class="op">%</span> <span class="number">64</span>, <span class="number">0</span>);
-
-            <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
-                .<span class="ident">grow</span>(
-                    <span class="ident">memory</span>.<span class="ident">ptr</span>,
-                    <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>(),
-                    <span class="number">8</span>,
-                    <span class="ident">ReallocPlacement</span>::<span class="ident">InPlace</span>,
-                    <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>,
-                )
+            <span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="ident">alloc</span>
+                .<span class="ident">grow_in_place</span>(<span class="ident">memory</span>.<span class="ident">as_non_null_ptr</span>(), <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>(), <span class="number">8</span>)
                 .<span class="ident">expect</span>(<span class="string">&quot;Could not grow to 8 bytes&quot;</span>);
-            <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">memory</span>.<span class="ident">size</span> <span class="op">%</span> <span class="number">64</span>, <span class="number">0</span>);
-            <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">memory</span>.<span class="ident">size</span> <span class="op">&gt;=</span> <span class="number">64</span>);
+            <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">len</span> <span class="op">%</span> <span class="number">64</span>, <span class="number">0</span>);
+            <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">len</span> <span class="op">&gt;=</span> <span class="number">64</span>);
 
-            <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
-                .<span class="ident">grow</span>(
-                    <span class="ident">memory</span>.<span class="ident">ptr</span>,
-                    <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">8</span>]<span class="op">&gt;</span>(),
-                    <span class="number">64</span>,
-                    <span class="ident">ReallocPlacement</span>::<span class="ident">InPlace</span>,
-                    <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>,
-                )
+            <span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="ident">alloc</span>
+                .<span class="ident">grow_in_place</span>(<span class="ident">memory</span>.<span class="ident">as_non_null_ptr</span>(), <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">8</span>]<span class="op">&gt;</span>(), <span class="number">64</span>)
                 .<span class="ident">expect</span>(<span class="string">&quot;Could not grow to 64 bytes&quot;</span>);
-            <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">memory</span>.<span class="ident">size</span> <span class="op">%</span> <span class="number">64</span>, <span class="number">0</span>);
-            <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">memory</span>.<span class="ident">size</span> <span class="op">&gt;=</span> <span class="number">64</span>);
+            <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">len</span> <span class="op">%</span> <span class="number">64</span>, <span class="number">0</span>);
+            <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">len</span> <span class="op">&gt;=</span> <span class="number">64</span>);
 
             <span class="ident">alloc</span>
-                .<span class="ident">grow</span>(
-                    <span class="ident">memory</span>.<span class="ident">ptr</span>,
-                    <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">64</span>]<span class="op">&gt;</span>(),
-                    <span class="number">65</span>,
-                    <span class="ident">ReallocPlacement</span>::<span class="ident">InPlace</span>,
-                    <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>,
-                )
+                .<span class="ident">grow_in_place</span>(<span class="ident">memory</span>.<span class="ident">as_non_null_ptr</span>(), <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">64</span>]<span class="op">&gt;</span>(), <span class="number">65</span>)
                 .<span class="ident">expect_err</span>(<span class="string">&quot;Could grow to 65 bytes in place&quot;</span>);
 
-            <span class="ident">alloc</span>.<span class="ident">dealloc</span>(<span class="ident">memory</span>.<span class="ident">ptr</span>, <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">64</span>]<span class="op">&gt;</span>());
+            <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
+                .<span class="ident">grow</span>(<span class="ident">memory</span>.<span class="ident">as_non_null_ptr</span>(), <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">64</span>]<span class="op">&gt;</span>(), <span class="number">65</span>)
+                .<span class="ident">expect</span>(<span class="string">&quot;Could not grow to 65 bytes&quot;</span>);
+
+            <span class="ident">alloc</span>
+                .<span class="ident">grow</span>(<span class="ident">memory</span>.<span class="ident">as_non_null_ptr</span>(), <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">100</span>]<span class="op">&gt;</span>(), <span class="number">512</span>)
+                .<span class="ident">expect_err</span>(<span class="string">&quot;Could grow to 512 bytes&quot;</span>);
+
+            <span class="ident">alloc</span>.<span class="ident">dealloc</span>(<span class="ident">memory</span>.<span class="ident">as_non_null_ptr</span>(), <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">100</span>]<span class="op">&gt;</span>());
         }
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">shrink</span>() {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">alloc</span> <span class="op">=</span> <span class="ident">helper</span>::<span class="ident">tracker</span>(<span class="ident">Chunk</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="number">64</span><span class="op">&gt;</span>(<span class="ident">System</span>));
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">data</span> <span class="op">=</span> [<span class="ident">MaybeUninit</span>::<span class="ident">new</span>(<span class="number">0</span>); <span class="number">256</span>];
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">alloc</span> <span class="op">=</span> <span class="ident">helper</span>::<span class="ident">tracker</span>(<span class="ident">Chunk</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="number">64</span><span class="op">&gt;</span>(<span class="ident">Region</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">data</span>)));
+
+        <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
+            .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">128</span>]<span class="op">&gt;</span>())
+            .<span class="ident">expect</span>(<span class="string">&quot;Could not allocate 128 bytes&quot;</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">memory</span>.<span class="ident">len</span>() <span class="op">%</span> <span class="number">64</span>, <span class="number">0</span>);
+
+        <span class="kw">let</span> <span class="ident">_cannot_shrink_in_place</span> <span class="op">=</span> <span class="ident">alloc</span>
+            .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">128</span>]<span class="op">&gt;</span>())
+            .<span class="ident">expect</span>(<span class="string">&quot;Could not allocate 128 bytes&quot;</span>);
 
         <span class="kw">unsafe</span> {
-            <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
-                .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">128</span>]<span class="op">&gt;</span>(), <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span>)
-                .<span class="ident">expect</span>(<span class="string">&quot;Could not allocate 128 bytes&quot;</span>);
-            <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">memory</span>.<span class="ident">size</span> <span class="op">%</span> <span class="number">64</span>, <span class="number">0</span>);
-
-            <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
-                .<span class="ident">shrink</span>(
-                    <span class="ident">memory</span>.<span class="ident">ptr</span>,
-                    <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">128</span>]<span class="op">&gt;</span>(),
-                    <span class="number">100</span>,
-                    <span class="ident">ReallocPlacement</span>::<span class="ident">InPlace</span>,
-                )
+            <span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="ident">alloc</span>
+                .<span class="ident">shrink_in_place</span>(<span class="ident">memory</span>.<span class="ident">as_non_null_ptr</span>(), <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">128</span>]<span class="op">&gt;</span>(), <span class="number">100</span>)
                 .<span class="ident">expect</span>(<span class="string">&quot;Could not shrink to 100 bytes&quot;</span>);
-            <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">memory</span>.<span class="ident">size</span> <span class="op">%</span> <span class="number">64</span>, <span class="number">0</span>);
-            <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">memory</span>.<span class="ident">size</span> <span class="op">&gt;=</span> <span class="number">128</span>);
+            <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">len</span> <span class="op">%</span> <span class="number">64</span>, <span class="number">0</span>);
+            <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">len</span> <span class="op">&gt;=</span> <span class="number">128</span>);
 
-            <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
-                .<span class="ident">shrink</span>(
-                    <span class="ident">memory</span>.<span class="ident">ptr</span>,
-                    <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">100</span>]<span class="op">&gt;</span>(),
-                    <span class="number">65</span>,
-                    <span class="ident">ReallocPlacement</span>::<span class="ident">InPlace</span>,
-                )
+            <span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="ident">alloc</span>
+                .<span class="ident">shrink_in_place</span>(<span class="ident">memory</span>.<span class="ident">as_non_null_ptr</span>(), <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">100</span>]<span class="op">&gt;</span>(), <span class="number">65</span>)
                 .<span class="ident">expect</span>(<span class="string">&quot;Could not shrink to 65 bytes&quot;</span>);
-            <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">memory</span>.<span class="ident">size</span> <span class="op">%</span> <span class="number">64</span>, <span class="number">0</span>);
-            <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">memory</span>.<span class="ident">size</span> <span class="op">&gt;=</span> <span class="number">128</span>);
+            <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">len</span> <span class="op">%</span> <span class="number">64</span>, <span class="number">0</span>);
+            <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">len</span> <span class="op">&gt;=</span> <span class="number">128</span>);
 
             <span class="ident">alloc</span>
-                .<span class="ident">shrink</span>(
-                    <span class="ident">memory</span>.<span class="ident">ptr</span>,
-                    <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">65</span>]<span class="op">&gt;</span>(),
-                    <span class="number">64</span>,
-                    <span class="ident">ReallocPlacement</span>::<span class="ident">InPlace</span>,
-                )
+                .<span class="ident">shrink_in_place</span>(<span class="ident">memory</span>.<span class="ident">as_non_null_ptr</span>(), <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">65</span>]<span class="op">&gt;</span>(), <span class="number">64</span>)
                 .<span class="ident">expect_err</span>(<span class="string">&quot;Could shrink to 64 bytes in place&quot;</span>);
 
-            <span class="ident">alloc</span>.<span class="ident">dealloc</span>(<span class="ident">memory</span>.<span class="ident">ptr</span>, <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">65</span>]<span class="op">&gt;</span>());
+            <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
+                .<span class="ident">shrink</span>(<span class="ident">memory</span>.<span class="ident">as_non_null_ptr</span>(), <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">100</span>]<span class="op">&gt;</span>(), <span class="number">64</span>)
+                .<span class="ident">expect</span>(<span class="string">&quot;Could not shrink to 64 bytes&quot;</span>);
+
+            <span class="ident">alloc</span>.<span class="ident">dealloc</span>(<span class="ident">memory</span>.<span class="ident">as_non_null_ptr</span>(), <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">64</span>]<span class="op">&gt;</span>());
         }
     }
 }
