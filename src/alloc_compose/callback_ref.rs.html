@@ -824,13 +824,13 @@
 
     <span class="doccomment">/// Called before [`grow_in_place`] was invoked.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// [`grow_in_place`]: core::alloc::AllocRef::grow_in_place</span>
+    <span class="doccomment">/// [`grow_in_place`]: crate::ReallocInPlace::grow_in_place</span>
     <span class="attribute">#[<span class="ident">inline</span>]</span>
     <span class="kw">fn</span> <span class="ident">before_grow_in_place</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>, <span class="ident">new_size</span>: <span class="ident">usize</span>) {}
 
     <span class="doccomment">/// Called after [`grow_in_place`] was invoked.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// [`grow_in_place`]: core::alloc::AllocRef::grow_in_place</span>
+    <span class="doccomment">/// [`grow_in_place`]: crate::ReallocInPlace::grow_in_place</span>
     <span class="attribute">#[<span class="ident">inline</span>]</span>
     <span class="kw">fn</span> <span class="ident">after_grow_in_place</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
@@ -843,13 +843,13 @@
 
     <span class="doccomment">/// Called before [`grow_in_place_zeroed`] was invoked.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// [`grow_in_place_zeroed`]: core::alloc::AllocRef::grow_in_place_zeroed</span>
+    <span class="doccomment">/// [`grow_in_place_zeroed`]: crate::ReallocInPlace::grow_in_place_zeroed</span>
     <span class="attribute">#[<span class="ident">inline</span>]</span>
     <span class="kw">fn</span> <span class="ident">before_grow_in_place_zeroed</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>, <span class="ident">new_size</span>: <span class="ident">usize</span>) {}
 
     <span class="doccomment">/// Called after [`grow_in_place_zeroed`] was invoked.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// [`grow_in_place_zeroed`]: core::alloc::AllocRef::grow_in_place_zeroed</span>
+    <span class="doccomment">/// [`grow_in_place_zeroed`]: crate::ReallocInPlace::grow_in_place_zeroed</span>
     <span class="attribute">#[<span class="ident">inline</span>]</span>
     <span class="kw">fn</span> <span class="ident">after_grow_in_place_zeroed</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
@@ -881,13 +881,13 @@
 
     <span class="doccomment">/// Called before [`shrink_in_place`] was invoked.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// [`shrink_in_place`]: core::alloc::AllocRef::shrink_in_place</span>
+    <span class="doccomment">/// [`shrink_in_place`]: crate::ReallocInPlace::shrink_in_place</span>
     <span class="attribute">#[<span class="ident">inline</span>]</span>
     <span class="kw">fn</span> <span class="ident">before_shrink_in_place</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>, <span class="ident">new_size</span>: <span class="ident">usize</span>) {}
 
     <span class="doccomment">/// Called after [`shrink_in_place`] was invoked.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// [`shrink_in_place`]: core::alloc::AllocRef::shrink_in_place</span>
+    <span class="doccomment">/// [`shrink_in_place`]: crate::ReallocInPlace::shrink_in_place</span>
     <span class="attribute">#[<span class="ident">inline</span>]</span>
     <span class="kw">fn</span> <span class="ident">after_shrink_in_place</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,

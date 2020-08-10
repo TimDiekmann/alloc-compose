@@ -395,8 +395,8 @@
             <span class="string">&quot;`offset` must be smaller than or equal to `ptr.len()`&quot;</span>
         );
         <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">AllocInit</span>::<span class="ident">Uninitialized</span> <span class="op">=&gt;</span> (),
-            <span class="ident">AllocInit</span>::<span class="ident">Zeroed</span> <span class="op">=&gt;</span> <span class="ident">ptr</span>
+            <span class="self">Self</span>::<span class="ident">Uninitialized</span> <span class="op">=&gt;</span> (),
+            <span class="self">Self</span>::<span class="ident">Zeroed</span> <span class="op">=&gt;</span> <span class="ident">ptr</span>
                 .<span class="ident">as_non_null_ptr</span>()
                 .<span class="ident">as_ptr</span>()
                 .<span class="ident">add</span>(<span class="ident">offset</span>)
@@ -429,19 +429,19 @@
     <span class="prelude-val">Ok</span>(<span class="ident">new_ptr</span>)
 }
 
-<span class="comment">// unsafe fn shrink_fallback&lt;A1: AllocRef, A2: AllocRef&gt;(</span>
-<span class="comment">//     a1: &amp;mut A1,</span>
-<span class="comment">//     a2: &amp;mut A2,</span>
-<span class="comment">//     ptr: NonNull&lt;u8&gt;,</span>
-<span class="comment">//     layout: Layout,</span>
-<span class="comment">//     new_size: usize,</span>
-<span class="comment">// ) -&gt; Result&lt;NonNull&lt;[u8]&gt;, AllocErr&gt; {</span>
-<span class="comment">//     let new_layout = Layout::from_size_align_unchecked(new_size, layout.align());</span>
-<span class="comment">//     let new_ptr = a2.alloc(new_layout)?;</span>
-<span class="comment">//     ptr::copy_nonoverlapping(ptr.as_ptr(), new_ptr.as_mut_ptr(), new_size);</span>
-<span class="comment">//     a1.dealloc(ptr, layout);</span>
-<span class="comment">//     Ok(new_ptr)</span>
-<span class="comment">// }</span>
+<span class="kw">pub</span>(<span class="kw">in</span> <span class="kw">crate</span>) <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">shrink_fallback</span><span class="op">&lt;</span><span class="ident">A1</span>: <span class="ident">AllocRef</span>, <span class="ident">A2</span>: <span class="ident">AllocRef</span><span class="op">&gt;</span>(
+    <span class="ident">a1</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">A1</span>,
+    <span class="ident">a2</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">A2</span>,
+    <span class="ident">ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
+    <span class="ident">layout</span>: <span class="ident">Layout</span>,
+    <span class="ident">new_size</span>: <span class="ident">usize</span>,
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NonNull</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span> {
+    <span class="kw">let</span> <span class="ident">new_layout</span> <span class="op">=</span> <span class="ident">Layout</span>::<span class="ident">from_size_align_unchecked</span>(<span class="ident">new_size</span>, <span class="ident">layout</span>.<span class="ident">align</span>());
+    <span class="kw">let</span> <span class="ident">new_ptr</span> <span class="op">=</span> <span class="ident">a2</span>.<span class="ident">alloc</span>(<span class="ident">new_layout</span>)<span class="question-mark">?</span>;
+    <span class="ident">ptr</span>::<span class="ident">copy_nonoverlapping</span>(<span class="ident">ptr</span>.<span class="ident">as_ptr</span>(), <span class="ident">new_ptr</span>.<span class="ident">as_mut_ptr</span>(), <span class="ident">new_size</span>);
+    <span class="ident">a1</span>.<span class="ident">dealloc</span>(<span class="ident">ptr</span>, <span class="ident">layout</span>);
+    <span class="prelude-val">Ok</span>(<span class="ident">new_ptr</span>)
+}
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">tracker</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">AllocRef</span><span class="op">&gt;</span>(<span class="ident">alloc</span>: <span class="ident">A</span>) <span class="op">-&gt;</span> <span class="kw">crate</span>::<span class="ident">Proxy</span><span class="op">&lt;</span><span class="ident">A</span>, <span class="kw">impl</span> <span class="kw">crate</span>::<span class="ident">CallbackRef</span><span class="op">&gt;</span> {
