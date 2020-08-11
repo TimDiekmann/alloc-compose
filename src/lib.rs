@@ -9,7 +9,7 @@
     const_checked_int_methods,
     const_alloc_layout,
     const_fn,
-    const_generics,
+    min_const_generics,
     const_panic,
     const_int_pow,
     const_nonnull_slice_from_raw_parts,
