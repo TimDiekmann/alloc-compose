@@ -12,7 +12,7 @@ use core::{
     ptr::{self, NonNull},
 };
 
-/// Allocator over an user-defined region of memory.
+/// A stack allocator over an user-defined region of memory.
 ///
 /// ## Examples
 ///

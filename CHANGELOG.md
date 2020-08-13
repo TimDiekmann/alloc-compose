@@ -1,10 +1,10 @@
-## [v0.5](https://timdiekmann.github.io/alloc-compose/alloc_compose/index.html) (Unreleased)
+## [v0.5](https://docs.rs/alloc-compose/0.5)
 
 - Add `ReallocInPlace` trait
 - Fix a bug in `Segregate` returning the wrong size
 
 **Breaking Changes:** 
-- Update to latest nightly, which uses `NonNull<[u8]>` and bans `InPlace` reallocations
+- Update to nightly-2020-08-10, which uses `NonNull<[u8]>` and bans `InPlace` reallocations
 - Add `AllocAll` trait and move some methods from `Region` into that trait
 - Change `Region` to require `[MaybeUninit<u8>]` rather than `[u8]`
 - Remove `MemoryMarker`
