@@ -9,7 +9,7 @@
 <img src="https://img.shields.io/crates/l/alloc-compose" alt="Crates.io" /></p>
 <hr />
 <h2 id="important-note" class="section-header"><a href="#important-note">Important note</a></h2>
-<p>Due to some changes to <code>AllocRef</code> it was hard to keep this crate updated. I'll readd the functionality from v0.5.0 from time to time. Most things have to be refactored as <code>AllocRef</code> now takes <code>&amp;self</code> instead of <code>&amp;mut self</code>.</p>
+<p>Due to some changes to <code>AllocRef</code> it was hard to keep this crate updated. I'll readd the functionality from v0.5.0 from time to time. Most things have to be refactored as <code>AllocRef</code>s reallocation methods now takes two layouts.</p>
 <p>The most interesting part as of now is probably <code>Region</code> and its variants.
 In future version, composable blocks like <code>AffixAllocator</code> or <code>Proxy</code> will be added.</p>
 <hr />
