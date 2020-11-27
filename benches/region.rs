@@ -1,6 +1,6 @@
 #![feature(allocator_api)]
 
-use alloc_compose::{region::*, AllocAll};
+use alloc_compose::{region::*, AllocateAll};
 use core::{
     alloc::{AllocRef, Layout},
     mem::MaybeUninit,
@@ -13,7 +13,7 @@ fn regions(c: &mut Criterion) {
     let mut data = [MaybeUninit::uninit(); 1024 * 1024];
 
     #[inline]
-    fn run(region: impl AllocRef + AllocAll, b: &mut Bencher) {
+    fn run(region: impl AllocRef + AllocateAll, b: &mut Bencher) {
         b.iter(|| {
             for _ in 0..16 {
                 region.alloc(black_box(Layout::new::<[u8; 16]>())).unwrap();
