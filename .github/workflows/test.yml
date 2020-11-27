@@ -60,8 +60,8 @@ jobs:
           override: true
           components: miri
 
+      - name: Setup miri
+        run: cargo miri setup
+
       - name: Run miri
-        uses: actions-rs/cargo@v1
-        with:
-          command: miri test
-          args: --all-features
+        run: cargo miri test --all-features
