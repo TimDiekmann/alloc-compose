@@ -321,14 +321,6 @@
 <span id="318">318</span>
 <span id="319">319</span>
 <span id="320">320</span>
-<span id="321">321</span>
-<span id="322">322</span>
-<span id="323">323</span>
-<span id="324">324</span>
-<span id="325">325</span>
-<span id="326">326</span>
-<span id="327">327</span>
-<span id="328">328</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">test</span>), <span class="ident">no_std</span>)]</span>
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">doc</span>, <span class="ident">feature</span>(<span class="ident">doc_cfg</span>, <span class="ident">external_doc</span>))]</span>
@@ -347,7 +339,7 @@
     <span class="ident">nonnull_slice_from_raw_parts</span>,
     <span class="ident">slice_ptr_get</span>,
     <span class="ident">slice_ptr_len</span>,
-    <span class="ident">maybe_uninit_slice</span>,
+    <span class="ident">maybe_uninit_slice</span>
 )]</span>
 <span class="attribute">#![<span class="ident">allow</span>(<span class="ident">incomplete_features</span>, <span class="ident">clippy</span>::<span class="ident">must_use_candidate</span>)]</span>
 
@@ -369,19 +361,12 @@
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">region</span>;
 <span class="comment">// mod segregate;</span>
 
-<span class="kw">use</span> <span class="ident">core</span>::<span class="ident">ptr</span>::<span class="ident">NonNull</span>;
-<span class="kw">use</span> <span class="ident">core</span>::<span class="ident">alloc</span>::{<span class="ident">Layout</span>, <span class="ident">AllocError</span>};
-
-<span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::{
-<span class="comment">//     affix::Affix,</span>
-<span class="comment">//     callback_ref::CallbackRef,</span>
-<span class="comment">//     chunk::Chunk,</span>
-<span class="comment">//     fallback::Fallback,</span>
-    <span class="ident">null</span>::<span class="ident">Null</span>,
-<span class="comment">//     proxy::Proxy,</span>
-<span class="comment">//     region::Region,</span>
-<span class="comment">//     segregate::Segregate,</span>
+<span class="kw">use</span> <span class="ident">core</span>::{
+    <span class="ident">alloc</span>::{<span class="ident">AllocError</span>, <span class="ident">Layout</span>},
+    <span class="ident">ptr</span>::<span class="ident">NonNull</span>,
 };
+
+<span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::<span class="ident">null</span>::<span class="ident">Null</span>;
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;intrinsics&quot;</span>)]</span>
 <span class="kw">mod</span> <span class="ident">intrinsics</span> {
@@ -484,7 +469,6 @@
 }
 
 <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">trait</span> <span class="ident">ReallocateInPlace</span> {
-
     <span class="doccomment">/// Attempts to extend the memory block.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Returns the new actual size of the allocated memory. The pointer is suitable for holding</span>

@@ -333,7 +333,6 @@
 <span id="330">330</span>
 <span id="331">331</span>
 <span id="332">332</span>
-<span id="333">333</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Region implementations which are not bound by a lifetime.</span>
 <span class="doccomment">//!</span>
@@ -345,12 +344,11 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! [`region`]: super</span>
 
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">intrinsics</span>::<span class="ident">unlikely</span>;
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">Owns</span>, <span class="ident">AllocAll</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">intrinsics</span>::<span class="ident">unlikely</span>, <span class="ident">AllocAll</span>, <span class="ident">Owns</span>};
 <span class="kw">use</span> <span class="ident">core</span>::{
-    <span class="ident">fmt</span>,
     <span class="ident">alloc</span>::{<span class="ident">AllocError</span>, <span class="ident">AllocRef</span>, <span class="ident">Layout</span>},
     <span class="ident">cell</span>::<span class="ident">Cell</span>,
+    <span class="ident">fmt</span>,
     <span class="ident">ptr</span>::<span class="ident">NonNull</span>,
 };
 
@@ -522,7 +520,7 @@
     }
 }
 
-    <span class="attribute">#[<span class="ident">inline</span>]</span>
+<span class="attribute">#[<span class="ident">inline</span>]</span>
 <span class="kw">fn</span> <span class="ident">alloc_impl</span>(
     <span class="ident">memory</span>: <span class="ident">NonNull</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>,
     <span class="ident">current</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
@@ -542,7 +540,7 @@
     }
 }
 
-    <span class="attribute">#[<span class="ident">inline</span>]</span>
+<span class="attribute">#[<span class="ident">inline</span>]</span>
 <span class="kw">fn</span> <span class="ident">alloc_all_impl</span>(
     <span class="ident">memory</span>: <span class="ident">NonNull</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>,
     <span class="ident">current</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
