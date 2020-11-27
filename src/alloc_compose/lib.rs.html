@@ -408,6 +408,8 @@
 <span id="405">405</span>
 <span id="406">406</span>
 <span id="407">407</span>
+<span id="408">408</span>
+<span id="409">409</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="attribute">#![<span class="ident">no_std</span>]</span>
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">doc</span>, <span class="ident">feature</span>(<span class="ident">doc_cfg</span>, <span class="ident">external_doc</span>))]</span>
@@ -450,7 +452,7 @@
     <span class="ident">ptr</span>::<span class="ident">NonNull</span>,
 };
 
-<span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::{<span class="ident">null</span>::<span class="ident">Null</span>, <span class="ident">chunk</span>::<span class="ident">Chunk</span>};
+<span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::{<span class="ident">chunk</span>::<span class="ident">Chunk</span>, <span class="ident">null</span>::<span class="ident">Null</span>};
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;intrinsics&quot;</span>)]</span>
 <span class="kw">mod</span> <span class="ident">intrinsics</span> {
@@ -764,7 +766,7 @@
     };
 }
 
-<span class="macro">impl_traits</span><span class="macro">!</span>( <span class="kw-2">&amp;</span><span class="ident">A</span>);
+<span class="macro">impl_traits</span><span class="macro">!</span>(<span class="kw-2">&amp;</span><span class="ident">A</span>);
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">doc</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;alloc&quot;</span>))]</span>
 <span class="macro">impl_traits</span><span class="macro">!</span>(<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">doc</span>, <span class="ident">doc</span>(<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;alloc&quot;</span>)))]</span> <span class="ident">alloc</span>::<span class="ident">boxed</span>::<span class="ident">Box</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>);
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">doc</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;alloc&quot;</span>))]</span>
@@ -794,7 +796,8 @@
     );
     <span class="macro">debug_assert</span><span class="macro">!</span>(
         <span class="ident">new_layout</span>.<span class="ident">size</span>() <span class="op">&gt;</span><span class="op">=</span> <span class="ident">old_layout</span>.<span class="ident">size</span>(),
-        <span class="string">&quot;`new_layout.size()` must be greater than or equal to `old_layout.size()`, expected {} &gt;= {}&quot;</span>,
+        <span class="string">&quot;`new_layout.size()` must be greater than or equal to `old_layout.size()`, expected {} &gt;= \
+         {}&quot;</span>,
         <span class="ident">new_layout</span>.<span class="ident">size</span>(),
         <span class="ident">old_layout</span>.<span class="ident">size</span>()
     );
@@ -811,7 +814,8 @@
     );
     <span class="macro">debug_assert</span><span class="macro">!</span>(
         <span class="ident">new_layout</span>.<span class="ident">size</span>() <span class="op">&lt;</span><span class="op">=</span> <span class="ident">old_layout</span>.<span class="ident">size</span>(),
-        <span class="string">&quot;`new_layout.size()` must be smaller than or equal to `old_layout.size()`, expected {} &lt;= {}&quot;</span>,
+        <span class="string">&quot;`new_layout.size()` must be smaller than or equal to `old_layout.size()`, expected {} &lt;= \
+         {}&quot;</span>,
         <span class="ident">new_layout</span>.<span class="ident">size</span>(),
         <span class="ident">old_layout</span>.<span class="ident">size</span>()
     );
