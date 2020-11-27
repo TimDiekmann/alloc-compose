@@ -27,6 +27,7 @@ fn regions(c: &mut Criterion) {
     group.bench_function("IntrusiveRegion", |b| {
         run(IntrusiveRegion::new(&mut data), b)
     });
+    group.bench_function("&Region", |b| run(&Region::new(&mut data), b));
 
     group.finish();
 }

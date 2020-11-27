@@ -137,6 +137,38 @@ pub unsafe trait AllocateAll {
     }
 }
 
+unsafe impl<A> AllocateAll for &A
+where
+    A: AllocateAll + ?Sized,
+{
+    fn allocate_all(&self) -> Result<NonNull<[u8]>, AllocError> {
+        (**self).allocate_all()
+    }
+
+    fn allocate_all_zeroed(&self) -> Result<NonNull<[u8]>, AllocError> {
+        (**self).allocate_all_zeroed()
+    }
+
+    fn deallocate_all(&self) {
+        (**self).deallocate_all()
+    }
+
+    fn capacity(&self) -> usize {
+        (**self).capacity()
+    }
+
+    fn capacity_left(&self) -> usize {
+        (**self).capacity_left()
+    }
+
+    fn is_empty(&self) -> bool {
+        (**self).is_empty()
+    }
+
+    fn is_full(&self) -> bool {
+        (**self).is_full()
+    }
+}
 /// Extends `AllocRef` to support growing and shrinking in place.
 pub unsafe trait ReallocateInPlace {
     /// Attempts to extend the memory block.
@@ -262,10 +294,50 @@ pub unsafe trait ReallocateInPlace {
     ) -> Result<usize, AllocError>;
 }
 
+unsafe impl<A> ReallocateInPlace for &A
+where
+    A: ReallocateInPlace + ?Sized,
+{
+    unsafe fn grow_in_place(
+        &self,
+        ptr: NonNull<u8>,
+        old_layout: Layout,
+        new_layout: Layout,
+    ) -> Result<usize, AllocError> {
+        (**self).grow_in_place(ptr, old_layout, new_layout)
+    }
+
+    unsafe fn grow_in_place_zeroed(
+        &self,
+        ptr: NonNull<u8>,
+        old_layout: Layout,
+        new_layout: Layout,
+    ) -> Result<usize, AllocError> {
+        (**self).grow_in_place_zeroed(ptr, old_layout, new_layout)
+    }
+
+    unsafe fn shrink_in_place(
+        &self,
+        ptr: NonNull<u8>,
+        old_layout: Layout,
+        new_layout: Layout,
+    ) -> Result<usize, AllocError> {
+        (**self).shrink_in_place(ptr, old_layout, new_layout)
+    }
+}
 /// Trait to determine if a given memory block is owned by an allocator.
 pub trait Owns {
     /// Returns if the allocator *owns* the passed memory.
     fn owns(&self, ptr: NonNull<[u8]>) -> bool;
+}
+
+impl<A> Owns for &A
+where
+    A: Owns + ?Sized,
+{
+    fn owns(&self, ptr: NonNull<[u8]>) -> bool {
+        (**self).owns(ptr)
+    }
 }
 
 // #[track_caller]
