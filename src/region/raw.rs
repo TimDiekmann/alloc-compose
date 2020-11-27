@@ -6,9 +6,9 @@
 //!
 //! It is highly encouraged to use the safe counterparts whenever possible.
 //!
-//! [`region`]: super
+//! [`region`]: crate::region
 
-use crate::{intrinsics::unlikely, AllocAll, Owns};
+use crate::{intrinsics::unlikely, AllocateAll, Owns};
 use core::{
     alloc::{AllocError, AllocRef, Layout},
     cell::Cell,
@@ -30,6 +30,11 @@ trait Current {
     fn set_current(&self, ptr: NonNull<u8>);
 }
 
+/// A stack allocator over an user-defined region of memory.
+///
+/// This is the non-lifetime version of [`Region`].
+///
+/// [`Region`]: crate::region::Region
 pub struct RawRegion {
     memory: NonNull<[u8]>,
     current: Cell<NonNull<u8>>,
@@ -83,6 +88,11 @@ pub struct RawSharedRegion {
     current: Rc<Cell<NonNull<u8>>>,
 }
 
+/// A clonable region allocator based on `Rc`.
+///
+/// This is the non-lifetime version of [`SharedRegion`].
+///
+/// [`SharedRegion`]: crate::region::SharedRegion
 #[cfg(any(doc, feature = "alloc"))]
 impl RawSharedRegion {
     /// Creates a new region from the given memory block.
@@ -125,6 +135,11 @@ impl Current for RawSharedRegion {
     }
 }
 
+/// An intrusive region allocator, which stores the current posision in the provided memory.
+///
+/// This is the non-lifetime version of [`IntrusiveRegion`].
+///
+/// [`IntrusiveRegion`]: crate::region::IntrusiveRegion
 #[derive(Clone)]
 pub struct RawIntrusiveRegion {
     memory: NonNull<[u8]>,
@@ -263,7 +278,7 @@ fn end(ptr: NonNull<[u8]>) -> NonNull<u8> {
 // }
 
 macro_rules! impl_raw_region {
-    ($ty:ty) => {
+    ($ty:ident) => {
         impl PartialEq for $ty {
             #[inline]
             fn eq(&self, rhs: &Self) -> bool {
@@ -293,7 +308,7 @@ macro_rules! impl_raw_region {
             unsafe fn dealloc(&self, _ptr: NonNull<u8>, _layout: Layout) {}
         }
 
-        unsafe impl AllocAll for $ty {
+        unsafe impl AllocateAll for $ty {
             #[inline]
             fn allocate_all(&self) -> Result<NonNull<[u8]>, AllocError> {
                 let new = alloc_all_impl(self.memory, self.current())?;
@@ -325,6 +340,8 @@ macro_rules! impl_raw_region {
                 ptr >= current && ptr + memory.len() <= end(self.memory).as_ptr() as usize
             }
         }
+
+        impl_global_alloc!($ty);
     };
 }
 

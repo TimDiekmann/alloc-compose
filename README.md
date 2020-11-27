@@ -13,6 +13,7 @@ Important note
 Due to some changes to `AllocRef` it was hard to keep this crate updated. I'll readd the functionality from v0.5.0 from time to time. Most things have to be refactored as `AllocRef` now takes `&self` instead of `&mut self`.
 
 The most interesting part as of now is probably `Region` and its variants.
+In future version, composable blocks like `AffixAllocator` or `Proxy` will be added.
 
 ---
 

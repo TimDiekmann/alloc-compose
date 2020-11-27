@@ -1,32 +1,24 @@
-#![cfg_attr(not(test), no_std)]
+#![no_std]
 #![cfg_attr(doc, feature(doc_cfg, external_doc))]
 #![cfg_attr(feature = "intrinsics", feature(core_intrinsics))]
 #![cfg_attr(doc, doc(include = "../README.md"))]
 #![feature(
     allocator_api,
-    alloc_layout_extra,
-    const_checked_int_methods,
-    const_alloc_layout,
-    const_fn,
-    min_const_generics,
-    const_panic,
-    const_nonnull_slice_from_raw_parts,
-    const_slice_ptr_len,
     nonnull_slice_from_raw_parts,
     slice_ptr_get,
-    slice_ptr_len,
-    maybe_uninit_slice
+    slice_ptr_len
 )]
+#![cfg_attr(test, feature(maybe_uninit_slice))]
 #![allow(incomplete_features, clippy::must_use_candidate)]
 
-#[cfg(any(feature = "alloc", doc))]
+#[cfg(any(feature = "alloc", doc, test))]
 extern crate alloc;
 
 // pub mod stats;
 
 // mod helper;
-// #[macro_use]
-// mod macros;
+#[macro_use]
+mod macros;
 
 // mod affix;
 // mod callback_ref;
@@ -51,7 +43,7 @@ mod intrinsics {
 
 #[cfg(not(feature = "intrinsics"))]
 mod intrinsics {
-    #![allow(clippy::missing_const_for_fn, clippy::inline_always)]
+    #![allow(clippy::missing_const_for_fn, clippy::inline_always, unused)]
 
     #[inline(always)]
     pub fn unlikely(b: bool) -> bool {
@@ -68,7 +60,8 @@ use crate::intrinsics::{assume, unlikely};
 #[allow(non_snake_case)]
 mod SIZE {}
 
-pub unsafe trait AllocAll {
+/// Extends `AllocRef` for allocating or deallocating all memory at once.
+pub unsafe trait AllocateAll {
     /// Attempts to allocate all of the memory the allocator can provide.
     ///
     /// If the allocator is currently not managing any memory, then it returns all the memory
@@ -144,6 +137,7 @@ pub unsafe trait AllocAll {
     }
 }
 
+/// Extends `AllocRef` to support growing and shrinking in place.
 pub unsafe trait ReallocateInPlace {
     /// Attempts to extend the memory block.
     ///

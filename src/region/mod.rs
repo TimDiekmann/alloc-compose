@@ -1,80 +1,109 @@
+//! Stack-based allocators with user-provided memory
+//!
+//! A region allocator allocates memory straight from one contiguous chunk. There is no
+//! deallocation, and once the region is full, allocation requests returns [`AllocError`].
+//! A region only stores a reference to the provided memory and a pointer to the current position.
+//!
+//! This module provides three kinds of stack-based allocators: [`Region`], [`SharedRegion`], and
+//! [`IntrusiveRegion`]. All three allocators uses a user-provided memory to allocate and differ
+//! in the way how they store the pointer to the current position.
+//!
+//! # Which region allocator to chose?
+//!
+//! Every region allocator is more or less on-par. They slightly differ in performance depending
+//! on how many allocations are made and how big the allocations are.
+//!
+//! - [`Region`] stores a current position in a [`Cell`] right next to the reference to the memory.
+//! - [`SharedRegion`] wraps the [`Cell`] in a [`RC`] to support cloning of the allocator.
+//! - [`IntrusiveRegion`] stores the pointer to the current position at the end of the provided
+//!   memory block.
+//!
+//! This results in the fact, that [`Region`] cannot be cloned. However, using [`AllocRef::by_ref`]
+//! returns a reference to the region, which can itself be cloned.
+//! [`SharedRegion`] and [`IntrusiveRegion`] both can be cloned. The [`IntrusiveRegion`] has a
+//! better performance in most cases due to cache coherence, but it's hard to say exactly, how much
+//! capacity the allocator will have exactly, as the pointer to the current position has to be well
+//! aligned. If this feature is important, [`SharedRegion`] or [`Region`] should be used instead.
+//! [`SharedRegion`] is only available with the `alloc`-feature, as it requires the [`Rc`] to
+//! allocate memory to store the pointer in.
+//!
+//! [`Rc`]: alloc::rc::Rc
+//! [`Cell`]: core::cell::Cell
+//!
+//! ## Examples
+//!
+//! ```rust
+//! #![feature(allocator_api)]
+//!
+//! use alloc_compose::{region::Region, Owns};
+//! use core::{
+//!     alloc::{AllocRef, Layout},
+//!     mem::MaybeUninit,
+//! };
+//!
+//! let mut data = [MaybeUninit::uninit(); 64];
+//! let region = Region::new(&mut data);
+//!
+//! let memory = region.alloc(Layout::new::<u32>())?;
+//! assert!(region.owns(memory));
+//! # Ok::<(), core::alloc::AllocError>(())
+//! ```
+//!
+//! This allocator can also be used in collection types of the std-library:
+//!
+//! ```rust
+//! #![feature(nonnull_slice_from_raw_parts)]
+//! # #![feature(allocator_api)]
+//! # use alloc_compose::{region::Region, Owns};
+//! # use core::{alloc::{AllocRef, Layout}, mem::MaybeUninit};
+//! # let mut data = [MaybeUninit::uninit(); 64];
+//! # let region = Region::new(&mut data);
+//!
+//! use core::ptr::NonNull;
+//!
+//! let mut vec: Vec<u32, _> = Vec::new_in(region.by_ref());
+//! vec.extend(&[10, 20, 30]);
+//! assert_eq!(vec, [10, 20, 30]);
+//!
+//! let ptr = unsafe { NonNull::new_unchecked(vec.as_mut_ptr()) };
+//! let memory = NonNull::slice_from_raw_parts(ptr.cast(), 12);
+//! assert!(region.owns(memory));
+//! ```
+//!
+//! To reset the allocator, [`AllocateAll::deallocate_all`] may be used:
+//!
+//! ```rust
+//! # #![feature(allocator_api)]
+//! # use alloc_compose::{region::Region, Owns};
+//! # use core::{alloc::{AllocRef, Layout}, mem::MaybeUninit};
+//! # let mut data = [MaybeUninit::uninit(); 64];
+//! # let region = Region::new(&mut data);
+//! # let _ = region.alloc(Layout::new::<u32>())?;
+//! use alloc_compose::AllocateAll;
+//!
+//! assert!(!region.is_empty());
+//! region.deallocate_all();
+//! assert!(region.is_empty());
+//! # Ok::<(), core::alloc::AllocError>(())
+//! ```
+
 pub mod raw;
 
 use self::raw::*;
-use crate::{AllocAll, Owns};
+use crate::{AllocateAll, Owns};
 use core::{
     alloc::{AllocError, AllocRef, Layout},
     marker::PhantomData,
     mem::MaybeUninit,
     ptr::NonNull,
 };
+
 /// A stack allocator over an user-defined region of memory.
 ///
 /// It holds a lifetime to the provided memory block, which ensures, that the allocator does not
 /// outlive the underlying memory.
 ///
 /// For a version without lifetime see [`RawRegion`] instead.
-///
-/// [`RawRegion`]: self::raw::RawRegion
-///
-/// ## Examples
-///
-/// ```rust
-/// #![feature(allocator_api)]
-///
-/// use alloc_compose::{region::Region, Owns};
-/// use core::{
-///     alloc::{AllocRef, Layout},
-///     mem::MaybeUninit,
-/// };
-///
-/// let mut data = [MaybeUninit::uninit(); 64];
-/// let region = Region::new(&mut data);
-///
-/// let memory = region.alloc(Layout::new::<u32>())?;
-/// assert!(region.owns(memory));
-/// # Ok::<(), core::alloc::AllocError>(())
-/// ```
-///
-/// This allocator can also be used in collection types of the std-library:
-///
-/// ```rust
-/// #![feature(nonnull_slice_from_raw_parts)]
-/// # #![feature(allocator_api)]
-/// # use alloc_compose::{region::Region, Owns};
-/// # use core::{alloc::{AllocRef, Layout}, mem::MaybeUninit};
-/// # let mut data = [MaybeUninit::uninit(); 64];
-/// # let region = Region::new(&mut data);
-///
-/// use core::ptr::NonNull;
-///
-/// let mut vec: Vec<u32, _> = Vec::new_in(region.by_ref());
-/// vec.extend(&[10, 20, 30]);
-/// assert_eq!(vec, [10, 20, 30]);
-///
-/// let ptr = unsafe { NonNull::new_unchecked(vec.as_mut_ptr()) };
-/// let memory = NonNull::slice_from_raw_parts(ptr.cast(), 12);
-/// assert!(region.owns(memory));
-/// ```
-///
-/// To reset the allocator, [`AllocAll::deallocate_all`] may be used:
-///
-/// [`AllocAll::deallocate_all`]: crate::AllocAll::deallocate_all
-///
-/// ```rust
-/// # #![feature(allocator_api)]
-/// # use alloc_compose::{region::Region, Owns};
-/// # use core::{alloc::{AllocRef, Layout}, mem::MaybeUninit};
-/// # let mut data = [MaybeUninit::uninit(); 64];
-/// # let region = Region::new(&mut data);
-/// # let _ = region.alloc(Layout::new::<u32>())?;
-/// use alloc_compose::AllocAll;
-///
-/// assert!(!region.is_empty());
-/// region.deallocate_all();
-/// assert!(region.is_empty());
-/// # Ok::<(), core::alloc::AllocError>(())
-/// ```
 pub struct Region<'mem> {
     raw: RawRegion,
     _marker: PhantomData<&'mem mut [MaybeUninit<u8>]>,
@@ -93,6 +122,12 @@ impl<'mem> Region<'mem> {
     }
 }
 
+/// A clonable region allocator based on `Rc`.
+///
+/// It holds a lifetime to the provided memory block, which ensures, that the allocator does not
+/// outlive the underlying memory.
+///
+/// For a version without lifetime see [`RawSharedRegion`] instead.
 #[derive(Clone)]
 #[cfg(any(doc, feature = "alloc"))]
 #[cfg_attr(doc, doc(cfg(feature = "alloc")))]
@@ -115,6 +150,12 @@ impl<'mem> SharedRegion<'mem> {
     }
 }
 
+/// An intrusive region allocator, which stores the current posision in the provided memory.
+///
+/// It holds a lifetime to the provided memory block, which ensures, that the allocator does not
+/// outlive the underlying memory.
+///
+/// For a version without lifetime see [`RawIntrusiveRegion`] instead.
 #[derive(Clone)]
 pub struct IntrusiveRegion<'mem> {
     raw: RawIntrusiveRegion,
@@ -203,7 +244,7 @@ macro_rules! impl_region {
             }
         }
 
-        unsafe impl AllocAll for $ty<'_> {
+        unsafe impl AllocateAll for $ty<'_> {
             #[inline]
             fn allocate_all(&self) -> Result<NonNull<[u8]>, AllocError> {
                 self.raw.allocate_all()
@@ -236,6 +277,8 @@ macro_rules! impl_region {
                 self.raw.owns(memory)
             }
         }
+
+        impl_global_alloc!($ty<'_>);
     };
 }
 
@@ -248,13 +291,13 @@ impl_region!(IntrusiveRegion, RawIntrusiveRegion);
 mod tests {
     #![allow(clippy::wildcard_imports)]
     use super::*;
-    use std::{cell::Cell, mem};
+    use core::{cell::Cell, mem};
 
     fn aligned_slice(memory: &mut [MaybeUninit<u8>], size: usize) -> &mut [MaybeUninit<u8>] {
         let ptr = memory.as_mut_ptr() as usize;
         let start = (ptr + 31) & !(31);
         assert!(memory.len() >= start - ptr + size);
-        unsafe { std::slice::from_raw_parts_mut(start as *mut MaybeUninit<u8>, size) }
+        unsafe { core::slice::from_raw_parts_mut(start as *mut MaybeUninit<u8>, size) }
     }
 
     macro_rules! impl_tests {
@@ -414,7 +457,7 @@ mod tests {
         let mut raw_data = [MaybeUninit::<u8>::new(1); 128];
         let data = aligned_slice(&mut raw_data, 32);
         let region = Region::new(data);
-        let mut vec = Vec::new_in(region.by_ref());
+        let mut vec = alloc::vec::Vec::new_in(region.by_ref());
         vec.push(10);
     }
 

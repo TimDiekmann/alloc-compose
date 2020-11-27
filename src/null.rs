@@ -1,4 +1,4 @@
-use crate::{AllocAll, Owns, ReallocateInPlace};
+use crate::{AllocateAll, Owns, ReallocateInPlace};
 use core::{
     alloc::{AllocError, AllocRef, Layout},
     ptr::NonNull,
@@ -6,7 +6,8 @@ use core::{
 
 /// An emphatically empty implementation of `AllocRef`.
 ///
-/// Although it has no direct use, it is useful as a "terminator" in composite allocators.
+/// Although it has no direct use, it is useful as a "terminator" in composite allocators
+/// or for disabling the global allocator.
 ///
 /// # Examples
 ///
@@ -30,6 +31,15 @@ use core::{
 /// # use std::alloc::{AllocRef, Global, Layout};
 /// let memory = Null.alloc(Layout::new::<()>());
 /// assert!(memory.is_err())
+/// ```
+///
+/// ## Disabling the global allocator
+///
+/// ```rust, no_run
+/// use alloc_compose::Null;
+///
+/// #[global_allocator]
+/// static A: Null = Null;
 /// ```
 #[derive(Debug, Copy, Clone)]
 pub struct Null;
@@ -81,7 +91,7 @@ unsafe impl AllocRef for Null {
     }
 }
 
-unsafe impl AllocAll for Null {
+unsafe impl AllocateAll for Null {
     fn allocate_all(&self) -> Result<NonNull<[u8]>, AllocError> {
         Err(AllocError)
     }
@@ -139,6 +149,8 @@ impl Owns for Null {
         false
     }
 }
+
+impl_global_alloc!(Null);
 
 #[cfg(test)]
 mod tests {
@@ -241,6 +253,6 @@ mod tests {
 
     #[test]
     fn debug() {
-        assert_eq!(format!("{:?}", Null), "Null");
+        assert_eq!(alloc::format!("{:?}", Null), "Null");
     }
 }
