@@ -1,6 +1,6 @@
-use crate::{AllocAll, Owns, ReallocInPlace};
+use crate::{AllocAll, Owns, ReallocateInPlace};
 use core::{
-    alloc::{AllocErr, AllocRef, Layout},
+    alloc::{AllocError, AllocRef, Layout},
     ptr::NonNull,
 };
 
@@ -36,61 +36,61 @@ pub struct Null;
 
 unsafe impl AllocRef for Null {
     /// Will always return `Err(AllocErr)`.
-    fn alloc(&mut self, _layout: Layout) -> Result<NonNull<[u8]>, AllocErr> {
-        Err(AllocErr)
+    fn alloc(&self, _layout: Layout) -> Result<NonNull<[u8]>, AllocError> {
+        Err(AllocError)
     }
 
     /// Will always return `Err(AllocErr)`.
-    fn alloc_zeroed(&mut self, _layout: Layout) -> Result<NonNull<[u8]>, AllocErr> {
-        Err(AllocErr)
+    fn alloc_zeroed(&self, _layout: Layout) -> Result<NonNull<[u8]>, AllocError> {
+        Err(AllocError)
     }
 
     /// Must not be called, as allocation always fails.
-    unsafe fn dealloc(&mut self, _ptr: NonNull<u8>, _layout: Layout) {
+    unsafe fn dealloc(&self, _ptr: NonNull<u8>, _layout: Layout) {
         unreachable!("Null::dealloc must never be called as allocation always fails")
     }
 
     /// Must not be called, as allocation always fails.
     unsafe fn grow(
-        &mut self,
+        &self,
         _ptr: NonNull<u8>,
-        _layout: Layout,
-        _new_size: usize,
-    ) -> Result<NonNull<[u8]>, AllocErr> {
+        _old_layout: Layout,
+        _new_layout: Layout,
+    ) -> Result<NonNull<[u8]>, AllocError> {
         unreachable!("Null::grow must never be called as allocation always fails")
     }
 
     /// Must not be called, as allocation always fails.
     unsafe fn grow_zeroed(
-        &mut self,
+        &self,
         _ptr: NonNull<u8>,
-        _layout: Layout,
-        _new_size: usize,
-    ) -> Result<NonNull<[u8]>, AllocErr> {
+        _old_layout: Layout,
+        _new_layout: Layout,
+    ) -> Result<NonNull<[u8]>, AllocError> {
         unreachable!("Null::grow_zeroed must never be called as allocation always fails")
     }
 
     /// Must not be called, as allocation always fails.
     unsafe fn shrink(
-        &mut self,
+        &self,
         _ptr: NonNull<u8>,
-        _layout: Layout,
-        _new_size: usize,
-    ) -> Result<NonNull<[u8]>, AllocErr> {
+        _old_layout: Layout,
+        _new_layout: Layout,
+    ) -> Result<NonNull<[u8]>, AllocError> {
         unreachable!("Null::shrink must never be called as allocation always fails")
     }
 }
 
 unsafe impl AllocAll for Null {
-    fn alloc_all(&mut self, _layout: Layout) -> Result<NonNull<[u8]>, AllocErr> {
-        Err(AllocErr)
+    fn allocate_all(&self) -> Result<NonNull<[u8]>, AllocError> {
+        Err(AllocError)
     }
 
-    fn alloc_all_zeroed(&mut self, _layout: Layout) -> Result<NonNull<[u8]>, AllocErr> {
-        Err(AllocErr)
+    fn allocate_all_zeroed(&self) -> Result<NonNull<[u8]>, AllocError> {
+        Err(AllocError)
     }
 
-    fn dealloc_all(&mut self) {}
+    fn deallocate_all(&self) {}
 
     fn capacity(&self) -> usize {
         0
@@ -101,34 +101,34 @@ unsafe impl AllocAll for Null {
     }
 }
 
-unsafe impl ReallocInPlace for Null {
+unsafe impl ReallocateInPlace for Null {
     /// Must not be called, as allocation always fails.
     unsafe fn grow_in_place(
-        &mut self,
+        &self,
         _ptr: NonNull<u8>,
-        _layout: Layout,
-        _new_size: usize,
-    ) -> Result<usize, AllocErr> {
+        _old_layout: Layout,
+        _new_layout: Layout,
+    ) -> Result<usize, AllocError> {
         unreachable!("Null::grow_in_place must never be called as allocation always fails")
     }
 
     /// Must not be called, as allocation always fails.
     unsafe fn grow_in_place_zeroed(
-        &mut self,
+        &self,
         _ptr: NonNull<u8>,
-        _layout: Layout,
-        _new_size: usize,
-    ) -> Result<usize, AllocErr> {
+        _old_layout: Layout,
+        _new_layout: Layout,
+    ) -> Result<usize, AllocError> {
         unreachable!("Null::grow_in_place_zeroed must never be called as allocation always fails")
     }
 
     /// Must not be called, as allocation always fails.
     unsafe fn shrink_in_place(
-        &mut self,
+        &self,
         _ptr: NonNull<u8>,
-        _layout: Layout,
-        _new_size: usize,
-    ) -> Result<usize, AllocErr> {
+        _old_layout: Layout,
+        _new_layout: Layout,
+    ) -> Result<usize, AllocError> {
         unreachable!("Null::shrink_in_place must never be called as allocation always fails")
     }
 }
@@ -155,18 +155,22 @@ mod tests {
     fn alloc() {
         assert!(Null.alloc(Layout::new::<u32>()).is_err());
         assert!(Null.alloc_zeroed(Layout::new::<u32>()).is_err());
-        assert!(Null.alloc_all(Layout::new::<u32>()).is_err());
-        assert!(Null.alloc_all_zeroed(Layout::new::<u32>()).is_err());
+        assert!(Null.allocate_all().is_err());
+        assert!(Null.allocate_all_zeroed().is_err());
         assert_eq!(Null.capacity(), 0);
         assert_eq!(Null.capacity_left(), 0);
-        Null.dealloc_all();
+        Null.deallocate_all();
     }
 
     #[test]
     #[should_panic(expected = "unreachable")]
     fn grow() {
         unsafe {
-            let _ = Null.grow(NonNull::dangling(), Layout::new::<()>(), 0);
+            let _ = Null.grow(
+                NonNull::dangling(),
+                Layout::new::<()>(),
+                Layout::new::<()>(),
+            );
         };
     }
 
@@ -174,7 +178,11 @@ mod tests {
     #[should_panic(expected = "unreachable")]
     fn grow_zeroed() {
         unsafe {
-            let _ = Null.grow_zeroed(NonNull::dangling(), Layout::new::<()>(), 0);
+            let _ = Null.grow_zeroed(
+                NonNull::dangling(),
+                Layout::new::<()>(),
+                Layout::new::<()>(),
+            );
         };
     }
 
@@ -182,7 +190,11 @@ mod tests {
     #[should_panic(expected = "unreachable")]
     fn grow_in_place() {
         unsafe {
-            let _ = Null.grow_in_place(NonNull::dangling(), Layout::new::<()>(), 0);
+            let _ = Null.grow_in_place(
+                NonNull::dangling(),
+                Layout::new::<()>(),
+                Layout::new::<()>(),
+            );
         };
     }
 
@@ -190,7 +202,11 @@ mod tests {
     #[should_panic(expected = "unreachable")]
     fn grow_in_place_zeroed() {
         unsafe {
-            let _ = Null.grow_in_place_zeroed(NonNull::dangling(), Layout::new::<()>(), 0);
+            let _ = Null.grow_in_place_zeroed(
+                NonNull::dangling(),
+                Layout::new::<()>(),
+                Layout::new::<()>(),
+            );
         };
     }
 
@@ -198,7 +214,11 @@ mod tests {
     #[should_panic(expected = "unreachable")]
     fn shrink() {
         unsafe {
-            let _ = Null.shrink(NonNull::dangling(), Layout::new::<()>(), 0);
+            let _ = Null.shrink(
+                NonNull::dangling(),
+                Layout::new::<()>(),
+                Layout::new::<()>(),
+            );
         };
     }
 
@@ -206,7 +226,11 @@ mod tests {
     #[should_panic(expected = "unreachable")]
     fn shrink_in_place() {
         unsafe {
-            let _ = Null.shrink_in_place(NonNull::dangling(), Layout::new::<()>(), 0);
+            let _ = Null.shrink_in_place(
+                NonNull::dangling(),
+                Layout::new::<()>(),
+                Layout::new::<()>(),
+            );
         };
     }
 

@@ -1,7 +1,6 @@
 #![cfg_attr(not(test), no_std)]
 #![cfg_attr(doc, feature(doc_cfg, external_doc))]
 #![cfg_attr(feature = "intrinsics", feature(core_intrinsics))]
-#![cfg_attr(test, feature(maybe_uninit_slice_assume_init))]
 #![cfg_attr(doc, doc(include = "../README.md"))]
 #![feature(
     allocator_api,
@@ -11,48 +10,39 @@
     const_fn,
     min_const_generics,
     const_panic,
-    const_int_pow,
     const_nonnull_slice_from_raw_parts,
     const_slice_ptr_len,
     nonnull_slice_from_raw_parts,
     slice_ptr_get,
-    slice_ptr_len
+    slice_ptr_len,
+    maybe_uninit_slice
 )]
 #![allow(incomplete_features, clippy::must_use_candidate)]
 
 #[cfg(any(feature = "alloc", doc))]
 extern crate alloc;
 
-pub mod stats;
+// pub mod stats;
 
-mod helper;
-#[macro_use]
-mod macros;
+// mod helper;
+// #[macro_use]
+// mod macros;
 
-mod affix;
-mod callback_ref;
-mod chunk;
-mod fallback;
+// mod affix;
+// mod callback_ref;
+// mod chunk;
+// mod fallback;
 mod null;
-mod proxy;
-mod region;
-mod segregate;
+// mod proxy;
+pub mod region;
+// mod segregate;
 
 use core::{
-    alloc::{AllocErr, Layout},
+    alloc::{AllocError, Layout},
     ptr::NonNull,
 };
 
-pub use self::{
-    affix::Affix,
-    callback_ref::CallbackRef,
-    chunk::Chunk,
-    fallback::Fallback,
-    null::Null,
-    proxy::Proxy,
-    region::Region,
-    segregate::Segregate,
-};
+pub use self::null::Null;
 
 #[cfg(feature = "intrinsics")]
 mod intrinsics {
@@ -82,19 +72,21 @@ pub unsafe trait AllocAll {
     /// Attempts to allocate all of the memory the allocator can provide.
     ///
     /// If the allocator is currently not managing any memory, then it returns all the memory
-    /// available to the allocator. Subsequent calls should not suceed.
+    /// available to the allocator. Subsequent are unlikely to succeed.
     ///
-    /// On success, returns a [`NonNull<[u8]>`] meeting the size and alignment guarantees of `layout`.
+    /// On success, returns `[NonNull<[u8]>]` meeting the size and alignment guarantees of `layout`.
     ///
     /// The returned block may have a larger size than specified by `layout.size()`, and may or may
     /// not have its contents initialized.
     ///
-    /// [`NonNull<[u8]>`]: NonNull
+    /// Also see [`AllocRef::alloc`]
+    ///
+    /// [`AllocRef::alloc`]: core::alloc::AllocRef::alloc
     ///
     /// # Errors
     ///
     /// Returning `Err` indicates that either memory is exhausted or `layout` does not meet
-    /// allocator's size or alignment constraints.
+    /// allocators size or alignment constraints.
     ///
     /// Implementations are encouraged to return `Err` on memory exhaustion rather than panicking or
     /// aborting, but this is not a strict requirement. (Specifically: it is *legal* to implement
@@ -103,15 +95,19 @@ pub unsafe trait AllocAll {
     /// Clients wishing to abort computation in response to an allocation error are encouraged to
     /// call the [`handle_alloc_error`] function, rather than directly invoking `panic!` or similar.
     ///
-    /// [`handle_alloc_error`]: ../../alloc/alloc/fn.handle_alloc_error.html
-    fn alloc_all(&mut self, layout: Layout) -> Result<NonNull<[u8]>, AllocErr>;
+    /// [`handle_alloc_error`]: https://doc.rust-lang.org/alloc/alloc/fn.handle_alloc_error.html
+    fn allocate_all(&self) -> Result<NonNull<[u8]>, AllocError>;
 
     /// Behaves like `alloc_all`, but also ensures that the returned memory is zero-initialized.
     ///
+    /// Also see [`AllocRef::alloc_zeroed`]
+    ///
+    /// [`AllocRef::alloc_zeroed`]: core::alloc::AllocRef::alloc_zeroed
+    ///
     /// # Errors
     ///
     /// Returning `Err` indicates that either memory is exhausted or `layout` does not meet
-    /// allocator's size or alignment constraints.
+    /// allocators size or alignment constraints.
     ///
     /// Implementations are encouraged to return `Err` on memory exhaustion rather than panicking or
     /// aborting, but this is not a strict requirement. (Specifically: it is *legal* to implement
@@ -120,11 +116,16 @@ pub unsafe trait AllocAll {
     /// Clients wishing to abort computation in response to an allocation error are encouraged to
     /// call the [`handle_alloc_error`] function, rather than directly invoking `panic!` or similar.
     ///
-    /// [`handle_alloc_error`]: ../../alloc/alloc/fn.handle_alloc_error.html
-    fn alloc_all_zeroed(&mut self, layout: Layout) -> Result<NonNull<[u8]>, AllocErr>;
+    /// [`handle_alloc_error`]: https://doc.rust-lang.org/alloc/alloc/fn.handle_alloc_error.html
+    fn allocate_all_zeroed(&self) -> Result<NonNull<[u8]>, AllocError> {
+        let ptr = self.allocate_all()?;
+        // SAFETY: `allocate_all` returns a valid memory block
+        unsafe { ptr.as_non_null_ptr().as_ptr().write_bytes(0, ptr.len()) }
+        Ok(ptr)
+    }
 
     /// Deallocates all the memory the allocator had allocated.
-    fn dealloc_all(&mut self);
+    fn deallocate_all(&self);
 
     /// Returns the total capacity available in this allocator.
     fn capacity(&self) -> usize;
@@ -143,10 +144,10 @@ pub unsafe trait AllocAll {
     }
 }
 
-pub unsafe trait ReallocInPlace {
-    /// Attempts to extend the allocation referenced by `ptr` to fit `new_layout`.
+pub unsafe trait ReallocateInPlace {
+    /// Attempts to extend the memory block.
     ///
-    /// Returns the a new actual size of the allocated memory. The pointer is suitable for holding
+    /// Returns the new actual size of the allocated memory. The pointer is suitable for holding
     /// data described by a new layout with `layout`’s alignment and a size given by `new_size`.
     /// To accomplish this, the allocator may extend the allocation referenced by `ptr` to fit the
     /// new layout.
@@ -157,18 +158,16 @@ pub unsafe trait ReallocInPlace {
     ///
     /// # Safety
     ///
-    /// * `ptr` must denote a block of memory [*currently allocated*] via this allocator,
-    /// * `layout` must [*fit*] that block of memory (The `new_size` argument need not fit it.),
-    /// * `new_size` must be greater than or equal to `layout.size()`, and
-    /// * `new_size`, when rounded up to the nearest multiple of `layout.align()`, must not overflow
-    ///   (i.e., the rounded value must be less than or equal to `usize::MAX`).
+    /// * `ptr` must denote a block of memory [*currently allocated*] via this allocator.
+    /// * `old_layout` must [*fit*] that block of memory (The `new_layout` argument need not fit it.).
+    /// * `new_layout.size()` must be greater than or equal to `old_layout.size()`.
     ///
     /// [*currently allocated*]: https://doc.rust-lang.org/nightly/alloc/alloc/trait.AllocRef.html#currently-allocated-memory
     /// [*fit*]: https://doc.rust-lang.org/nightly/alloc/alloc/trait.AllocRef.html#memory-fitting
     ///
     /// # Errors
     ///
-    /// Returns `Err` if the new layout does not meet the allocator's size and alignment
+    /// Returns `Err` if the new layout does not meet the allocators size and alignment
     /// constraints of the allocator, or if growing otherwise fails.
     ///
     /// Implementations are encouraged to return `Err` on memory exhaustion rather than panicking or
@@ -178,41 +177,39 @@ pub unsafe trait ReallocInPlace {
     /// Clients wishing to abort computation in response to an allocation error are encouraged to
     /// call the [`handle_alloc_error`] function, rather than directly invoking `panic!` or similar.
     ///
-    /// [`handle_alloc_error`]: ../../alloc/alloc/fn.handle_alloc_error.html
+    /// [`handle_alloc_error`]: https://doc.rust-lang.org/alloc/alloc/fn.handle_alloc_error.html
     unsafe fn grow_in_place(
-        &mut self,
+        &self,
         ptr: NonNull<u8>,
-        layout: Layout,
-        new_size: usize,
-    ) -> Result<usize, AllocErr>;
+        old_layout: Layout,
+        new_layout: Layout,
+    ) -> Result<usize, AllocError>;
 
     /// Behaves like `grow_in_place`, but also ensures that the new contents are set to zero before
     /// being returned.
     ///
     /// The memory block will contain the following contents after a successful call to
-    /// `grow_in_place_zeroed`:
-    ///   * Bytes `0..layout.size()` are preserved from the original allocation.
-    ///   * Bytes `layout.size()..old_size` will either be preserved or zeroed,
-    ///     depending on the allocator implementation. `old_size` refers to the size of
-    ///     the `MemoryBlock` prior to the `grow_in_place_zeroed` call, which may be larger than the
-    ///     size that was originally requested when it was allocated.
-    ///   * Bytes `old_size..new_size` are zeroed. `new_size` refers to
-    ///     the size of the `MemoryBlock` returned by the `grow` call.
+    /// `grow_zeroed`:
+    ///   * Bytes `0..old_layout.size()` are preserved from the original allocation.
+    ///   * Bytes `old_layout.size()..old_size` will either be preserved or zeroed, depending on
+    ///     the allocator implementation. `old_size` refers to the size of the memory block prior
+    ///     to the `grow_zeroed` call, which may be larger than the size that was originally
+    ///     requested when it was allocated.
+    ///   * Bytes `old_size..new_size` are zeroed. `new_size` refers to the size of the memory
+    ///     block returned by the `grow_zeroed` call.
     ///
     /// # Safety
     ///
-    /// * `ptr` must denote a block of memory [*currently allocated*] via this allocator,
-    /// * `layout` must [*fit*] that block of memory (The `new_size` argument need not fit it.),
-    /// * `new_size` must be greater than or equal to `layout.size()`, and
-    /// * `new_size`, when rounded up to the nearest multiple of `layout.align()`, must not overflow
-    ///   (i.e., the rounded value must be less than or equal to `usize::MAX`).
+    /// * `ptr` must denote a block of memory [*currently allocated*] via this allocator.
+    /// * `old_layout` must [*fit*] that block of memory (The `new_layout` argument need not fit it.).
+    /// * `new_layout.size()` must be greater than or equal to `old_layout.size()`.
     ///
     /// [*currently allocated*]: https://doc.rust-lang.org/nightly/alloc/alloc/trait.AllocRef.html#currently-allocated-memory
     /// [*fit*]: https://doc.rust-lang.org/nightly/alloc/alloc/trait.AllocRef.html#memory-fitting
     ///
     /// # Errors
     ///
-    /// Returns `Err` if the new layout does not meet the allocator's size and alignment
+    /// Returns `Err` if the new layout does not meet the allocators size and alignment
     /// constraints of the allocator, or if growing otherwise fails.
     ///
     /// Implementations are encouraged to return `Err` on memory exhaustion rather than panicking or
@@ -222,17 +219,17 @@ pub unsafe trait ReallocInPlace {
     /// Clients wishing to abort computation in response to an allocation error are encouraged to
     /// call the [`handle_alloc_error`] function, rather than directly invoking `panic!` or similar.
     ///
-    /// [`handle_alloc_error`]: ../../alloc/alloc/fn.handle_alloc_error.html
+    /// [`handle_alloc_error`]: https://doc.rust-lang.org/alloc/alloc/fn.handle_alloc_error.html
     unsafe fn grow_in_place_zeroed(
-        &mut self,
+        &self,
         ptr: NonNull<u8>,
-        layout: Layout,
-        new_size: usize,
-    ) -> Result<usize, AllocErr>;
+        old_layout: Layout,
+        new_layout: Layout,
+    ) -> Result<usize, AllocError>;
 
-    /// Attempts to shrink the allocation referenced by `ptr` to fit `new_layout`.
+    /// Attempts to shrink the memory block.
     ///
-    /// Returns the a new actual size of the allocated memory. The pointer is suitable for holding
+    /// Returns the new actual size of the allocated memory. The pointer is suitable for holding
     /// data described by a new layout with `layout`’s alignment and a size given by `new_size`.
     /// To accomplish this, the allocator may extend the allocation referenced by `ptr` to fit the
     /// new layout.
@@ -243,9 +240,9 @@ pub unsafe trait ReallocInPlace {
     ///
     /// # Safety
     ///
-    /// * `ptr` must denote a block of memory [*currently allocated*] via this allocator,
-    /// * `layout` must [*fit*] that block of memory (The `new_size` argument need not fit it.), and
-    /// * `new_size` must be smaller than or equal to `layout.size()`
+    /// * `ptr` must denote a block of memory [*currently allocated*] via this allocator.
+    /// * `old_layout` must [*fit*] that block of memory (The `new_layout` argument need not fit it.).
+    /// * `new_layout.size()` must be smaller than or equal to `old_layout.size()`.
     ///
     /// [*currently allocated*]: https://doc.rust-lang.org/nightly/alloc/alloc/trait.AllocRef.html#currently-allocated-memory
     /// [*fit*]: https://doc.rust-lang.org/nightly/alloc/alloc/trait.AllocRef.html#memory-fitting
@@ -253,7 +250,7 @@ pub unsafe trait ReallocInPlace {
     /// # Errors
     ///
     /// Returns `Err` if the new layout does not meet the allocator's size and alignment
-    /// constraints of the allocator, or if growing otherwise fails.
+    /// constraints of the allocator, or if shrinking otherwise fails.
     ///
     /// Implementations are encouraged to return `Err` on memory exhaustion rather than panicking or
     /// aborting, but this is not a strict requirement. (Specifically: it is *legal* to implement
@@ -262,62 +259,62 @@ pub unsafe trait ReallocInPlace {
     /// Clients wishing to abort computation in response to an allocation error are encouraged to
     /// call the [`handle_alloc_error`] function, rather than directly invoking `panic!` or similar.
     ///
-    /// [`handle_alloc_error`]: ../../alloc/alloc/fn.handle_alloc_error.html
+    /// [`handle_alloc_error`]: https://doc.rust-lang.org/alloc/alloc/fn.handle_alloc_error.html
     unsafe fn shrink_in_place(
-        &mut self,
+        &self,
         ptr: NonNull<u8>,
-        layout: Layout,
-        new_size: usize,
-    ) -> Result<usize, AllocErr>;
+        old_layout: Layout,
+        new_layout: Layout,
+    ) -> Result<usize, AllocError>;
 }
 
-/// Trait to determine if a given `MemoryBlock` is owned by an allocator.
+/// Trait to determine if a given memory block is owned by an allocator.
 pub trait Owns {
-    /// Returns if the allocator *owns* the passed `MemoryBlock`.
+    /// Returns if the allocator *owns* the passed memory.
     fn owns(&self, ptr: NonNull<[u8]>) -> bool;
 }
 
-#[track_caller]
-#[inline]
-fn check_dealloc_precondition(ptr: NonNull<u8>, layout: Layout) {
-    debug_assert!(
-        ptr.as_ptr() as usize >= layout.align(),
-        "`ptr` allocated with the same alignment as `layout.align()`, expected {} >= {}",
-        ptr.as_ptr() as usize,
-        layout.align()
-    );
-}
+// #[track_caller]
+// #[inline]
+// fn check_dealloc_precondition(ptr: NonNull<u8>, old_layout: Layout) {
+//     debug_assert!(
+//         ptr.as_ptr() as usize >= layout.align(),
+//         "`ptr` allocated with the same alignment as `layout.align()`, expected {} >= {}",
+//         ptr.as_ptr() as usize,
+//         layout.align()
+//     );
+// }
 
-#[track_caller]
-#[inline]
-fn check_grow_precondition(ptr: NonNull<u8>, layout: Layout, new_size: usize) {
-    debug_assert!(
-        ptr.as_ptr() as usize >= layout.align(),
-        "`ptr` allocated with the same alignment as `layout.align()`, expected {} >= {}",
-        ptr.as_ptr() as usize,
-        layout.align()
-    );
-    debug_assert!(
-        new_size >= layout.size(),
-        "`new_size` must be greater than or equal to `layout.size()`, expected {} >= {}",
-        new_size,
-        layout.size()
-    );
-}
+// #[track_caller]
+// #[inline]
+// fn check_grow_precondition(ptr: NonNull<u8>, old_layout: Layout, new_layout: Layout) {
+//     debug_assert!(
+//         ptr.as_ptr() as usize >= layout.align(),
+//         "`ptr` allocated with the same alignment as `layout.align()`, expected {} >= {}",
+//         ptr.as_ptr() as usize,
+//         layout.align()
+//     );
+//     debug_assert!(
+//         new_layout >= layout.size(),
+//         "`new_layout` must be greater than or equal to `layout.size()`, expected {} >= {}",
+//         new_layout,
+//         layout.size()
+//     );
+// }
 
-#[track_caller]
-#[inline]
-fn check_shrink_precondition(ptr: NonNull<u8>, layout: Layout, new_size: usize) {
-    debug_assert!(
-        ptr.as_ptr() as usize >= layout.align(),
-        "`ptr` allocated with the same alignment as `layout.align()`, expected {} >= {}",
-        ptr.as_ptr() as usize,
-        layout.align()
-    );
-    debug_assert!(
-        new_size <= layout.size(),
-        "`new_size` must be smaller than or equal to `layout.size()`, expected {} <= {}",
-        new_size,
-        layout.size()
-    );
-}
+// #[track_caller]
+// #[inline]
+// fn check_shrink_precondition(ptr: NonNull<u8>, old_layout: Layout, new_layout: Layout) {
+//     debug_assert!(
+//         ptr.as_ptr() as usize >= layout.align(),
+//         "`ptr` allocated with the same alignment as `layout.align()`, expected {} >= {}",
+//         ptr.as_ptr() as usize,
+//         layout.align()
+//     );
+//     debug_assert!(
+//         new_layout <= layout.size(),
+//         "`new_layout` must be smaller than or equal to `layout.size()`, expected {} <= {}",
+//         new_layout,
+//         layout.size()
+//     );
+// }

@@ -16,3 +16,10 @@ exclude = [".github/**"]
 alloc = []
 default = ["alloc"]
 intrinsics = []
+
+[dev-dependencies]
+# criterion = { version = "0.3", features = ["real_blackbox"] }
+
+[[bench]]
+name = "region"
+harness = false

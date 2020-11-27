@@ -5,9 +5,21 @@
 [![Crates.io](https://img.shields.io/crates/v/alloc-compose)](https://crates.io/crates/alloc-compose)
 ![Crates.io](https://img.shields.io/crates/l/alloc-compose)
 
+---
+
+Important note
+--------------
+
+Due to some changes to `AllocRef` it was hard to keep this crate updated. I'll readd the functionality from v0.5.0 from time to time. Most things have to be refactored as `AllocRef` now takes `&self` instead of `&mut self`.
+
+The most interesting part as of now is probably `Region` and its variants.
+
+---
+
 Composable allocator structures for plugging together more powerful allocators.
 
 `alloc-compose` relies on [`AllocRef`] as allocator trait. Until `AllocRef` has been stabilized, this crate requires a nightly compiler.
+
 
 The design of composable allocators is inspired by
 [`std::allocator` Is to Allocation what `std::vector` Is to Vexation][vid] by Andrei
@@ -20,6 +32,7 @@ Alexandrescu and the [Phobos Standard Library][phobos] of the [D Programming Lan
 
 License
 -------
+
 Alloc-Compose is distributed under the terms of both the MIT license and the Apache License (Version 2.0).
 
 See [LICENSE-APACHE](https://github.com/TimDiekmann/alloc-compose/blob/master/LICENSE-APACHE) and [LICENSE-MIT](https://github.com/TimDiekmann/alloc-compose/blob/master/LICENSE-MIT) for details.
