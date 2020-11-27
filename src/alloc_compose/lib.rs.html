@@ -315,42 +315,28 @@
 <span id="312">312</span>
 <span id="313">313</span>
 <span id="314">314</span>
-<span id="315">315</span>
-<span id="316">316</span>
-<span id="317">317</span>
-<span id="318">318</span>
-<span id="319">319</span>
-<span id="320">320</span>
 </pre><div class="example-wrap"><pre class="rust ">
-<span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">test</span>), <span class="ident">no_std</span>)]</span>
+<span class="attribute">#![<span class="ident">no_std</span>]</span>
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">doc</span>, <span class="ident">feature</span>(<span class="ident">doc_cfg</span>, <span class="ident">external_doc</span>))]</span>
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;intrinsics&quot;</span>, <span class="ident">feature</span>(<span class="ident">core_intrinsics</span>))]</span>
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">doc</span>, <span class="ident">doc</span>(<span class="ident">include</span> <span class="op">=</span> <span class="string">&quot;../README.md&quot;</span>))]</span>
 <span class="attribute">#![<span class="ident">feature</span>(
     <span class="ident">allocator_api</span>,
-    <span class="ident">alloc_layout_extra</span>,
-    <span class="ident">const_checked_int_methods</span>,
-    <span class="ident">const_alloc_layout</span>,
-    <span class="ident">const_fn</span>,
-    <span class="ident">min_const_generics</span>,
-    <span class="ident">const_panic</span>,
-    <span class="ident">const_nonnull_slice_from_raw_parts</span>,
-    <span class="ident">const_slice_ptr_len</span>,
     <span class="ident">nonnull_slice_from_raw_parts</span>,
     <span class="ident">slice_ptr_get</span>,
-    <span class="ident">slice_ptr_len</span>,
-    <span class="ident">maybe_uninit_slice</span>
+    <span class="ident">slice_ptr_len</span>
 )]</span>
+<span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">test</span>, <span class="ident">feature</span>(<span class="ident">maybe_uninit_slice</span>))]</span>
 <span class="attribute">#![<span class="ident">allow</span>(<span class="ident">incomplete_features</span>, <span class="ident">clippy</span>::<span class="ident">must_use_candidate</span>)]</span>
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;alloc&quot;</span>, <span class="ident">doc</span>))]</span>
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;alloc&quot;</span>, <span class="ident">doc</span>, <span class="ident">test</span>))]</span>
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">alloc</span>;
 
 <span class="comment">// pub mod stats;</span>
 
 <span class="comment">// mod helper;</span>
-<span class="comment">// #[macro_use]</span>
-<span class="comment">// mod macros;</span>
+<span class="attribute">#[<span class="ident">macro_use</span>]</span>
+<span class="kw">mod</span> <span class="ident">macros</span>;
 
 <span class="comment">// mod affix;</span>
 <span class="comment">// mod callback_ref;</span>
@@ -375,7 +361,7 @@
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;intrinsics&quot;</span>))]</span>
 <span class="kw">mod</span> <span class="ident">intrinsics</span> {
-    <span class="attribute">#![<span class="ident">allow</span>(<span class="ident">clippy</span>::<span class="ident">missing_const_for_fn</span>, <span class="ident">clippy</span>::<span class="ident">inline_always</span>)]</span>
+    <span class="attribute">#![<span class="ident">allow</span>(<span class="ident">clippy</span>::<span class="ident">missing_const_for_fn</span>, <span class="ident">clippy</span>::<span class="ident">inline_always</span>, <span class="ident">unused</span>)]</span>
 
     <span class="attribute">#[<span class="ident">inline</span>(<span class="ident">always</span>)]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">unlikely</span>(<span class="ident">b</span>: <span class="ident">bool</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
@@ -392,7 +378,8 @@
 <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">non_snake_case</span>)]</span>
 <span class="kw">mod</span> <span class="ident">SIZE</span> {}
 
-<span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">trait</span> <span class="ident">AllocAll</span> {
+<span class="doccomment">/// Extends `AllocRef` for allocating or deallocating all memory at once.</span>
+<span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">trait</span> <span class="ident">AllocateAll</span> {
     <span class="doccomment">/// Attempts to allocate all of the memory the allocator can provide.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// If the allocator is currently not managing any memory, then it returns all the memory</span>
@@ -468,6 +455,7 @@
     }
 }
 
+<span class="doccomment">/// Extends `AllocRef` to support growing and shrinking in place.</span>
 <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">trait</span> <span class="ident">ReallocateInPlace</span> {
     <span class="doccomment">/// Attempts to extend the memory block.</span>
     <span class="doccomment">///</span>

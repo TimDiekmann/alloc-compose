@@ -247,8 +247,20 @@
 <span id="244">244</span>
 <span id="245">245</span>
 <span id="246">246</span>
+<span id="247">247</span>
+<span id="248">248</span>
+<span id="249">249</span>
+<span id="250">250</span>
+<span id="251">251</span>
+<span id="252">252</span>
+<span id="253">253</span>
+<span id="254">254</span>
+<span id="255">255</span>
+<span id="256">256</span>
+<span id="257">257</span>
+<span id="258">258</span>
 </pre><div class="example-wrap"><pre class="rust ">
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">AllocAll</span>, <span class="ident">Owns</span>, <span class="ident">ReallocateInPlace</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">AllocateAll</span>, <span class="ident">Owns</span>, <span class="ident">ReallocateInPlace</span>};
 <span class="kw">use</span> <span class="ident">core</span>::{
     <span class="ident">alloc</span>::{<span class="ident">AllocError</span>, <span class="ident">AllocRef</span>, <span class="ident">Layout</span>},
     <span class="ident">ptr</span>::<span class="ident">NonNull</span>,
@@ -256,7 +268,8 @@
 
 <span class="doccomment">/// An emphatically empty implementation of `AllocRef`.</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// Although it has no direct use, it is useful as a &quot;terminator&quot; in composite allocators.</span>
+<span class="doccomment">/// Although it has no direct use, it is useful as a &quot;terminator&quot; in composite allocators</span>
+<span class="doccomment">/// or for disabling the global allocator.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// # Examples</span>
 <span class="doccomment">///</span>
@@ -280,6 +293,15 @@
 <span class="doccomment">/// # use std::alloc::{AllocRef, Global, Layout};</span>
 <span class="doccomment">/// let memory = Null.alloc(Layout::new::&lt;()&gt;());</span>
 <span class="doccomment">/// assert!(memory.is_err())</span>
+<span class="doccomment">/// ```</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// ## Disabling the global allocator</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// ```rust, no_run</span>
+<span class="doccomment">/// use alloc_compose::Null;</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// #[global_allocator]</span>
+<span class="doccomment">/// static A: Null = Null;</span>
 <span class="doccomment">/// ```</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Null</span>;
@@ -331,7 +353,7 @@
     }
 }
 
-<span class="kw">unsafe</span> <span class="kw">impl</span> <span class="ident">AllocAll</span> <span class="kw">for</span> <span class="ident">Null</span> {
+<span class="kw">unsafe</span> <span class="kw">impl</span> <span class="ident">AllocateAll</span> <span class="kw">for</span> <span class="ident">Null</span> {
     <span class="kw">fn</span> <span class="ident">allocate_all</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NonNull</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>, <span class="ident">AllocError</span><span class="op">&gt;</span> {
         <span class="prelude-val">Err</span>(<span class="ident">AllocError</span>)
     }
@@ -389,6 +411,8 @@
         <span class="bool-val">false</span>
     }
 }
+
+<span class="macro">impl_global_alloc</span><span class="macro">!</span>(<span class="ident">Null</span>);
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">tests</span> {
@@ -491,7 +515,7 @@
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">debug</span>() {
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">Null</span>), <span class="string">&quot;Null&quot;</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">alloc</span>::<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">Null</span>), <span class="string">&quot;Null&quot;</span>);
     }
 }
 </pre></div>

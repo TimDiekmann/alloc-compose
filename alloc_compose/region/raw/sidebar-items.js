@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["RawIntrusiveRegion",""],["RawRegion",""],["RawSharedRegion",""]]});
+initSidebarItems({"struct":[["RawIntrusiveRegion","An intrusive region allocator, which stores the current posision in the provided memory."],["RawRegion","A stack allocator over an user-defined region of memory."],["RawSharedRegion",""]]});

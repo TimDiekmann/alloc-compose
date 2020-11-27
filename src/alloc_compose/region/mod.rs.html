@@ -523,84 +523,156 @@
 <span id="520">520</span>
 <span id="521">521</span>
 <span id="522">522</span>
+<span id="523">523</span>
+<span id="524">524</span>
+<span id="525">525</span>
+<span id="526">526</span>
+<span id="527">527</span>
+<span id="528">528</span>
+<span id="529">529</span>
+<span id="530">530</span>
+<span id="531">531</span>
+<span id="532">532</span>
+<span id="533">533</span>
+<span id="534">534</span>
+<span id="535">535</span>
+<span id="536">536</span>
+<span id="537">537</span>
+<span id="538">538</span>
+<span id="539">539</span>
+<span id="540">540</span>
+<span id="541">541</span>
+<span id="542">542</span>
+<span id="543">543</span>
+<span id="544">544</span>
+<span id="545">545</span>
+<span id="546">546</span>
+<span id="547">547</span>
+<span id="548">548</span>
+<span id="549">549</span>
+<span id="550">550</span>
+<span id="551">551</span>
+<span id="552">552</span>
+<span id="553">553</span>
+<span id="554">554</span>
+<span id="555">555</span>
+<span id="556">556</span>
+<span id="557">557</span>
+<span id="558">558</span>
+<span id="559">559</span>
+<span id="560">560</span>
+<span id="561">561</span>
+<span id="562">562</span>
+<span id="563">563</span>
+<span id="564">564</span>
+<span id="565">565</span>
 </pre><div class="example-wrap"><pre class="rust ">
+<span class="doccomment">//! Stack-based allocators with user-provided memory</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! A region allocator allocates memory straight from one contiguous chunk. There is no</span>
+<span class="doccomment">//! deallocation, and once the region is full, allocation requests returns [`AllocError`].</span>
+<span class="doccomment">//! A region only stores a reference to the provided memory and a pointer to the current position.</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! This module provides three kinds of stack-based allocators: [`Region`], [`SharedRegion`], and</span>
+<span class="doccomment">//! [`IntrusiveRegion`]. All three allocators uses a user-provided memory to allocate and differ</span>
+<span class="doccomment">//! in the way how they store the pointer to the current position.</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! # Which region allocator to chose?</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! Every region allocator is more or less on-par. They slightly differ in performance depending</span>
+<span class="doccomment">//! on how many allocations are made and how big the allocations are.</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! - [`Region`] stores a current position in a [`Cell`] right next to the reference to the memory.</span>
+<span class="doccomment">//! - [`SharedRegion`] wraps the [`Cell`] in a [`RC`] to support cloning of the allocator.</span>
+<span class="doccomment">//! - [`IntrusiveRegion`] stores the pointer to the current position at the end of the provided</span>
+<span class="doccomment">//!   memory block.</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! This results in the fact, that [`Region`] cannot be cloned. However, using [`AllocRef::by_ref`]</span>
+<span class="doccomment">//! returns a reference to the region, which can itself be cloned.</span>
+<span class="doccomment">//! [`SharedRegion`] and [`IntrusiveRegion`] both can be cloned. The [`IntrusiveRegion`] has a</span>
+<span class="doccomment">//! better performance in most cases due to cache coherence, but it&#39;s hard to say exactly, how much</span>
+<span class="doccomment">//! capacity the allocator will have exactly, as the pointer to the current position has to be well</span>
+<span class="doccomment">//! aligned. If this feature is important, [`SharedRegion`] or [`Region`] should be used instead.</span>
+<span class="doccomment">//! [`SharedRegion`] is only available with the `alloc`-feature, as it requires the [`Rc`] to</span>
+<span class="doccomment">//! allocate memory to store the pointer in.</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! [`Rc`]: alloc::rc::Rc</span>
+<span class="doccomment">//! [`Cell`]: core::cell::Cell</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! ## Examples</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! ```rust</span>
+<span class="doccomment">//! #![feature(allocator_api)]</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! use alloc_compose::{region::Region, Owns};</span>
+<span class="doccomment">//! use core::{</span>
+<span class="doccomment">//!     alloc::{AllocRef, Layout},</span>
+<span class="doccomment">//!     mem::MaybeUninit,</span>
+<span class="doccomment">//! };</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! let mut data = [MaybeUninit::uninit(); 64];</span>
+<span class="doccomment">//! let region = Region::new(&amp;mut data);</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! let memory = region.alloc(Layout::new::&lt;u32&gt;())?;</span>
+<span class="doccomment">//! assert!(region.owns(memory));</span>
+<span class="doccomment">//! # Ok::&lt;(), core::alloc::AllocError&gt;(())</span>
+<span class="doccomment">//! ```</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! This allocator can also be used in collection types of the std-library:</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! ```rust</span>
+<span class="doccomment">//! #![feature(nonnull_slice_from_raw_parts)]</span>
+<span class="doccomment">//! # #![feature(allocator_api)]</span>
+<span class="doccomment">//! # use alloc_compose::{region::Region, Owns};</span>
+<span class="doccomment">//! # use core::{alloc::{AllocRef, Layout}, mem::MaybeUninit};</span>
+<span class="doccomment">//! # let mut data = [MaybeUninit::uninit(); 64];</span>
+<span class="doccomment">//! # let region = Region::new(&amp;mut data);</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! use core::ptr::NonNull;</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! let mut vec: Vec&lt;u32, _&gt; = Vec::new_in(region.by_ref());</span>
+<span class="doccomment">//! vec.extend(&amp;[10, 20, 30]);</span>
+<span class="doccomment">//! assert_eq!(vec, [10, 20, 30]);</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! let ptr = unsafe { NonNull::new_unchecked(vec.as_mut_ptr()) };</span>
+<span class="doccomment">//! let memory = NonNull::slice_from_raw_parts(ptr.cast(), 12);</span>
+<span class="doccomment">//! assert!(region.owns(memory));</span>
+<span class="doccomment">//! ```</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! To reset the allocator, [`AllocateAll::deallocate_all`] may be used:</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! ```rust</span>
+<span class="doccomment">//! # #![feature(allocator_api)]</span>
+<span class="doccomment">//! # use alloc_compose::{region::Region, Owns};</span>
+<span class="doccomment">//! # use core::{alloc::{AllocRef, Layout}, mem::MaybeUninit};</span>
+<span class="doccomment">//! # let mut data = [MaybeUninit::uninit(); 64];</span>
+<span class="doccomment">//! # let region = Region::new(&amp;mut data);</span>
+<span class="doccomment">//! # let _ = region.alloc(Layout::new::&lt;u32&gt;())?;</span>
+<span class="doccomment">//! use alloc_compose::AllocateAll;</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! assert!(!region.is_empty());</span>
+<span class="doccomment">//! region.deallocate_all();</span>
+<span class="doccomment">//! assert!(region.is_empty());</span>
+<span class="doccomment">//! # Ok::&lt;(), core::alloc::AllocError&gt;(())</span>
+<span class="doccomment">//! ```</span>
+
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">raw</span>;
 
 <span class="kw">use</span> <span class="self">self</span>::<span class="ident">raw</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">AllocAll</span>, <span class="ident">Owns</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">AllocateAll</span>, <span class="ident">Owns</span>};
 <span class="kw">use</span> <span class="ident">core</span>::{
     <span class="ident">alloc</span>::{<span class="ident">AllocError</span>, <span class="ident">AllocRef</span>, <span class="ident">Layout</span>},
     <span class="ident">marker</span>::<span class="ident">PhantomData</span>,
     <span class="ident">mem</span>::<span class="ident">MaybeUninit</span>,
     <span class="ident">ptr</span>::<span class="ident">NonNull</span>,
 };
+
 <span class="doccomment">/// A stack allocator over an user-defined region of memory.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// It holds a lifetime to the provided memory block, which ensures, that the allocator does not</span>
 <span class="doccomment">/// outlive the underlying memory.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// For a version without lifetime see [`RawRegion`] instead.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// [`RawRegion`]: self::raw::RawRegion</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// ## Examples</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// ```rust</span>
-<span class="doccomment">/// #![feature(allocator_api)]</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// use alloc_compose::{region::Region, Owns};</span>
-<span class="doccomment">/// use core::{</span>
-<span class="doccomment">///     alloc::{AllocRef, Layout},</span>
-<span class="doccomment">///     mem::MaybeUninit,</span>
-<span class="doccomment">/// };</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// let mut data = [MaybeUninit::uninit(); 64];</span>
-<span class="doccomment">/// let region = Region::new(&amp;mut data);</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// let memory = region.alloc(Layout::new::&lt;u32&gt;())?;</span>
-<span class="doccomment">/// assert!(region.owns(memory));</span>
-<span class="doccomment">/// # Ok::&lt;(), core::alloc::AllocError&gt;(())</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// This allocator can also be used in collection types of the std-library:</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// ```rust</span>
-<span class="doccomment">/// #![feature(nonnull_slice_from_raw_parts)]</span>
-<span class="doccomment">/// # #![feature(allocator_api)]</span>
-<span class="doccomment">/// # use alloc_compose::{region::Region, Owns};</span>
-<span class="doccomment">/// # use core::{alloc::{AllocRef, Layout}, mem::MaybeUninit};</span>
-<span class="doccomment">/// # let mut data = [MaybeUninit::uninit(); 64];</span>
-<span class="doccomment">/// # let region = Region::new(&amp;mut data);</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// use core::ptr::NonNull;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// let mut vec: Vec&lt;u32, _&gt; = Vec::new_in(region.by_ref());</span>
-<span class="doccomment">/// vec.extend(&amp;[10, 20, 30]);</span>
-<span class="doccomment">/// assert_eq!(vec, [10, 20, 30]);</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// let ptr = unsafe { NonNull::new_unchecked(vec.as_mut_ptr()) };</span>
-<span class="doccomment">/// let memory = NonNull::slice_from_raw_parts(ptr.cast(), 12);</span>
-<span class="doccomment">/// assert!(region.owns(memory));</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// To reset the allocator, [`AllocAll::deallocate_all`] may be used:</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// [`AllocAll::deallocate_all`]: crate::AllocAll::deallocate_all</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// ```rust</span>
-<span class="doccomment">/// # #![feature(allocator_api)]</span>
-<span class="doccomment">/// # use alloc_compose::{region::Region, Owns};</span>
-<span class="doccomment">/// # use core::{alloc::{AllocRef, Layout}, mem::MaybeUninit};</span>
-<span class="doccomment">/// # let mut data = [MaybeUninit::uninit(); 64];</span>
-<span class="doccomment">/// # let region = Region::new(&amp;mut data);</span>
-<span class="doccomment">/// # let _ = region.alloc(Layout::new::&lt;u32&gt;())?;</span>
-<span class="doccomment">/// use alloc_compose::AllocAll;</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// assert!(!region.is_empty());</span>
-<span class="doccomment">/// region.deallocate_all();</span>
-<span class="doccomment">/// assert!(region.is_empty());</span>
-<span class="doccomment">/// # Ok::&lt;(), core::alloc::AllocError&gt;(())</span>
-<span class="doccomment">/// ```</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Region</span><span class="op">&lt;</span><span class="lifetime">&#39;mem</span><span class="op">&gt;</span> {
     <span class="ident">raw</span>: <span class="ident">RawRegion</span>,
     <span class="ident">_marker</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;mem</span> <span class="kw-2">mut</span> [<span class="ident">MaybeUninit</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>]<span class="op">&gt;</span>,
@@ -619,6 +691,12 @@
     }
 }
 
+<span class="doccomment">/// A clonable region allocator based on `Rc`.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// It holds a lifetime to the provided memory block, which ensures, that the allocator does not</span>
+<span class="doccomment">/// outlive the underlying memory.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// For a version without lifetime see [`RawSharedRegion`] instead.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>)]</span>
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">doc</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;alloc&quot;</span>))]</span>
 <span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">doc</span>, <span class="ident">doc</span>(<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;alloc&quot;</span>)))]</span>
@@ -641,6 +719,12 @@
     }
 }
 
+<span class="doccomment">/// An intrusive region allocator, which stores the current posision in the provided memory.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// It holds a lifetime to the provided memory block, which ensures, that the allocator does not</span>
+<span class="doccomment">/// outlive the underlying memory.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// For a version without lifetime see [`RawIntrusiveRegion`] instead.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">IntrusiveRegion</span><span class="op">&lt;</span><span class="lifetime">&#39;mem</span><span class="op">&gt;</span> {
     <span class="ident">raw</span>: <span class="ident">RawIntrusiveRegion</span>,
@@ -729,7 +813,7 @@
             }
         }
 
-        <span class="kw">unsafe</span> <span class="kw">impl</span> <span class="ident">AllocAll</span> <span class="kw">for</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">ty</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span> {
+        <span class="kw">unsafe</span> <span class="kw">impl</span> <span class="ident">AllocateAll</span> <span class="kw">for</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">ty</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span> {
             <span class="attribute">#[<span class="ident">inline</span>]</span>
             <span class="kw">fn</span> <span class="ident">allocate_all</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NonNull</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>, <span class="ident">AllocError</span><span class="op">&gt;</span> {
                 <span class="self">self</span>.<span class="ident">raw</span>.<span class="ident">allocate_all</span>()
@@ -762,6 +846,8 @@
                 <span class="self">self</span>.<span class="ident">raw</span>.<span class="ident">owns</span>(<span class="ident">memory</span>)
             }
         }
+
+        <span class="macro">impl_global_alloc</span><span class="macro">!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">ty</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>);
     };
 }
 
@@ -774,13 +860,13 @@
 <span class="kw">mod</span> <span class="ident">tests</span> {
     <span class="attribute">#![<span class="ident">allow</span>(<span class="ident">clippy</span>::<span class="ident">wildcard_imports</span>)]</span>
     <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
-    <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">cell</span>::<span class="ident">Cell</span>, <span class="ident">mem</span>};
+    <span class="kw">use</span> <span class="ident">core</span>::{<span class="ident">cell</span>::<span class="ident">Cell</span>, <span class="ident">mem</span>};
 
     <span class="kw">fn</span> <span class="ident">aligned_slice</span>(<span class="ident">memory</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> [<span class="ident">MaybeUninit</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>], <span class="ident">size</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> [<span class="ident">MaybeUninit</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>] {
         <span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="ident">memory</span>.<span class="ident">as_mut_ptr</span>() <span class="kw">as</span> <span class="ident">usize</span>;
         <span class="kw">let</span> <span class="ident">start</span> <span class="op">=</span> (<span class="ident">ptr</span> <span class="op">+</span> <span class="number">31</span>) <span class="op">&amp;</span> <span class="op">!</span>(<span class="number">31</span>);
         <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">memory</span>.<span class="ident">len</span>() <span class="op">&gt;</span><span class="op">=</span> <span class="ident">start</span> <span class="op">-</span> <span class="ident">ptr</span> <span class="op">+</span> <span class="ident">size</span>);
-        <span class="kw">unsafe</span> { <span class="ident">std</span>::<span class="ident">slice</span>::<span class="ident">from_raw_parts_mut</span>(<span class="ident">start</span> <span class="kw">as</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">MaybeUninit</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">size</span>) }
+        <span class="kw">unsafe</span> { <span class="ident">core</span>::<span class="ident">slice</span>::<span class="ident">from_raw_parts_mut</span>(<span class="ident">start</span> <span class="kw">as</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">MaybeUninit</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">size</span>) }
     }
 
     <span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">impl_tests</span> {
@@ -940,7 +1026,7 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">raw_data</span> <span class="op">=</span> [<span class="ident">MaybeUninit</span>::<span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>::<span class="ident">new</span>(<span class="number">1</span>); <span class="number">128</span>];
         <span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">aligned_slice</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">raw_data</span>, <span class="number">32</span>);
         <span class="kw">let</span> <span class="ident">region</span> <span class="op">=</span> <span class="ident">Region</span>::<span class="ident">new</span>(<span class="ident">data</span>);
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">vec</span> <span class="op">=</span> <span class="ident">Vec</span>::<span class="ident">new_in</span>(<span class="ident">region</span>.<span class="ident">by_ref</span>());
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">vec</span> <span class="op">=</span> <span class="ident">alloc</span>::<span class="ident">vec</span>::<span class="ident">Vec</span>::<span class="ident">new_in</span>(<span class="ident">region</span>.<span class="ident">by_ref</span>());
         <span class="ident">vec</span>.<span class="ident">push</span>(<span class="number">10</span>);
     }
 

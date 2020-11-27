@@ -1,8 +1,71 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="API documentation for the Rust `region` mod in crate `alloc_compose`."><meta name="keywords" content="rust, rustlang, rust-lang, region"><title>alloc_compose::region - Rust</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script id="default-settings"></script><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../favicon.svg">
 <link rel="alternate icon" type="image/png" href="../../favicon-16x16.png">
 <link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc mod"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../alloc_compose/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a><p class="location">Module region</p><div class="sidebar-elems"><div class="block items"><ul><li><a href="#modules">Modules</a></li><li><a href="#structs">Structs</a></li></ul></div><p class="location"><a href="../index.html">alloc_compose</a></p><script>window.sidebarCurrent = {name: "region", ty: "mod", relpath: "../"};</script><script defer src="../sidebar-items.js"></script></div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
-                <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><h1 class="fqn"><span class="out-of-band"><span id="render-detail"><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span><a class="srclink" href="../../src/alloc_compose/region/mod.rs.html#1-522" title="goto source code">[src]</a></span><span class="in-band">Module <a href="../index.html">alloc_compose</a>::<wbr><a class="mod" href="">region</a></span></h1><h2 id="modules" class="section-header"><a href="#modules">Modules</a></h2>
+                <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><h1 class="fqn"><span class="out-of-band"><span id="render-detail"><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span><a class="srclink" href="../../src/alloc_compose/region/mod.rs.html#1-565" title="goto source code">[src]</a></span><span class="in-band">Module <a href="../index.html">alloc_compose</a>::<wbr><a class="mod" href="">region</a></span></h1><div class="docblock"><p>Stack-based allocators with user-provided memory</p>
+<p>A region allocator allocates memory straight from one contiguous chunk. There is no
+deallocation, and once the region is full, allocation requests returns <a href="https://doc.rust-lang.org/nightly/core/alloc/struct.AllocError.html" title="AllocError"><code>AllocError</code></a>.
+A region only stores a reference to the provided memory and a pointer to the current position.</p>
+<p>This module provides three kinds of stack-based allocators: <a href="../../alloc_compose/region/struct.Region.html" title="Region"><code>Region</code></a>, <a href="../../alloc_compose/region/struct.SharedRegion.html" title="SharedRegion"><code>SharedRegion</code></a>, and
+<a href="../../alloc_compose/region/struct.IntrusiveRegion.html" title="IntrusiveRegion"><code>IntrusiveRegion</code></a>. All three allocators uses a user-provided memory to allocate and differ
+in the way how they store the pointer to the current position.</p>
+<h1 id="which-region-allocator-to-chose" class="section-header"><a href="#which-region-allocator-to-chose">Which region allocator to chose?</a></h1>
+<p>Every region allocator is more or less on-par. They slightly differ in performance depending
+on how many allocations are made and how big the allocations are.</p>
+<ul>
+<li><a href="../../alloc_compose/region/struct.Region.html" title="Region"><code>Region</code></a> stores a current position in a <a href="https://doc.rust-lang.org/nightly/core/cell/struct.Cell.html"><code>Cell</code></a> right next to the reference to the memory.</li>
+<li><a href="../../alloc_compose/region/struct.SharedRegion.html" title="SharedRegion"><code>SharedRegion</code></a> wraps the <a href="https://doc.rust-lang.org/nightly/core/cell/struct.Cell.html"><code>Cell</code></a> in a <a href="https://doc.rust-lang.org/nightly/alloc/rc/struct.Rc.html"><code>RC</code></a> to support cloning of the allocator.</li>
+<li><a href="../../alloc_compose/region/struct.IntrusiveRegion.html" title="IntrusiveRegion"><code>IntrusiveRegion</code></a> stores the pointer to the current position at the end of the provided
+memory block.</li>
+</ul>
+<p>This results in the fact, that <a href="../../alloc_compose/region/struct.Region.html" title="Region"><code>Region</code></a> cannot be cloned. However, using <a href="https://doc.rust-lang.org/nightly/core/alloc/trait.AllocRef.html#method.by_ref" title="AllocRef::by_ref"><code>AllocRef::by_ref</code></a>
+returns a reference to the region, which can itself be cloned.
+<a href="../../alloc_compose/region/struct.SharedRegion.html" title="SharedRegion"><code>SharedRegion</code></a> and <a href="../../alloc_compose/region/struct.IntrusiveRegion.html" title="IntrusiveRegion"><code>IntrusiveRegion</code></a> both can be cloned. The <a href="../../alloc_compose/region/struct.IntrusiveRegion.html" title="IntrusiveRegion"><code>IntrusiveRegion</code></a> has a
+better performance in most cases due to cache coherence, but it's hard to say exactly, how much
+capacity the allocator will have exactly, as the pointer to the current position has to be well
+aligned. If this feature is important, <a href="../../alloc_compose/region/struct.SharedRegion.html" title="SharedRegion"><code>SharedRegion</code></a> or <a href="../../alloc_compose/region/struct.Region.html" title="Region"><code>Region</code></a> should be used instead.
+<a href="../../alloc_compose/region/struct.SharedRegion.html" title="SharedRegion"><code>SharedRegion</code></a> is only available with the <code>alloc</code>-feature, as it requires the <a href="https://doc.rust-lang.org/nightly/alloc/rc/struct.Rc.html"><code>Rc</code></a> to
+allocate memory to store the pointer in.</p>
+<h2 id="examples" class="section-header"><a href="#examples">Examples</a></h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="attribute">#![<span class="ident">feature</span>(<span class="ident">allocator_api</span>)]</span>
+
+<span class="kw">use</span> <span class="ident">alloc_compose</span>::{<span class="ident">region</span>::<span class="ident">Region</span>, <span class="ident">Owns</span>};
+<span class="kw">use</span> <span class="ident">core</span>::{
+    <span class="ident">alloc</span>::{<span class="ident">AllocRef</span>, <span class="ident">Layout</span>},
+    <span class="ident">mem</span>::<span class="ident">MaybeUninit</span>,
+};
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">data</span> <span class="op">=</span> [<span class="ident">MaybeUninit</span>::<span class="ident">uninit</span>(); <span class="number">64</span>];
+<span class="kw">let</span> <span class="ident">region</span> <span class="op">=</span> <span class="ident">Region</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">data</span>);
+
+<span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">region</span>.<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>())<span class="question-mark">?</span>;
+<span class="macro">assert</span><span class="macro">!</span>(<span class="ident">region</span>.<span class="ident">owns</span>(<span class="ident">memory</span>));</pre></div>
+<p>This allocator can also be used in collection types of the std-library:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="attribute">#![<span class="ident">feature</span>(<span class="ident">nonnull_slice_from_raw_parts</span>)]</span>
+
+<span class="kw">use</span> <span class="ident">core</span>::<span class="ident">ptr</span>::<span class="ident">NonNull</span>;
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">vec</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u32</span>, <span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Vec</span>::<span class="ident">new_in</span>(<span class="ident">region</span>.<span class="ident">by_ref</span>());
+<span class="ident">vec</span>.<span class="ident">extend</span>(<span class="kw-2">&amp;</span>[<span class="number">10</span>, <span class="number">20</span>, <span class="number">30</span>]);
+<span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">vec</span>, [<span class="number">10</span>, <span class="number">20</span>, <span class="number">30</span>]);
+
+<span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">NonNull</span>::<span class="ident">new_unchecked</span>(<span class="ident">vec</span>.<span class="ident">as_mut_ptr</span>()) };
+<span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">NonNull</span>::<span class="ident">slice_from_raw_parts</span>(<span class="ident">ptr</span>.<span class="ident">cast</span>(), <span class="number">12</span>);
+<span class="macro">assert</span><span class="macro">!</span>(<span class="ident">region</span>.<span class="ident">owns</span>(<span class="ident">memory</span>));</pre></div>
+<p>To reset the allocator, <a href="../../alloc_compose/trait.AllocateAll.html#tymethod.deallocate_all" title="AllocateAll::deallocate_all"><code>AllocateAll::deallocate_all</code></a> may be used:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="kw">use</span> <span class="ident">alloc_compose</span>::<span class="ident">AllocateAll</span>;
+
+<span class="macro">assert</span><span class="macro">!</span>(<span class="op">!</span><span class="ident">region</span>.<span class="ident">is_empty</span>());
+<span class="ident">region</span>.<span class="ident">deallocate_all</span>();
+<span class="macro">assert</span><span class="macro">!</span>(<span class="ident">region</span>.<span class="ident">is_empty</span>());</pre></div>
+</div><h2 id="modules" class="section-header"><a href="#modules">Modules</a></h2>
 <table><tr class="module-item"><td><a class="mod" href="raw/index.html" title="alloc_compose::region::raw mod">raw</a></td><td class="docblock-short"><p>Region implementations which are not bound by a lifetime.</p>
 </td></tr></table><h2 id="structs" class="section-header"><a href="#structs">Structs</a></h2>
-<table><tr class="module-item"><td><a class="struct" href="struct.IntrusiveRegion.html" title="alloc_compose::region::IntrusiveRegion struct">IntrusiveRegion</a></td><td class="docblock-short"></td></tr><tr class="module-item"><td><a class="struct" href="struct.Region.html" title="alloc_compose::region::Region struct">Region</a></td><td class="docblock-short"><p>A stack allocator over an user-defined region of memory.</p>
-</td></tr><tr class="module-item"><td><a class="struct" href="struct.SharedRegion.html" title="alloc_compose::region::SharedRegion struct">SharedRegion</a></td><td class="docblock-short"><span class="stab portability" title="This is supported on crate feature `alloc` only"><code>alloc</code></span></td></tr></table></section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "alloc_compose";</script><script src="../../main.js"></script><script defer src="../../search-index.js"></script></body></html>
+<table><tr class="module-item"><td><a class="struct" href="struct.IntrusiveRegion.html" title="alloc_compose::region::IntrusiveRegion struct">IntrusiveRegion</a></td><td class="docblock-short"><p>An intrusive region allocator, which stores the current posision in the provided memory.</p>
+</td></tr><tr class="module-item"><td><a class="struct" href="struct.Region.html" title="alloc_compose::region::Region struct">Region</a></td><td class="docblock-short"><p>A stack allocator over an user-defined region of memory.</p>
+</td></tr><tr class="module-item"><td><a class="struct" href="struct.SharedRegion.html" title="alloc_compose::region::SharedRegion struct">SharedRegion</a></td><td class="docblock-short"><span class="stab portability" title="This is supported on crate feature `alloc` only"><code>alloc</code></span><p>A clonable region allocator based on <code>Rc</code>.</p>
+</td></tr></table></section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "alloc_compose";</script><script src="../../main.js"></script><script defer src="../../search-index.js"></script></body></html>

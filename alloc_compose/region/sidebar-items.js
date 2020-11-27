@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["raw","Region implementations which are not bound by a lifetime."]],"struct":[["IntrusiveRegion",""],["Region","A stack allocator over an user-defined region of memory."],["SharedRegion",""]]});
+initSidebarItems({"mod":[["raw","Region implementations which are not bound by a lifetime."]],"struct":[["IntrusiveRegion","An intrusive region allocator, which stores the current posision in the provided memory."],["Region","A stack allocator over an user-defined region of memory."],["SharedRegion","A clonable region allocator based on `Rc`."]]});
