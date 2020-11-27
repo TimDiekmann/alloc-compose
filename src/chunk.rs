@@ -1,6 +1,6 @@
-use crate::{helper::AllocInit, intrinsics, AllocAll, Owns, ReallocInPlace};
+use crate::{helper::AllocInit, intrinsics, AllocateAll, Owns, ReallocateInPlace};
 use core::{
-    alloc::{AllocErr, AllocRef, Layout},
+    alloc::{AllocError, AllocRef, Layout},
     ptr::NonNull,
 };
 
@@ -11,18 +11,14 @@ use core::{
 /// ```rust
 /// #![feature(allocator_api, slice_ptr_len)]
 ///
-/// use alloc_compose::{Chunk, Region};
-/// use std::{
-///     alloc::{AllocRef, Layout},
-///     mem::MaybeUninit,
-/// };
+/// use alloc_compose::Chunk;
+/// use std::alloc::{AllocRef, Layout, System};
 ///
-/// let mut data = [MaybeUninit::new(0); 64];
-/// let mut alloc = Chunk::<_, 64>(Region::new(&mut data));
+/// let mut alloc = Chunk::<_, 64>(System);
 /// let ptr = alloc.alloc(Layout::new::<[u8; 16]>())?;
-/// assert_eq!(ptr.len() % 32, 0);
-/// assert!(ptr.len() >= 32);
-/// # Ok::<(), core::alloc::AllocErr>(())
+/// assert_eq!(ptr.len() % 64, 0);
+/// assert!(ptr.len() >= 64);
+/// # Ok::<(), core::alloc::AllocError>(())
 /// ```
 ///
 /// When growing or shrinking the memory, `Chunk` will try to alter
@@ -31,18 +27,44 @@ use core::{
 /// ```rust
 /// #![feature(slice_ptr_get)]
 /// # #![feature(allocator_api, slice_ptr_len)]
-/// # use alloc_compose::{Chunk, Region};
-/// # use std::{alloc::{AllocRef, Layout}, mem::MaybeUninit};
-/// # let mut data = [MaybeUninit::new(0); 64];
-/// # let mut alloc = Chunk::<_, 64>(Region::new(&mut data));
+/// # use alloc_compose::Chunk;
+/// # use std::{alloc::{AllocRef, Layout, System}};
+/// # let mut alloc = Chunk::<_, 64>(System);
 /// # let ptr = alloc.alloc(Layout::new::<[u8; 16]>())?;
 ///
-/// use alloc_compose::ReallocInPlace;
+/// let new_ptr = unsafe {
+///     alloc.grow(
+///         ptr.as_non_null_ptr(),
+///         Layout::new::<[u8; 16]>(),
+///         Layout::new::<[u8; 24]>(),
+///     )?
+/// };
 ///
-/// let len = unsafe { alloc.grow_in_place(ptr.as_non_null_ptr(), Layout::new::<[u8; 16]>(), 24)? };
-/// assert_eq!(len % 32, 0);
-/// assert!(len >= 32);
-/// # Ok::<(), core::alloc::AllocErr>(())
+/// assert_eq!(ptr, new_ptr);
+/// # Ok::<(), core::alloc::AllocError>(())
+/// ```
+///
+/// This can be enforced by using [`ReallocateInPlace::grow_in_place`].
+///
+/// ```rust
+/// # #![feature(allocator_api, slice_ptr_len, slice_ptr_get)]
+/// # use alloc_compose::Chunk;
+/// # use std::{alloc::{AllocRef, Layout, System}};
+/// # let mut alloc = Chunk::<_, 64>(System);
+/// # let ptr = alloc.alloc(Layout::new::<[u8; 24]>())?;
+/// use alloc_compose::ReallocateInPlace;
+///
+/// let len = unsafe {
+///     alloc.grow_in_place(
+///         ptr.as_non_null_ptr(),
+///         Layout::new::<[u8; 24]>(),
+///         Layout::new::<[u8; 32]>(),
+///     )?
+/// };
+///
+/// assert_eq!(len % 64, 0);
+/// assert!(len >= 64);
+/// # Ok::<(), core::alloc::AllocError>(())
 /// ```
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
 pub struct Chunk<A, const SIZE: usize>(pub A);
@@ -55,7 +77,7 @@ use sealed::SizeIsPowerOfTwo;
 macro_rules! is_power_of_two {
     ($($N:literal)+) => {
         $(
-            impl<A> SizeIsPowerOfTwo for super::Chunk<A, { usize::pow(2, $N) }> {}
+            impl<A> SizeIsPowerOfTwo for Chunk<A, { usize::pow(2, $N) }> {}
         )+
     };
 }
@@ -76,8 +98,8 @@ impl<A, const SIZE: usize> Chunk<A, SIZE>
 where
     Self: SizeIsPowerOfTwo,
 {
-    fn round_up(size: usize) -> Result<usize, AllocErr> {
-        Ok((size.checked_add(SIZE).ok_or(AllocErr)? - 1) & !(SIZE - 1))
+    fn round_up(size: usize) -> Result<usize, AllocError> {
+        Ok((size.checked_add(SIZE).ok_or(AllocError)? - 1) & !(SIZE - 1))
     }
 
     unsafe fn round_up_unchecked(size: usize) -> usize {
@@ -90,61 +112,77 @@ where
         size & !(SIZE - 1)
     }
 
-    const fn round_down_ptr(ptr: NonNull<[u8]>) -> NonNull<[u8]> {
+    const fn round_down_ptr_len(ptr: NonNull<[u8]>) -> NonNull<[u8]> {
         NonNull::slice_from_raw_parts(ptr.as_non_null_ptr(), Self::round_down(ptr.len()))
     }
 
-    fn layout(layout: Layout, size: usize) -> Result<Layout, AllocErr> {
+    fn layout(layout: Layout, size: usize) -> Result<Layout, AllocError> {
         // SAFETY: layout already has valid alignment
         unsafe {
             intrinsics::assume(layout.align().is_power_of_two());
         }
 
-        Layout::from_size_align(size, layout.align()).map_err(|_| AllocErr)
+        Layout::from_size_align(size, layout.align()).map_err(|_| AllocError)
     }
 
     #[inline]
     fn alloc_impl(
-        old_layout: Layout,
-        alloc: impl FnOnce(Layout) -> Result<NonNull<[u8]>, AllocErr>,
-    ) -> Result<NonNull<[u8]>, AllocErr> {
-        let new_size = Self::round_up(old_layout.size())?;
-        let new_layout = Self::layout(old_layout, new_size)?;
+        layout: Layout,
+        alloc: impl FnOnce(Layout) -> Result<NonNull<[u8]>, AllocError>,
+    ) -> Result<NonNull<[u8]>, AllocError> {
+        let new_size = Self::round_up(layout.size())?;
+        let new_layout = unsafe { Layout::from_size_align_unchecked(new_size, layout.align()) };
 
-        alloc(new_layout).map(Self::round_down_ptr)
+        alloc(new_layout).map(Self::round_down_ptr_len)
     }
 
     #[inline]
     unsafe fn grow_impl(
         old_ptr: NonNull<u8>,
-        layout: Layout,
-        new_size: usize,
+        old_layout: Layout,
+        new_layout: Layout,
         init: AllocInit,
-        grow: impl FnOnce(NonNull<u8>, Layout, usize) -> Result<NonNull<[u8]>, AllocErr>,
-    ) -> Result<NonNull<[u8]>, AllocErr> {
-        let current_size = Self::round_up_unchecked(layout.size());
-        if new_size <= current_size {
+        grow: impl FnOnce(NonNull<u8>, Layout, Layout) -> Result<NonNull<[u8]>, AllocError>,
+    ) -> Result<NonNull<[u8]>, AllocError> {
+        let old_size = old_layout.size();
+        let current_size = Self::round_up_unchecked(old_size);
+        let new_size = new_layout.size();
+        if new_layout.align() <= old_layout.align() && new_size <= current_size {
             let ptr = NonNull::slice_from_raw_parts(old_ptr, current_size);
-            init.init_offset(ptr, layout.size());
+            init.init_offset(ptr, old_size);
             return Ok(ptr);
         }
 
-        grow(old_ptr, layout, Self::round_up(new_size)?).map(Self::round_down_ptr)
+        grow(
+            old_ptr,
+            Layout::from_size_align_unchecked(current_size, old_layout.align()),
+            Layout::from_size_align_unchecked(Self::round_up(new_size)?, new_layout.align()),
+        )
+        .map(Self::round_down_ptr_len)
     }
 
     #[inline]
     unsafe fn shrink_impl(
         old_ptr: NonNull<u8>,
-        layout: Layout,
-        new_size: usize,
-        shrink: impl FnOnce(NonNull<u8>, Layout, usize) -> Result<NonNull<[u8]>, AllocErr>,
-    ) -> Result<NonNull<[u8]>, AllocErr> {
-        let current_size = Self::round_up_unchecked(layout.size());
-        if new_size > current_size - SIZE {
+        old_layout: Layout,
+        new_layout: Layout,
+        shrink: impl FnOnce(NonNull<u8>, Layout, Layout) -> Result<NonNull<[u8]>, AllocError>,
+    ) -> Result<NonNull<[u8]>, AllocError> {
+        let current_size = Self::round_up_unchecked(old_layout.size());
+        let new_size = new_layout.size();
+        if new_layout.align() <= old_layout.align() && new_layout.size() > current_size - SIZE {
             return Ok(NonNull::slice_from_raw_parts(old_ptr, current_size));
         }
 
-        shrink(old_ptr, layout, Self::round_up_unchecked(new_size)).map(Self::round_down_ptr)
+        shrink(
+            old_ptr,
+            old_layout,
+            Layout::from_size_align_unchecked(
+                Self::round_up_unchecked(new_size),
+                new_layout.align(),
+            ),
+        )
+        .map(Self::round_down_ptr_len)
     }
 }
 
@@ -154,7 +192,7 @@ where
 {
     impl_alloc_ref!(0);
 
-    unsafe fn dealloc(&mut self, ptr: NonNull<u8>, layout: Layout) {
+    unsafe fn dealloc(&self, ptr: NonNull<u8>, layout: Layout) {
         crate::check_dealloc_precondition(ptr, layout);
 
         self.0.dealloc(
@@ -167,14 +205,21 @@ where
     }
 }
 
-unsafe impl<A: AllocAll, const SIZE: usize> AllocAll for Chunk<A, SIZE>
+// unsafe impl<A: AllocateAll, const SIZE: usize> AllocateAll for Chunk<A, SIZE>
+// where
+//     Self: SizeIsPowerOfTwo,
+// {
+//     impl_alloc_all!(0);
+// }
+
+unsafe impl<A, const SIZE: usize> ReallocateInPlace for Chunk<A, SIZE>
 where
     Self: SizeIsPowerOfTwo,
 {
-    impl_alloc_all!(0);
+    impl_realloc_in_place_spec!(0);
 }
 
-unsafe impl<A: ReallocInPlace, const SIZE: usize> ReallocInPlace for Chunk<A, SIZE>
+unsafe impl<A: ReallocateInPlace, const SIZE: usize> ReallocateInPlace for Chunk<A, SIZE>
 where
     Self: SizeIsPowerOfTwo,
 {
@@ -193,15 +238,16 @@ where
 #[cfg(test)]
 mod tests {
     use super::Chunk;
-    use crate::{helper, AllocAll, ReallocInPlace, Region};
-    use std::{
-        alloc::{AllocRef, Layout, System},
+    use crate::{helper, AllocateAll, ReallocateInPlace};
+    use alloc::alloc::Global;
+    use core::{
+        alloc::{AllocRef, Layout},
         mem::MaybeUninit,
     };
 
     #[test]
     fn alloc() {
-        let mut alloc = helper::tracker(Chunk::<_, 64>(System));
+        let alloc = Chunk::<_, 64>(Global);
         let memory = alloc
             .alloc(Layout::new::<u8>())
             .expect("Could not allocate 64 bytes");
@@ -215,7 +261,7 @@ mod tests {
 
     #[test]
     fn dealloc() {
-        let mut alloc = helper::tracker(Chunk::<_, 64>(System));
+        let alloc = Chunk::<_, 64>(Global);
 
         unsafe {
             let memory = alloc
@@ -225,20 +271,20 @@ mod tests {
             alloc.dealloc(memory.as_non_null_ptr(), Layout::new::<[u8; 4]>());
 
             let memory = alloc
-                .alloc(Layout::new::<[u8; 4]>())
-                .expect("Could not allocate 4 bytes");
+                .alloc(Layout::new::<[u8; 8]>())
+                .expect("Could not allocate 8 bytes");
+            assert_eq!(memory.len() % 64, 0);
+            alloc.dealloc(memory.as_non_null_ptr(), Layout::new::<[u8; 8]>());
+
+            let memory = alloc
+                .alloc(Layout::new::<[u8; 32]>())
+                .expect("Could not allocate 32 bytes");
             assert_eq!(memory.len() % 64, 0);
             alloc.dealloc(memory.as_non_null_ptr(), Layout::new::<[u8; 32]>());
 
             let memory = alloc
-                .alloc(Layout::new::<[u8; 4]>())
-                .expect("Could not allocate 4 bytes");
-            assert_eq!(memory.len() % 64, 0);
-            alloc.dealloc(memory.as_non_null_ptr(), Layout::new::<[u8; 64]>());
-
-            let memory = alloc
-                .alloc(Layout::new::<[u8; 4]>())
-                .expect("Could not allocate 4 bytes");
+                .alloc(Layout::new::<[u8; 64]>())
+                .expect("Could not allocate 64 bytes");
             assert_eq!(memory.len() % 64, 0);
             alloc.dealloc(memory.as_non_null_ptr(), Layout::new::<[u8; 64]>());
         }
@@ -246,82 +292,98 @@ mod tests {
 
     #[test]
     fn grow() {
-        let mut data = [MaybeUninit::new(0); 256];
-        let mut alloc = helper::tracker(Chunk::<_, 64>(Region::new(&mut data)));
+        let alloc = Chunk::<_, 64>(Global);
 
         let memory = alloc
             .alloc(Layout::new::<[u8; 4]>())
             .expect("Could not allocate 4 bytes");
         assert_eq!(memory.len() % 64, 0);
-        assert_eq!(alloc.capacity_left(), 192);
-
-        let _cannot_grow_in_place = alloc
-            .alloc(Layout::new::<[u8; 1]>())
-            .expect("Could not allocate 64 bytes");
-        assert_eq!(alloc.capacity_left(), 128);
 
         unsafe {
             let len = alloc
-                .grow_in_place(memory.as_non_null_ptr(), Layout::new::<[u8; 4]>(), 8)
+                .grow_in_place(
+                    memory.as_non_null_ptr(),
+                    Layout::new::<[u8; 4]>(),
+                    Layout::new::<[u8; 64]>(),
+                )
                 .expect("Could not grow to 8 bytes");
             assert_eq!(len % 64, 0);
             assert!(len >= 64);
 
             let len = alloc
-                .grow_in_place(memory.as_non_null_ptr(), Layout::new::<[u8; 8]>(), 64)
+                .grow_in_place(
+                    memory.as_non_null_ptr(),
+                    Layout::new::<[u8; 8]>(),
+                    Layout::new::<[u8; 64]>(),
+                )
                 .expect("Could not grow to 64 bytes");
             assert_eq!(len % 64, 0);
             assert!(len >= 64);
 
             alloc
-                .grow_in_place(memory.as_non_null_ptr(), Layout::new::<[u8; 64]>(), 65)
+                .grow_in_place(
+                    memory.as_non_null_ptr(),
+                    Layout::new::<[u8; 64]>(),
+                    Layout::new::<[u8; 65]>(),
+                )
                 .expect_err("Could grow to 65 bytes in place");
 
             let memory = alloc
-                .grow(memory.as_non_null_ptr(), Layout::new::<[u8; 64]>(), 65)
+                .grow(
+                    memory.as_non_null_ptr(),
+                    Layout::new::<[u8; 64]>(),
+                    Layout::new::<[u8; 65]>(),
+                )
                 .expect("Could not grow to 65 bytes");
 
-            alloc
-                .grow(memory.as_non_null_ptr(), Layout::new::<[u8; 100]>(), 512)
-                .expect_err("Could grow to 512 bytes");
-
-            alloc.dealloc(memory.as_non_null_ptr(), Layout::new::<[u8; 100]>());
+            alloc.dealloc(memory.as_non_null_ptr(), Layout::new::<[u8; 65]>());
         }
     }
 
     #[test]
     fn shrink() {
-        let mut data = [MaybeUninit::new(0); 256];
-        let mut alloc = helper::tracker(Chunk::<_, 64>(Region::new(&mut data)));
+        let alloc = Chunk::<_, 64>(Global);
 
         let memory = alloc
             .alloc(Layout::new::<[u8; 128]>())
             .expect("Could not allocate 128 bytes");
         assert_eq!(memory.len() % 64, 0);
 
-        let _cannot_shrink_in_place = alloc
-            .alloc(Layout::new::<[u8; 128]>())
-            .expect("Could not allocate 128 bytes");
-
         unsafe {
             let len = alloc
-                .shrink_in_place(memory.as_non_null_ptr(), Layout::new::<[u8; 128]>(), 100)
+                .shrink_in_place(
+                    memory.as_non_null_ptr(),
+                    Layout::new::<[u8; 128]>(),
+                    Layout::new::<[u8; 100]>(),
+                )
                 .expect("Could not shrink to 100 bytes");
             assert_eq!(len % 64, 0);
             assert!(len >= 128);
 
             let len = alloc
-                .shrink_in_place(memory.as_non_null_ptr(), Layout::new::<[u8; 100]>(), 65)
+                .shrink_in_place(
+                    memory.as_non_null_ptr(),
+                    Layout::new::<[u8; 100]>(),
+                    Layout::new::<[u8; 65]>(),
+                )
                 .expect("Could not shrink to 65 bytes");
             assert_eq!(len % 64, 0);
             assert!(len >= 128);
 
             alloc
-                .shrink_in_place(memory.as_non_null_ptr(), Layout::new::<[u8; 65]>(), 64)
+                .shrink_in_place(
+                    memory.as_non_null_ptr(),
+                    Layout::new::<[u8; 65]>(),
+                    Layout::new::<[u8; 64]>(),
+                )
                 .expect_err("Could shrink to 64 bytes in place");
 
             let memory = alloc
-                .shrink(memory.as_non_null_ptr(), Layout::new::<[u8; 100]>(), 64)
+                .shrink(
+                    memory.as_non_null_ptr(),
+                    Layout::new::<[u8; 128]>(),
+                    Layout::new::<[u8; 64]>(),
+                )
                 .expect("Could not shrink to 64 bytes");
 
             alloc.dealloc(memory.as_non_null_ptr(), Layout::new::<[u8; 64]>());

@@ -51,145 +51,216 @@ macro_rules! impl_global_alloc {
     };
 }
 
-// macro_rules! impl_alloc_ref {
-//     ($parent:tt) => {
-//         fn alloc(&mut self, layout: Layout) -> Result<NonNull<[u8]>, AllocErr> {
-//             Self::alloc_impl(layout, |l| self.$parent.alloc(l))
-//         }
+macro_rules! impl_alloc_ref {
+    ($parent:tt) => {
+        fn alloc(&self, layout: Layout) -> Result<NonNull<[u8]>, AllocError> {
+            Self::alloc_impl(layout, |l| self.$parent.alloc(l))
+        }
 
-//         fn alloc_zeroed(&mut self, layout: Layout) -> Result<NonNull<[u8]>, AllocErr> {
-//             Self::alloc_impl(layout, |l| self.$parent.alloc_zeroed(l))
-//         }
+        fn alloc_zeroed(&self, layout: Layout) -> Result<NonNull<[u8]>, AllocError> {
+            Self::alloc_impl(layout, |l| self.$parent.alloc_zeroed(l))
+        }
 
-//         unsafe fn grow(
-//             &mut self,
-//             ptr: NonNull<u8>,
-//             layout: Layout,
-//             new_size: usize,
-//         ) -> Result<NonNull<[u8]>, AllocErr> {
-//             crate::check_grow_precondition(ptr, layout, new_size);
-//             Self::grow_impl(
-//                 ptr,
-//                 layout,
-//                 new_size,
-//                 AllocInit::Uninitialized,
-//                 |ptr, layout, new_size| self.$parent.grow(ptr, layout, new_size),
-//             )
-//         }
+        unsafe fn grow(
+            &self,
+            ptr: NonNull<u8>,
+            old_layout: Layout,
+            new_layout: Layout,
+        ) -> Result<NonNull<[u8]>, AllocError> {
+            crate::check_grow_precondition(ptr, old_layout, new_layout);
+            Self::grow_impl(
+                ptr,
+                old_layout,
+                new_layout,
+                AllocInit::Uninitialized,
+                |ptr, old_layout, new_layout| self.$parent.grow(ptr, old_layout, new_layout),
+            )
+        }
 
-//         unsafe fn grow_zeroed(
-//             &mut self,
-//             ptr: NonNull<u8>,
-//             layout: Layout,
-//             new_size: usize,
-//         ) -> Result<NonNull<[u8]>, AllocErr> {
-//             crate::check_grow_precondition(ptr, layout, new_size);
-//             Self::grow_impl(
-//                 ptr,
-//                 layout,
-//                 new_size,
-//                 AllocInit::Zeroed,
-//                 |ptr, layout, new_size| self.$parent.grow_zeroed(ptr, layout, new_size),
-//             )
-//         }
+        unsafe fn grow_zeroed(
+            &self,
+            ptr: NonNull<u8>,
+            old_layout: Layout,
+            new_layout: Layout,
+        ) -> Result<NonNull<[u8]>, AllocError> {
+            crate::check_grow_precondition(ptr, old_layout, new_layout);
+            Self::grow_impl(
+                ptr,
+                old_layout,
+                new_layout,
+                AllocInit::Zeroed,
+                |ptr, old_layout, new_layout| self.$parent.grow_zeroed(ptr, old_layout, new_layout),
+            )
+        }
 
-//         unsafe fn shrink(
-//             &mut self,
-//             ptr: NonNull<u8>,
-//             layout: Layout,
-//             new_size: usize,
-//         ) -> Result<NonNull<[u8]>, AllocErr> {
-//             crate::check_shrink_precondition(ptr, layout, new_size);
-//             Self::shrink_impl(ptr, layout, new_size, |ptr, layout, new_size| {
-//                 self.$parent.shrink(ptr, layout, new_size)
-//             })
-//         }
-//     };
-// }
-// macro_rules! impl_alloc_all {
-//     ($parent:tt) => {
-//         fn alloc_all(&mut self, layout: Layout) -> Result<NonNull<[u8]>, AllocErr> {
-//             Self::alloc_impl(layout, |layout| self.$parent.alloc_all(layout))
-//         }
+        unsafe fn shrink(
+            &self,
+            ptr: NonNull<u8>,
+            old_layout: Layout,
+            new_layout: Layout,
+        ) -> Result<NonNull<[u8]>, AllocError> {
+            crate::check_shrink_precondition(ptr, old_layout, new_layout);
+            Self::shrink_impl(
+                ptr,
+                old_layout,
+                new_layout,
+                |ptr, old_layout, new_layout| self.$parent.shrink(ptr, old_layout, new_layout),
+            )
+        }
+    };
+}
+macro_rules! impl_alloc_all {
+    ($parent:tt) => {
+        fn allocate_all(&self) -> Result<NonNull<[u8]>, AllocError> {
+            Self::allocate_all_impl(|| self.$parent.allocate_all())
+        }
 
-//         fn alloc_all_zeroed(&mut self, layout: Layout) -> Result<NonNull<[u8]>, AllocErr> {
-//             Self::alloc_impl(layout, |layout| self.$parent.alloc_all_zeroed(layout))
-//         }
+        fn allocate_all_zeroed(&self) -> Result<NonNull<[u8]>, AllocError> {
+            Self::allocate_all_impl(|| self.$parent.allocate_all_zeroed())
+        }
 
-//         fn dealloc_all(&mut self) {
-//             self.$parent.dealloc_all()
-//         }
+        fn deallocate_all(&self) {
+            self.$parent.deallocate_all()
+        }
 
-//         fn capacity(&self) -> usize {
-//             self.$parent.capacity()
-//         }
+        fn capacity(&self) -> usize {
+            self.$parent.capacity()
+        }
 
-//         fn capacity_left(&self) -> usize {
-//             self.$parent.capacity_left()
-//         }
-//     };
-// }
+        fn capacity_left(&self) -> usize {
+            self.$parent.capacity_left()
+        }
+    };
+}
 
-// macro_rules! impl_realloc_in_place {
-//     ($parent:tt) => {
-//         unsafe fn grow_in_place(
-//             &mut self,
-//             ptr: NonNull<u8>,
-//             layout: Layout,
-//             new_size: usize,
-//         ) -> Result<usize, AllocErr> {
-//             crate::check_grow_precondition(ptr, layout, new_size);
-//             Self::grow_impl(
-//                 ptr,
-//                 layout,
-//                 new_size,
-//                 AllocInit::Uninitialized,
-//                 |ptr, layout, new_size| {
-//                     crate::check_grow_precondition(ptr, layout, new_size);
-//                     self.$parent
-//                         .grow_in_place(ptr, layout, new_size)
-//                         .map(|len| NonNull::slice_from_raw_parts(ptr, len))
-//                 },
-//             )
-//             .map(NonNull::len)
-//         }
+macro_rules! impl_realloc_in_place {
+    ($parent:tt) => {
+        unsafe fn grow_in_place(
+            &self,
+            ptr: NonNull<u8>,
+            old_layout: Layout,
+            new_layout: Layout,
+        ) -> Result<usize, AllocError> {
+            crate::check_grow_precondition(ptr, old_layout, new_layout);
+            Self::grow_impl(
+                ptr,
+                old_layout,
+                new_layout,
+                AllocInit::Uninitialized,
+                |ptr, old_layout, new_layout| {
+                    crate::check_grow_precondition(ptr, old_layout, new_layout);
+                    self.$parent
+                        .grow_in_place(ptr, old_layout, new_layout)
+                        .map(|len| NonNull::slice_from_raw_parts(ptr, len))
+                },
+            )
+            .map(NonNull::len)
+        }
 
-//         unsafe fn grow_in_place_zeroed(
-//             &mut self,
-//             ptr: NonNull<u8>,
-//             layout: Layout,
-//             new_size: usize,
-//         ) -> Result<usize, AllocErr> {
-//             crate::check_grow_precondition(ptr, layout, new_size);
-//             Self::grow_impl(
-//                 ptr,
-//                 layout,
-//                 new_size,
-//                 AllocInit::Zeroed,
-//                 |ptr, layout, new_size| {
-//                     crate::check_grow_precondition(ptr, layout, new_size);
-//                     self.$parent
-//                         .grow_in_place_zeroed(ptr, layout, new_size)
-//                         .map(|len| NonNull::slice_from_raw_parts(ptr, len))
-//                 },
-//             )
-//             .map(NonNull::len)
-//         }
+        unsafe fn grow_in_place_zeroed(
+            &self,
+            ptr: NonNull<u8>,
+            old_layout: Layout,
+            new_layout: Layout,
+        ) -> Result<usize, AllocError> {
+            crate::check_grow_precondition(ptr, old_layout, new_layout);
+            Self::grow_impl(
+                ptr,
+                old_layout,
+                new_layout,
+                AllocInit::Zeroed,
+                |ptr, old_layout, new_layout| {
+                    crate::check_grow_precondition(ptr, old_layout, new_layout);
+                    self.$parent
+                        .grow_in_place_zeroed(ptr, old_layout, new_layout)
+                        .map(|len| NonNull::slice_from_raw_parts(ptr, len))
+                },
+            )
+            .map(NonNull::len)
+        }
 
-//         unsafe fn shrink_in_place(
-//             &mut self,
-//             ptr: NonNull<u8>,
-//             layout: Layout,
-//             new_size: usize,
-//         ) -> Result<usize, AllocErr> {
-//             crate::check_shrink_precondition(ptr, layout, new_size);
-//             Self::shrink_impl(ptr, layout, new_size, |ptr, layout, new_size| {
-//                 crate::check_shrink_precondition(ptr, layout, new_size);
-//                 self.$parent
-//                     .shrink_in_place(ptr, layout, new_size)
-//                     .map(|len| NonNull::slice_from_raw_parts(ptr, len))
-//             })
-//             .map(NonNull::len)
-//         }
-//     };
-// }
+        unsafe fn shrink_in_place(
+            &self,
+            ptr: NonNull<u8>,
+            old_layout: Layout,
+            new_layout: Layout,
+        ) -> Result<usize, AllocError> {
+            crate::check_shrink_precondition(ptr, old_layout, new_layout);
+            Self::shrink_impl(
+                ptr,
+                old_layout,
+                new_layout,
+                |ptr, old_layout, new_layout| {
+                    crate::check_shrink_precondition(ptr, old_layout, new_layout);
+                    self.$parent
+                        .shrink_in_place(ptr, old_layout, new_layout)
+                        .map(|len| NonNull::slice_from_raw_parts(ptr, len))
+                },
+            )
+            .map(NonNull::len)
+        }
+    };
+}
+
+macro_rules! impl_realloc_in_place_spec {
+    ($parent:tt) => {
+        default unsafe fn grow_in_place(
+            &self,
+            ptr: NonNull<u8>,
+            old_layout: Layout,
+            new_layout: Layout,
+        ) -> Result<usize, AllocError> {
+            crate::check_grow_precondition(ptr, old_layout, new_layout);
+            Self::grow_impl(
+                ptr,
+                old_layout,
+                new_layout,
+                AllocInit::Uninitialized,
+                |ptr, old_layout, new_layout| {
+                    crate::check_grow_precondition(ptr, old_layout, new_layout);
+                    Err(AllocError)
+                },
+            )
+            .map(NonNull::len)
+        }
+
+        default unsafe fn grow_in_place_zeroed(
+            &self,
+            ptr: NonNull<u8>,
+            old_layout: Layout,
+            new_layout: Layout,
+        ) -> Result<usize, AllocError> {
+            crate::check_grow_precondition(ptr, old_layout, new_layout);
+            Self::grow_impl(
+                ptr,
+                old_layout,
+                new_layout,
+                AllocInit::Zeroed,
+                |ptr, old_layout, new_layout| {
+                    crate::check_grow_precondition(ptr, old_layout, new_layout);
+                    Err(AllocError)
+                },
+            )
+            .map(NonNull::len)
+        }
+
+        default unsafe fn shrink_in_place(
+            &self,
+            ptr: NonNull<u8>,
+            old_layout: Layout,
+            new_layout: Layout,
+        ) -> Result<usize, AllocError> {
+            crate::check_shrink_precondition(ptr, old_layout, new_layout);
+            Self::shrink_impl(
+                ptr,
+                old_layout,
+                new_layout,
+                |ptr, old_layout, new_layout| {
+                    crate::check_shrink_precondition(ptr, old_layout, new_layout);
+                    Err(AllocError)
+                },
+            )
+            .map(NonNull::len)
+        }
+    };
+}
