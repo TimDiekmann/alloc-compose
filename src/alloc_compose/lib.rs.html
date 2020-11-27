@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../alloc_compose/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script id="default-settings"></script><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../favicon.svg">
+<link rel="alternate icon" type="image/png" href="../../favicon-16x16.png">
+<link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../alloc_compose/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
                 <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
@@ -322,11 +324,15 @@
 <span id="321">321</span>
 <span id="322">322</span>
 <span id="323">323</span>
+<span id="324">324</span>
+<span id="325">325</span>
+<span id="326">326</span>
+<span id="327">327</span>
+<span id="328">328</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">test</span>), <span class="ident">no_std</span>)]</span>
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">doc</span>, <span class="ident">feature</span>(<span class="ident">doc_cfg</span>, <span class="ident">external_doc</span>))]</span>
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;intrinsics&quot;</span>, <span class="ident">feature</span>(<span class="ident">core_intrinsics</span>))]</span>
-<span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">test</span>, <span class="ident">feature</span>(<span class="ident">maybe_uninit_slice_assume_init</span>))]</span>
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">doc</span>, <span class="ident">doc</span>(<span class="ident">include</span> <span class="op">=</span> <span class="string">&quot;../README.md&quot;</span>))]</span>
 <span class="attribute">#![<span class="ident">feature</span>(
     <span class="ident">allocator_api</span>,
@@ -336,47 +342,45 @@
     <span class="ident">const_fn</span>,
     <span class="ident">min_const_generics</span>,
     <span class="ident">const_panic</span>,
-    <span class="ident">const_int_pow</span>,
     <span class="ident">const_nonnull_slice_from_raw_parts</span>,
     <span class="ident">const_slice_ptr_len</span>,
     <span class="ident">nonnull_slice_from_raw_parts</span>,
     <span class="ident">slice_ptr_get</span>,
-    <span class="ident">slice_ptr_len</span>
+    <span class="ident">slice_ptr_len</span>,
+    <span class="ident">maybe_uninit_slice</span>,
 )]</span>
 <span class="attribute">#![<span class="ident">allow</span>(<span class="ident">incomplete_features</span>, <span class="ident">clippy</span>::<span class="ident">must_use_candidate</span>)]</span>
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;alloc&quot;</span>, <span class="ident">doc</span>))]</span>
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">alloc</span>;
 
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">stats</span>;
+<span class="comment">// pub mod stats;</span>
 
-<span class="kw">mod</span> <span class="ident">helper</span>;
-<span class="attribute">#[<span class="ident">macro_use</span>]</span>
-<span class="kw">mod</span> <span class="ident">macros</span>;
+<span class="comment">// mod helper;</span>
+<span class="comment">// #[macro_use]</span>
+<span class="comment">// mod macros;</span>
 
-<span class="kw">mod</span> <span class="ident">affix</span>;
-<span class="kw">mod</span> <span class="ident">callback_ref</span>;
-<span class="kw">mod</span> <span class="ident">chunk</span>;
-<span class="kw">mod</span> <span class="ident">fallback</span>;
+<span class="comment">// mod affix;</span>
+<span class="comment">// mod callback_ref;</span>
+<span class="comment">// mod chunk;</span>
+<span class="comment">// mod fallback;</span>
 <span class="kw">mod</span> <span class="ident">null</span>;
-<span class="kw">mod</span> <span class="ident">proxy</span>;
-<span class="kw">mod</span> <span class="ident">region</span>;
-<span class="kw">mod</span> <span class="ident">segregate</span>;
+<span class="comment">// mod proxy;</span>
+<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">region</span>;
+<span class="comment">// mod segregate;</span>
 
-<span class="kw">use</span> <span class="ident">core</span>::{
-    <span class="ident">alloc</span>::{<span class="ident">AllocErr</span>, <span class="ident">Layout</span>},
-    <span class="ident">ptr</span>::<span class="ident">NonNull</span>,
-};
+<span class="kw">use</span> <span class="ident">core</span>::<span class="ident">ptr</span>::<span class="ident">NonNull</span>;
+<span class="kw">use</span> <span class="ident">core</span>::<span class="ident">alloc</span>::{<span class="ident">Layout</span>, <span class="ident">AllocError</span>};
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::{
-    <span class="ident">affix</span>::<span class="ident">Affix</span>,
-    <span class="ident">callback_ref</span>::<span class="ident">CallbackRef</span>,
-    <span class="ident">chunk</span>::<span class="ident">Chunk</span>,
-    <span class="ident">fallback</span>::<span class="ident">Fallback</span>,
+<span class="comment">//     affix::Affix,</span>
+<span class="comment">//     callback_ref::CallbackRef,</span>
+<span class="comment">//     chunk::Chunk,</span>
+<span class="comment">//     fallback::Fallback,</span>
     <span class="ident">null</span>::<span class="ident">Null</span>,
-    <span class="ident">proxy</span>::<span class="ident">Proxy</span>,
-    <span class="ident">region</span>::<span class="ident">Region</span>,
-    <span class="ident">segregate</span>::<span class="ident">Segregate</span>,
+<span class="comment">//     proxy::Proxy,</span>
+<span class="comment">//     region::Region,</span>
+<span class="comment">//     segregate::Segregate,</span>
 };
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;intrinsics&quot;</span>)]</span>
@@ -389,7 +393,7 @@
     <span class="attribute">#![<span class="ident">allow</span>(<span class="ident">clippy</span>::<span class="ident">missing_const_for_fn</span>, <span class="ident">clippy</span>::<span class="ident">inline_always</span>)]</span>
 
     <span class="attribute">#[<span class="ident">inline</span>(<span class="ident">always</span>)]</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">unlikely</span>(<span class="ident">b</span>: <span class="ident">bool</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">unlikely</span>(<span class="ident">b</span>: <span class="ident">bool</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
         <span class="ident">b</span>
     }
 
@@ -407,19 +411,21 @@
     <span class="doccomment">/// Attempts to allocate all of the memory the allocator can provide.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// If the allocator is currently not managing any memory, then it returns all the memory</span>
-    <span class="doccomment">/// available to the allocator. Subsequent calls should not suceed.</span>
+    <span class="doccomment">/// available to the allocator. Subsequent are unlikely to succeed.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// On success, returns a [`NonNull&lt;[u8]&gt;`] meeting the size and alignment guarantees of `layout`.</span>
+    <span class="doccomment">/// On success, returns `[NonNull&lt;[u8]&gt;]` meeting the size and alignment guarantees of `layout`.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// The returned block may have a larger size than specified by `layout.size()`, and may or may</span>
     <span class="doccomment">/// not have its contents initialized.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// [`NonNull&lt;[u8]&gt;`]: NonNull</span>
+    <span class="doccomment">/// Also see [`AllocRef::alloc`]</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// [`AllocRef::alloc`]: core::alloc::AllocRef::alloc</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// # Errors</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Returning `Err` indicates that either memory is exhausted or `layout` does not meet</span>
-    <span class="doccomment">/// allocator&#39;s size or alignment constraints.</span>
+    <span class="doccomment">/// allocators size or alignment constraints.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Implementations are encouraged to return `Err` on memory exhaustion rather than panicking or</span>
     <span class="doccomment">/// aborting, but this is not a strict requirement. (Specifically: it is *legal* to implement</span>
@@ -428,15 +434,19 @@
     <span class="doccomment">/// Clients wishing to abort computation in response to an allocation error are encouraged to</span>
     <span class="doccomment">/// call the [`handle_alloc_error`] function, rather than directly invoking `panic!` or similar.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// [`handle_alloc_error`]: ../../alloc/alloc/fn.handle_alloc_error.html</span>
-    <span class="kw">fn</span> <span class="ident">alloc_all</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NonNull</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span>;
+    <span class="doccomment">/// [`handle_alloc_error`]: https://doc.rust-lang.org/alloc/alloc/fn.handle_alloc_error.html</span>
+    <span class="kw">fn</span> <span class="ident">allocate_all</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NonNull</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>, <span class="ident">AllocError</span><span class="op">&gt;</span>;
 
     <span class="doccomment">/// Behaves like `alloc_all`, but also ensures that the returned memory is zero-initialized.</span>
     <span class="doccomment">///</span>
+    <span class="doccomment">/// Also see [`AllocRef::alloc_zeroed`]</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// [`AllocRef::alloc_zeroed`]: core::alloc::AllocRef::alloc_zeroed</span>
+    <span class="doccomment">///</span>
     <span class="doccomment">/// # Errors</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Returning `Err` indicates that either memory is exhausted or `layout` does not meet</span>
-    <span class="doccomment">/// allocator&#39;s size or alignment constraints.</span>
+    <span class="doccomment">/// allocators size or alignment constraints.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Implementations are encouraged to return `Err` on memory exhaustion rather than panicking or</span>
     <span class="doccomment">/// aborting, but this is not a strict requirement. (Specifically: it is *legal* to implement</span>
@@ -445,33 +455,39 @@
     <span class="doccomment">/// Clients wishing to abort computation in response to an allocation error are encouraged to</span>
     <span class="doccomment">/// call the [`handle_alloc_error`] function, rather than directly invoking `panic!` or similar.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// [`handle_alloc_error`]: ../../alloc/alloc/fn.handle_alloc_error.html</span>
-    <span class="kw">fn</span> <span class="ident">alloc_all_zeroed</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NonNull</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span>;
+    <span class="doccomment">/// [`handle_alloc_error`]: https://doc.rust-lang.org/alloc/alloc/fn.handle_alloc_error.html</span>
+    <span class="kw">fn</span> <span class="ident">allocate_all_zeroed</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NonNull</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>, <span class="ident">AllocError</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">allocate_all</span>()<span class="question-mark">?</span>;
+        <span class="comment">// SAFETY: `allocate_all` returns a valid memory block</span>
+        <span class="kw">unsafe</span> { <span class="ident">ptr</span>.<span class="ident">as_non_null_ptr</span>().<span class="ident">as_ptr</span>().<span class="ident">write_bytes</span>(<span class="number">0</span>, <span class="ident">ptr</span>.<span class="ident">len</span>()) }
+        <span class="prelude-val">Ok</span>(<span class="ident">ptr</span>)
+    }
 
     <span class="doccomment">/// Deallocates all the memory the allocator had allocated.</span>
-    <span class="kw">fn</span> <span class="ident">dealloc_all</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>);
+    <span class="kw">fn</span> <span class="ident">deallocate_all</span>(<span class="kw-2">&amp;</span><span class="self">self</span>);
 
     <span class="doccomment">/// Returns the total capacity available in this allocator.</span>
-    <span class="kw">fn</span> <span class="ident">capacity</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">usize</span>;
+    <span class="kw">fn</span> <span class="ident">capacity</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span>;
 
     <span class="doccomment">/// Returns the free capacity left for allocating.</span>
-    <span class="kw">fn</span> <span class="ident">capacity_left</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">usize</span>;
+    <span class="kw">fn</span> <span class="ident">capacity_left</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span>;
 
     <span class="doccomment">/// Returns if the allocator is currently not holding memory.</span>
-    <span class="kw">fn</span> <span class="ident">is_empty</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
-        <span class="self">self</span>.<span class="ident">capacity</span>() <span class="op">==</span> <span class="self">self</span>.<span class="ident">capacity_left</span>()
+    <span class="kw">fn</span> <span class="ident">is_empty</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+        <span class="self">self</span>.<span class="ident">capacity</span>() <span class="op">=</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">capacity_left</span>()
     }
 
     <span class="doccomment">/// Returns if the allocator has no more capacity left.</span>
-    <span class="kw">fn</span> <span class="ident">is_full</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
-        <span class="self">self</span>.<span class="ident">capacity_left</span>() <span class="op">==</span> <span class="number">0</span>
+    <span class="kw">fn</span> <span class="ident">is_full</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+        <span class="self">self</span>.<span class="ident">capacity_left</span>() <span class="op">=</span><span class="op">=</span> <span class="number">0</span>
     }
 }
 
-<span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">trait</span> <span class="ident">ReallocInPlace</span> {
-    <span class="doccomment">/// Attempts to extend the allocation referenced by `ptr` to fit `new_layout`.</span>
+<span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">trait</span> <span class="ident">ReallocateInPlace</span> {
+
+    <span class="doccomment">/// Attempts to extend the memory block.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// Returns the a new actual size of the allocated memory. The pointer is suitable for holding</span>
+    <span class="doccomment">/// Returns the new actual size of the allocated memory. The pointer is suitable for holding</span>
     <span class="doccomment">/// data described by a new layout with `layout`’s alignment and a size given by `new_size`.</span>
     <span class="doccomment">/// To accomplish this, the allocator may extend the allocation referenced by `ptr` to fit the</span>
     <span class="doccomment">/// new layout.</span>
@@ -482,18 +498,16 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// # Safety</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// * `ptr` must denote a block of memory [*currently allocated*] via this allocator,</span>
-    <span class="doccomment">/// * `layout` must [*fit*] that block of memory (The `new_size` argument need not fit it.),</span>
-    <span class="doccomment">/// * `new_size` must be greater than or equal to `layout.size()`, and</span>
-    <span class="doccomment">/// * `new_size`, when rounded up to the nearest multiple of `layout.align()`, must not overflow</span>
-    <span class="doccomment">///   (i.e., the rounded value must be less than or equal to `usize::MAX`).</span>
+    <span class="doccomment">/// * `ptr` must denote a block of memory [*currently allocated*] via this allocator.</span>
+    <span class="doccomment">/// * `old_layout` must [*fit*] that block of memory (The `new_layout` argument need not fit it.).</span>
+    <span class="doccomment">/// * `new_layout.size()` must be greater than or equal to `old_layout.size()`.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// [*currently allocated*]: https://doc.rust-lang.org/nightly/alloc/alloc/trait.AllocRef.html#currently-allocated-memory</span>
     <span class="doccomment">/// [*fit*]: https://doc.rust-lang.org/nightly/alloc/alloc/trait.AllocRef.html#memory-fitting</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// # Errors</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// Returns `Err` if the new layout does not meet the allocator&#39;s size and alignment</span>
+    <span class="doccomment">/// Returns `Err` if the new layout does not meet the allocators size and alignment</span>
     <span class="doccomment">/// constraints of the allocator, or if growing otherwise fails.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Implementations are encouraged to return `Err` on memory exhaustion rather than panicking or</span>
@@ -503,41 +517,39 @@
     <span class="doccomment">/// Clients wishing to abort computation in response to an allocation error are encouraged to</span>
     <span class="doccomment">/// call the [`handle_alloc_error`] function, rather than directly invoking `panic!` or similar.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// [`handle_alloc_error`]: ../../alloc/alloc/fn.handle_alloc_error.html</span>
+    <span class="doccomment">/// [`handle_alloc_error`]: https://doc.rust-lang.org/alloc/alloc/fn.handle_alloc_error.html</span>
     <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">grow_in_place</span>(
-        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-        <span class="ident">layout</span>: <span class="ident">Layout</span>,
-        <span class="ident">new_size</span>: <span class="ident">usize</span>,
-    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">usize</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span>;
+        <span class="ident">old_layout</span>: <span class="ident">Layout</span>,
+        <span class="ident">new_layout</span>: <span class="ident">Layout</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">usize</span>, <span class="ident">AllocError</span><span class="op">&gt;</span>;
 
     <span class="doccomment">/// Behaves like `grow_in_place`, but also ensures that the new contents are set to zero before</span>
     <span class="doccomment">/// being returned.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// The memory block will contain the following contents after a successful call to</span>
-    <span class="doccomment">/// `grow_in_place_zeroed`:</span>
-    <span class="doccomment">///   * Bytes `0..layout.size()` are preserved from the original allocation.</span>
-    <span class="doccomment">///   * Bytes `layout.size()..old_size` will either be preserved or zeroed,</span>
-    <span class="doccomment">///     depending on the allocator implementation. `old_size` refers to the size of</span>
-    <span class="doccomment">///     the `MemoryBlock` prior to the `grow_in_place_zeroed` call, which may be larger than the</span>
-    <span class="doccomment">///     size that was originally requested when it was allocated.</span>
-    <span class="doccomment">///   * Bytes `old_size..new_size` are zeroed. `new_size` refers to</span>
-    <span class="doccomment">///     the size of the `MemoryBlock` returned by the `grow` call.</span>
+    <span class="doccomment">/// `grow_zeroed`:</span>
+    <span class="doccomment">///   * Bytes `0..old_layout.size()` are preserved from the original allocation.</span>
+    <span class="doccomment">///   * Bytes `old_layout.size()..old_size` will either be preserved or zeroed, depending on</span>
+    <span class="doccomment">///     the allocator implementation. `old_size` refers to the size of the memory block prior</span>
+    <span class="doccomment">///     to the `grow_zeroed` call, which may be larger than the size that was originally</span>
+    <span class="doccomment">///     requested when it was allocated.</span>
+    <span class="doccomment">///   * Bytes `old_size..new_size` are zeroed. `new_size` refers to the size of the memory</span>
+    <span class="doccomment">///     block returned by the `grow_zeroed` call.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// # Safety</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// * `ptr` must denote a block of memory [*currently allocated*] via this allocator,</span>
-    <span class="doccomment">/// * `layout` must [*fit*] that block of memory (The `new_size` argument need not fit it.),</span>
-    <span class="doccomment">/// * `new_size` must be greater than or equal to `layout.size()`, and</span>
-    <span class="doccomment">/// * `new_size`, when rounded up to the nearest multiple of `layout.align()`, must not overflow</span>
-    <span class="doccomment">///   (i.e., the rounded value must be less than or equal to `usize::MAX`).</span>
+    <span class="doccomment">/// * `ptr` must denote a block of memory [*currently allocated*] via this allocator.</span>
+    <span class="doccomment">/// * `old_layout` must [*fit*] that block of memory (The `new_layout` argument need not fit it.).</span>
+    <span class="doccomment">/// * `new_layout.size()` must be greater than or equal to `old_layout.size()`.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// [*currently allocated*]: https://doc.rust-lang.org/nightly/alloc/alloc/trait.AllocRef.html#currently-allocated-memory</span>
     <span class="doccomment">/// [*fit*]: https://doc.rust-lang.org/nightly/alloc/alloc/trait.AllocRef.html#memory-fitting</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// # Errors</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// Returns `Err` if the new layout does not meet the allocator&#39;s size and alignment</span>
+    <span class="doccomment">/// Returns `Err` if the new layout does not meet the allocators size and alignment</span>
     <span class="doccomment">/// constraints of the allocator, or if growing otherwise fails.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Implementations are encouraged to return `Err` on memory exhaustion rather than panicking or</span>
@@ -547,17 +559,17 @@
     <span class="doccomment">/// Clients wishing to abort computation in response to an allocation error are encouraged to</span>
     <span class="doccomment">/// call the [`handle_alloc_error`] function, rather than directly invoking `panic!` or similar.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// [`handle_alloc_error`]: ../../alloc/alloc/fn.handle_alloc_error.html</span>
+    <span class="doccomment">/// [`handle_alloc_error`]: https://doc.rust-lang.org/alloc/alloc/fn.handle_alloc_error.html</span>
     <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">grow_in_place_zeroed</span>(
-        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-        <span class="ident">layout</span>: <span class="ident">Layout</span>,
-        <span class="ident">new_size</span>: <span class="ident">usize</span>,
-    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">usize</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span>;
+        <span class="ident">old_layout</span>: <span class="ident">Layout</span>,
+        <span class="ident">new_layout</span>: <span class="ident">Layout</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">usize</span>, <span class="ident">AllocError</span><span class="op">&gt;</span>;
 
-    <span class="doccomment">/// Attempts to shrink the allocation referenced by `ptr` to fit `new_layout`.</span>
+    <span class="doccomment">/// Attempts to shrink the memory block.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// Returns the a new actual size of the allocated memory. The pointer is suitable for holding</span>
+    <span class="doccomment">/// Returns the new actual size of the allocated memory. The pointer is suitable for holding</span>
     <span class="doccomment">/// data described by a new layout with `layout`’s alignment and a size given by `new_size`.</span>
     <span class="doccomment">/// To accomplish this, the allocator may extend the allocation referenced by `ptr` to fit the</span>
     <span class="doccomment">/// new layout.</span>
@@ -568,9 +580,9 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// # Safety</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// * `ptr` must denote a block of memory [*currently allocated*] via this allocator,</span>
-    <span class="doccomment">/// * `layout` must [*fit*] that block of memory (The `new_size` argument need not fit it.), and</span>
-    <span class="doccomment">/// * `new_size` must be smaller than or equal to `layout.size()`</span>
+    <span class="doccomment">/// * `ptr` must denote a block of memory [*currently allocated*] via this allocator.</span>
+    <span class="doccomment">/// * `old_layout` must [*fit*] that block of memory (The `new_layout` argument need not fit it.).</span>
+    <span class="doccomment">/// * `new_layout.size()` must be smaller than or equal to `old_layout.size()`.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// [*currently allocated*]: https://doc.rust-lang.org/nightly/alloc/alloc/trait.AllocRef.html#currently-allocated-memory</span>
     <span class="doccomment">/// [*fit*]: https://doc.rust-lang.org/nightly/alloc/alloc/trait.AllocRef.html#memory-fitting</span>
@@ -578,7 +590,7 @@
     <span class="doccomment">/// # Errors</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Returns `Err` if the new layout does not meet the allocator&#39;s size and alignment</span>
-    <span class="doccomment">/// constraints of the allocator, or if growing otherwise fails.</span>
+    <span class="doccomment">/// constraints of the allocator, or if shrinking otherwise fails.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Implementations are encouraged to return `Err` on memory exhaustion rather than panicking or</span>
     <span class="doccomment">/// aborting, but this is not a strict requirement. (Specifically: it is *legal* to implement</span>
@@ -587,64 +599,64 @@
     <span class="doccomment">/// Clients wishing to abort computation in response to an allocation error are encouraged to</span>
     <span class="doccomment">/// call the [`handle_alloc_error`] function, rather than directly invoking `panic!` or similar.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// [`handle_alloc_error`]: ../../alloc/alloc/fn.handle_alloc_error.html</span>
+    <span class="doccomment">/// [`handle_alloc_error`]: https://doc.rust-lang.org/alloc/alloc/fn.handle_alloc_error.html</span>
     <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">shrink_in_place</span>(
-        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-        <span class="ident">layout</span>: <span class="ident">Layout</span>,
-        <span class="ident">new_size</span>: <span class="ident">usize</span>,
-    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">usize</span>, <span class="ident">AllocErr</span><span class="op">&gt;</span>;
+        <span class="ident">old_layout</span>: <span class="ident">Layout</span>,
+        <span class="ident">new_layout</span>: <span class="ident">Layout</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">usize</span>, <span class="ident">AllocError</span><span class="op">&gt;</span>;
 }
 
-<span class="doccomment">/// Trait to determine if a given `MemoryBlock` is owned by an allocator.</span>
+<span class="doccomment">/// Trait to determine if a given memory block is owned by an allocator.</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Owns</span> {
-    <span class="doccomment">/// Returns if the allocator *owns* the passed `MemoryBlock`.</span>
-    <span class="kw">fn</span> <span class="ident">owns</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="ident">bool</span>;
+    <span class="doccomment">/// Returns if the allocator *owns* the passed memory.</span>
+    <span class="kw">fn</span> <span class="ident">owns</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span>;
 }
 
-<span class="attribute">#[<span class="ident">track_caller</span>]</span>
-<span class="attribute">#[<span class="ident">inline</span>]</span>
-<span class="kw">fn</span> <span class="ident">check_dealloc_precondition</span>(<span class="ident">ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>) {
-    <span class="macro">debug_assert</span><span class="macro">!</span>(
-        <span class="ident">ptr</span>.<span class="ident">as_ptr</span>() <span class="kw">as</span> <span class="ident">usize</span> <span class="op">&gt;=</span> <span class="ident">layout</span>.<span class="ident">align</span>(),
-        <span class="string">&quot;`ptr` allocated with the same alignment as `layout.align()`, expected {} &gt;= {}&quot;</span>,
-        <span class="ident">ptr</span>.<span class="ident">as_ptr</span>() <span class="kw">as</span> <span class="ident">usize</span>,
-        <span class="ident">layout</span>.<span class="ident">align</span>()
-    );
-}
+<span class="comment">// #[track_caller]</span>
+<span class="comment">// #[inline]</span>
+<span class="comment">// fn check_dealloc_precondition(ptr: NonNull&lt;u8&gt;, old_layout: Layout) {</span>
+<span class="comment">//     debug_assert!(</span>
+<span class="comment">//         ptr.as_ptr() as usize &gt;= layout.align(),</span>
+<span class="comment">//         &quot;`ptr` allocated with the same alignment as `layout.align()`, expected {} &gt;= {}&quot;,</span>
+<span class="comment">//         ptr.as_ptr() as usize,</span>
+<span class="comment">//         layout.align()</span>
+<span class="comment">//     );</span>
+<span class="comment">// }</span>
 
-<span class="attribute">#[<span class="ident">track_caller</span>]</span>
-<span class="attribute">#[<span class="ident">inline</span>]</span>
-<span class="kw">fn</span> <span class="ident">check_grow_precondition</span>(<span class="ident">ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>, <span class="ident">new_size</span>: <span class="ident">usize</span>) {
-    <span class="macro">debug_assert</span><span class="macro">!</span>(
-        <span class="ident">ptr</span>.<span class="ident">as_ptr</span>() <span class="kw">as</span> <span class="ident">usize</span> <span class="op">&gt;=</span> <span class="ident">layout</span>.<span class="ident">align</span>(),
-        <span class="string">&quot;`ptr` allocated with the same alignment as `layout.align()`, expected {} &gt;= {}&quot;</span>,
-        <span class="ident">ptr</span>.<span class="ident">as_ptr</span>() <span class="kw">as</span> <span class="ident">usize</span>,
-        <span class="ident">layout</span>.<span class="ident">align</span>()
-    );
-    <span class="macro">debug_assert</span><span class="macro">!</span>(
-        <span class="ident">new_size</span> <span class="op">&gt;=</span> <span class="ident">layout</span>.<span class="ident">size</span>(),
-        <span class="string">&quot;`new_size` must be greater than or equal to `layout.size()`, expected {} &gt;= {}&quot;</span>,
-        <span class="ident">new_size</span>,
-        <span class="ident">layout</span>.<span class="ident">size</span>()
-    );
-}
+<span class="comment">// #[track_caller]</span>
+<span class="comment">// #[inline]</span>
+<span class="comment">// fn check_grow_precondition(ptr: NonNull&lt;u8&gt;, old_layout: Layout, new_layout: Layout) {</span>
+<span class="comment">//     debug_assert!(</span>
+<span class="comment">//         ptr.as_ptr() as usize &gt;= layout.align(),</span>
+<span class="comment">//         &quot;`ptr` allocated with the same alignment as `layout.align()`, expected {} &gt;= {}&quot;,</span>
+<span class="comment">//         ptr.as_ptr() as usize,</span>
+<span class="comment">//         layout.align()</span>
+<span class="comment">//     );</span>
+<span class="comment">//     debug_assert!(</span>
+<span class="comment">//         new_layout &gt;= layout.size(),</span>
+<span class="comment">//         &quot;`new_layout` must be greater than or equal to `layout.size()`, expected {} &gt;= {}&quot;,</span>
+<span class="comment">//         new_layout,</span>
+<span class="comment">//         layout.size()</span>
+<span class="comment">//     );</span>
+<span class="comment">// }</span>
 
-<span class="attribute">#[<span class="ident">track_caller</span>]</span>
-<span class="attribute">#[<span class="ident">inline</span>]</span>
-<span class="kw">fn</span> <span class="ident">check_shrink_precondition</span>(<span class="ident">ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>, <span class="ident">new_size</span>: <span class="ident">usize</span>) {
-    <span class="macro">debug_assert</span><span class="macro">!</span>(
-        <span class="ident">ptr</span>.<span class="ident">as_ptr</span>() <span class="kw">as</span> <span class="ident">usize</span> <span class="op">&gt;=</span> <span class="ident">layout</span>.<span class="ident">align</span>(),
-        <span class="string">&quot;`ptr` allocated with the same alignment as `layout.align()`, expected {} &gt;= {}&quot;</span>,
-        <span class="ident">ptr</span>.<span class="ident">as_ptr</span>() <span class="kw">as</span> <span class="ident">usize</span>,
-        <span class="ident">layout</span>.<span class="ident">align</span>()
-    );
-    <span class="macro">debug_assert</span><span class="macro">!</span>(
-        <span class="ident">new_size</span> <span class="op">&lt;=</span> <span class="ident">layout</span>.<span class="ident">size</span>(),
-        <span class="string">&quot;`new_size` must be smaller than or equal to `layout.size()`, expected {} &lt;= {}&quot;</span>,
-        <span class="ident">new_size</span>,
-        <span class="ident">layout</span>.<span class="ident">size</span>()
-    );
-}
+<span class="comment">// #[track_caller]</span>
+<span class="comment">// #[inline]</span>
+<span class="comment">// fn check_shrink_precondition(ptr: NonNull&lt;u8&gt;, old_layout: Layout, new_layout: Layout) {</span>
+<span class="comment">//     debug_assert!(</span>
+<span class="comment">//         ptr.as_ptr() as usize &gt;= layout.align(),</span>
+<span class="comment">//         &quot;`ptr` allocated with the same alignment as `layout.align()`, expected {} &gt;= {}&quot;,</span>
+<span class="comment">//         ptr.as_ptr() as usize,</span>
+<span class="comment">//         layout.align()</span>
+<span class="comment">//     );</span>
+<span class="comment">//     debug_assert!(</span>
+<span class="comment">//         new_layout &lt;= layout.size(),</span>
+<span class="comment">//         &quot;`new_layout` must be smaller than or equal to `layout.size()`, expected {} &lt;= {}&quot;,</span>
+<span class="comment">//         new_layout,</span>
+<span class="comment">//         layout.size()</span>
+<span class="comment">//     );</span>
+<span class="comment">// }</span>
 </pre></div>
 </section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "alloc_compose";</script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
