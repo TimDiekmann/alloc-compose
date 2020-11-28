@@ -438,13 +438,13 @@
 <span class="kw">mod</span> <span class="ident">macros</span>;
 
 <span class="comment">// mod affix;</span>
-<span class="comment">// mod callback_ref;</span>
+<span class="kw">mod</span> <span class="ident">callback_ref</span>;
 <span class="kw">mod</span> <span class="ident">chunk</span>;
 <span class="comment">// mod fallback;</span>
 <span class="kw">mod</span> <span class="ident">null</span>;
-<span class="comment">// mod proxy;</span>
+<span class="kw">mod</span> <span class="ident">proxy</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">region</span>;
-<span class="comment">// pub mod stats;</span>
+<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">stats</span>;
 <span class="comment">// mod segregate;</span>
 
 <span class="kw">use</span> <span class="ident">core</span>::{
@@ -452,7 +452,7 @@
     <span class="ident">ptr</span>::<span class="ident">NonNull</span>,
 };
 
-<span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::{<span class="ident">chunk</span>::<span class="ident">Chunk</span>, <span class="ident">null</span>::<span class="ident">Null</span>};
+<span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::{<span class="ident">callback_ref</span>::<span class="ident">CallbackRef</span>, <span class="ident">chunk</span>::<span class="ident">Chunk</span>, <span class="ident">null</span>::<span class="ident">Null</span>, <span class="ident">proxy</span>::<span class="ident">Proxy</span>};
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;intrinsics&quot;</span>)]</span>
 <span class="kw">mod</span> <span class="ident">intrinsics</span> {

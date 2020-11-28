@@ -383,18 +383,8 @@
 <span id="380">380</span>
 <span id="381">381</span>
 <span id="382">382</span>
-<span id="383">383</span>
-<span id="384">384</span>
-<span id="385">385</span>
-<span id="386">386</span>
-<span id="387">387</span>
-<span id="388">388</span>
-<span id="389">389</span>
-<span id="390">390</span>
-<span id="391">391</span>
-<span id="392">392</span>
 </pre><div class="example-wrap"><pre class="rust ">
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">helper</span>::<span class="ident">AllocInit</span>, <span class="ident">intrinsics</span>, <span class="ident">AllocateAll</span>, <span class="ident">Owns</span>, <span class="ident">ReallocateInPlace</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">helper</span>::<span class="ident">AllocInit</span>, <span class="ident">Owns</span>, <span class="ident">ReallocateInPlace</span>};
 <span class="kw">use</span> <span class="ident">core</span>::{
     <span class="ident">alloc</span>::{<span class="ident">AllocError</span>, <span class="ident">AllocRef</span>, <span class="ident">Layout</span>},
     <span class="ident">ptr</span>::<span class="ident">NonNull</span>,
@@ -512,15 +502,6 @@
         <span class="ident">NonNull</span>::<span class="ident">slice_from_raw_parts</span>(<span class="ident">ptr</span>.<span class="ident">as_non_null_ptr</span>(), <span class="self">Self</span>::<span class="ident">round_down</span>(<span class="ident">ptr</span>.<span class="ident">len</span>()))
     }
 
-    <span class="kw">fn</span> <span class="ident">layout</span>(<span class="ident">layout</span>: <span class="ident">Layout</span>, <span class="ident">size</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Layout</span>, <span class="ident">AllocError</span><span class="op">&gt;</span> {
-        <span class="comment">// SAFETY: layout already has valid alignment</span>
-        <span class="kw">unsafe</span> {
-            <span class="ident">intrinsics</span>::<span class="ident">assume</span>(<span class="ident">layout</span>.<span class="ident">align</span>().<span class="ident">is_power_of_two</span>());
-        }
-
-        <span class="ident">Layout</span>::<span class="ident">from_size_align</span>(<span class="ident">size</span>, <span class="ident">layout</span>.<span class="ident">align</span>()).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">AllocError</span>)
-    }
-
     <span class="attribute">#[<span class="ident">inline</span>]</span>
     <span class="kw">fn</span> <span class="ident">alloc_impl</span>(
         <span class="ident">layout</span>: <span class="ident">Layout</span>,
@@ -634,18 +615,17 @@
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">tests</span> {
     <span class="kw">use</span> <span class="kw">super</span>::<span class="ident">Chunk</span>;
-    <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">helper</span>, <span class="ident">AllocateAll</span>, <span class="ident">ReallocateInPlace</span>};
+    <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">helper</span>::<span class="ident">tracker</span>, <span class="ident">ReallocateInPlace</span>};
     <span class="kw">use</span> <span class="ident">alloc</span>::<span class="ident">alloc</span>::<span class="ident">Global</span>;
     <span class="kw">use</span> <span class="ident">core</span>::{
         <span class="ident">alloc</span>::{<span class="ident">AllocRef</span>, <span class="ident">Layout</span>},
-        <span class="ident">mem</span>::<span class="ident">MaybeUninit</span>,
     };
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">alloc</span>() {
-        <span class="kw">let</span> <span class="ident">alloc</span> <span class="op">=</span> <span class="ident">Chunk</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="number">64</span><span class="op">&gt;</span>(<span class="ident">Global</span>);
+        <span class="kw">let</span> <span class="ident">alloc</span> <span class="op">=</span> <span class="ident">Chunk</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="number">64</span><span class="op">&gt;</span>(<span class="ident">tracker</span>(<span class="ident">Global</span>));
         <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
-            .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>())
+            .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">2</span>]<span class="op">&gt;</span>())
             .<span class="ident">expect</span>(<span class="string">&quot;Could not allocate 64 bytes&quot;</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">memory</span>.<span class="ident">len</span>() <span class="op">%</span> <span class="number">64</span>, <span class="number">0</span>);
         <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">memory</span>.<span class="ident">len</span>() <span class="op">&gt;</span><span class="op">=</span> <span class="number">64</span>);
@@ -657,7 +637,7 @@
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">dealloc</span>() {
-        <span class="kw">let</span> <span class="ident">alloc</span> <span class="op">=</span> <span class="ident">Chunk</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="number">64</span><span class="op">&gt;</span>(<span class="ident">Global</span>);
+        <span class="kw">let</span> <span class="ident">alloc</span> <span class="op">=</span> <span class="ident">Chunk</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="number">64</span><span class="op">&gt;</span>(<span class="ident">tracker</span>(<span class="ident">Global</span>));
 
         <span class="kw">unsafe</span> {
             <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
@@ -688,7 +668,7 @@
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">grow</span>() {
-        <span class="kw">let</span> <span class="ident">alloc</span> <span class="op">=</span> <span class="ident">Chunk</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="number">64</span><span class="op">&gt;</span>(<span class="ident">Global</span>);
+        <span class="kw">let</span> <span class="ident">alloc</span> <span class="op">=</span> <span class="ident">Chunk</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="number">64</span><span class="op">&gt;</span>(<span class="ident">tracker</span>(<span class="ident">Global</span>));
 
         <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
             .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>())
@@ -738,7 +718,7 @@
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">shrink</span>() {
-        <span class="kw">let</span> <span class="ident">alloc</span> <span class="op">=</span> <span class="ident">Chunk</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="number">64</span><span class="op">&gt;</span>(<span class="ident">Global</span>);
+        <span class="kw">let</span> <span class="ident">alloc</span> <span class="op">=</span> <span class="ident">Chunk</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="number">64</span><span class="op">&gt;</span>(<span class="ident">tracker</span>(<span class="ident">Global</span>));
 
         <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">alloc</span>
             .<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">128</span>]<span class="op">&gt;</span>())
