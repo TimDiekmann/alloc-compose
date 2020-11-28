@@ -291,6 +291,7 @@ impl_region!(IntrusiveRegion, RawIntrusiveRegion);
 mod tests {
     #![allow(clippy::wildcard_imports)]
     use super::*;
+    use crate::helper::tracker;
     use core::{cell::Cell, mem};
 
     fn aligned_slice(memory: &mut [MaybeUninit<u8>], size: usize) -> &mut [MaybeUninit<u8>] {
@@ -309,7 +310,7 @@ mod tests {
                 fn alloc_zero() {
                     let mut raw_data = [MaybeUninit::<u8>::new(1); 128];
                     let data = aligned_slice(&mut raw_data, 32 + $extra);
-                    let region = <$ty>::new(data);
+                    let region = tracker(<$ty>::new(data));
 
                     assert_eq!(region.capacity(), 32);
                     assert!(region.is_empty());
@@ -320,6 +321,7 @@ mod tests {
                     assert!(region.is_empty());
 
                     unsafe {
+                        drop(region);
                         assert_eq!(MaybeUninit::slice_assume_init_ref(data)[..32], [1; 32]);
                     }
                 }
@@ -328,7 +330,7 @@ mod tests {
                 fn alloc_zeroed() {
                     let mut raw_data = [MaybeUninit::<u8>::new(1); 128];
                     let data = aligned_slice(&mut raw_data, 32 + $extra);
-                    let region = <$ty>::new(data);
+                    let region = tracker(<$ty>::new(data));
 
                     assert_eq!(region.capacity(), 32);
                     assert!(region.is_empty());
@@ -339,6 +341,7 @@ mod tests {
                     assert!(!region.is_empty());
 
                     unsafe {
+                        drop(region);
                         assert_eq!(MaybeUninit::slice_assume_init_ref(data)[..32], [0; 32]);
                     }
                 }
@@ -347,7 +350,7 @@ mod tests {
                 fn alloc_small() {
                     let mut raw_data = [MaybeUninit::<u8>::new(1); 128];
                     let data = aligned_slice(&mut raw_data, 32 + $extra);
-                    let region = <$ty>::new(data);
+                    let region = tracker(<$ty>::new(data));
 
                     assert_eq!(region.capacity(), 32);
                     assert_eq!(region.capacity(), region.capacity_left());
@@ -358,6 +361,7 @@ mod tests {
                     assert_eq!(region.capacity_left(), 16);
 
                     unsafe {
+                        drop(region);
                         assert_eq!(MaybeUninit::slice_assume_init_ref(&data[0..16]), [1; 16]);
                         assert_eq!(MaybeUninit::slice_assume_init_ref(&data[16..32]), [0; 16]);
                     }
@@ -367,7 +371,7 @@ mod tests {
                 fn alloc_uninitialzed() {
                     let mut raw_data = [MaybeUninit::<u8>::new(1); 128];
                     let data = aligned_slice(&mut raw_data, 32 + $extra);
-                    let region = <$ty>::new(data);
+                    let region = tracker(<$ty>::new(data));
 
                     region
                         .alloc(Layout::new::<[u8; 32]>())
@@ -375,6 +379,7 @@ mod tests {
                     assert_eq!(region.capacity_left(), 0);
 
                     unsafe {
+                        drop(region);
                         assert_eq!(MaybeUninit::slice_assume_init_ref(&data)[..32], [1; 32]);
                     }
                 }
@@ -383,7 +388,7 @@ mod tests {
                 fn alloc_all() {
                     let mut raw_data = [MaybeUninit::<u8>::new(1); 128];
                     let data = aligned_slice(&mut raw_data, 32 + $extra);
-                    let region = <$ty>::new(data);
+                    let region = tracker(<$ty>::new(data));
 
                     assert_eq!(region.capacity(), 32);
                     assert!(region.is_empty());
@@ -415,7 +420,7 @@ mod tests {
                 fn alloc_fail() {
                     let mut raw_data = [MaybeUninit::<u8>::new(1); 128];
                     let data = aligned_slice(&mut raw_data, 32 + $extra);
-                    let region = <$ty>::new(data);
+                    let region = tracker(<$ty>::new(data));
 
                     region
                         .alloc(Layout::new::<[u8; 33]>())
@@ -426,7 +431,7 @@ mod tests {
                 fn alloc_aligned() {
                     let mut raw_data = [MaybeUninit::<u8>::new(1); 128];
                     let data = aligned_slice(&mut raw_data, 32 + $extra);
-                    let region = <$ty>::new(data);
+                    let region = tracker(<$ty>::new(data));
 
                     region
                         .alloc(Layout::from_size_align(5, 1).expect("Invalid layout"))
@@ -456,7 +461,7 @@ mod tests {
     fn vec() {
         let mut raw_data = [MaybeUninit::<u8>::new(1); 128];
         let data = aligned_slice(&mut raw_data, 32);
-        let region = Region::new(data);
+        let region = tracker(Region::new(data));
         let mut vec = alloc::vec::Vec::new_in(region.by_ref());
         vec.push(10);
     }

@@ -1,4 +1,4 @@
-use crate::{helper::AllocInit, intrinsics, AllocateAll, Owns, ReallocateInPlace};
+use crate::{helper::AllocInit, Owns, ReallocateInPlace};
 use core::{
     alloc::{AllocError, AllocRef, Layout},
     ptr::NonNull,
@@ -116,15 +116,6 @@ where
         NonNull::slice_from_raw_parts(ptr.as_non_null_ptr(), Self::round_down(ptr.len()))
     }
 
-    fn layout(layout: Layout, size: usize) -> Result<Layout, AllocError> {
-        // SAFETY: layout already has valid alignment
-        unsafe {
-            intrinsics::assume(layout.align().is_power_of_two());
-        }
-
-        Layout::from_size_align(size, layout.align()).map_err(|_| AllocError)
-    }
-
     #[inline]
     fn alloc_impl(
         layout: Layout,
@@ -238,18 +229,15 @@ where
 #[cfg(test)]
 mod tests {
     use super::Chunk;
-    use crate::{helper, AllocateAll, ReallocateInPlace};
+    use crate::{helper::tracker, ReallocateInPlace};
     use alloc::alloc::Global;
-    use core::{
-        alloc::{AllocRef, Layout},
-        mem::MaybeUninit,
-    };
+    use core::alloc::{AllocRef, Layout};
 
     #[test]
     fn alloc() {
-        let alloc = Chunk::<_, 64>(Global);
+        let alloc = Chunk::<_, 64>(tracker(Global));
         let memory = alloc
-            .alloc(Layout::new::<u8>())
+            .alloc(Layout::new::<[u8; 2]>())
             .expect("Could not allocate 64 bytes");
         assert_eq!(memory.len() % 64, 0);
         assert!(memory.len() >= 64);
@@ -261,7 +249,7 @@ mod tests {
 
     #[test]
     fn dealloc() {
-        let alloc = Chunk::<_, 64>(Global);
+        let alloc = Chunk::<_, 64>(tracker(Global));
 
         unsafe {
             let memory = alloc
@@ -292,7 +280,7 @@ mod tests {
 
     #[test]
     fn grow() {
-        let alloc = Chunk::<_, 64>(Global);
+        let alloc = Chunk::<_, 64>(tracker(Global));
 
         let memory = alloc
             .alloc(Layout::new::<[u8; 4]>())
@@ -342,7 +330,7 @@ mod tests {
 
     #[test]
     fn shrink() {
-        let alloc = Chunk::<_, 64>(Global);
+        let alloc = Chunk::<_, 64>(tracker(Global));
 
         let memory = alloc
             .alloc(Layout::new::<[u8; 128]>())

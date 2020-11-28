@@ -1,7 +1,5 @@
-#[cfg(any(doc, feature = "alloc"))]
-use alloc::{boxed::Box, rc::Rc, sync::Arc};
 use core::{
-    alloc::{AllocErr, Layout},
+    alloc::{AllocError, Layout},
     ptr::NonNull,
 };
 
@@ -24,79 +22,79 @@ pub unsafe trait CallbackRef {
     ///
     /// [`alloc`]: core::alloc::AllocRef::alloc
     #[inline]
-    fn before_alloc(&self, layout: Layout) {}
+    fn before_allocate(&self, layout: Layout) {}
 
     /// Called after [`alloc`] was invoked.
     ///
     /// [`alloc`]: core::alloc::AllocRef::alloc
     #[inline]
-    fn after_alloc(&self, layout: Layout, result: Result<NonNull<[u8]>, AllocErr>) {}
+    fn after_allocate(&self, layout: Layout, result: Result<NonNull<[u8]>, AllocError>) {}
 
     /// Called before [`alloc_zeroed`] was invoked.
     ///
     /// [`alloc_zeroed`]: core::alloc::AllocRef::alloc_zeroed
     #[inline]
-    fn before_alloc_zeroed(&self, layout: Layout) {}
+    fn before_allocate_zeroed(&self, layout: Layout) {}
 
     /// Called after [`alloc_zeroed`] was invoked.
     ///
     /// [`alloc_zeroed`]: core::alloc::AllocRef::alloc_zeroed
     #[inline]
-    fn after_alloc_zeroed(&self, layout: Layout, result: Result<NonNull<[u8]>, AllocErr>) {}
+    fn after_allocate_zeroed(&self, layout: Layout, result: Result<NonNull<[u8]>, AllocError>) {}
 
-    /// Called before [`alloc_all`] was invoked.
+    /// Called before [`allocate_all`] was invoked.
     ///
-    /// [`alloc_all`]: crate::AllocAll::alloc_all
+    /// [`allocate_all`]: crate::AllocateAll::allocate_all
     #[inline]
-    fn before_alloc_all(&self, layout: Layout) {}
+    fn before_allocate_all(&self) {}
 
-    /// Called after [`alloc_all`] was invoked.
+    /// Called after [`allocate_all`] was invoked.
     ///
-    /// [`alloc_all`]: crate::AllocAll::alloc_all
+    /// [`allocate_all`]: crate::AllocateAll::allocate_all
     #[inline]
-    fn after_alloc_all(&self, layout: Layout, result: Result<NonNull<[u8]>, AllocErr>) {}
+    fn after_allocate_all(&self, result: Result<NonNull<[u8]>, AllocError>) {}
 
-    /// Called before [`alloc_all_zeroed`] was invoked.
+    /// Called before [`allocate_all_zeroed`] was invoked.
     ///
-    /// [`alloc_all_zeroed`]: crate::AllocAll::alloc_all_zeroed
+    /// [`allocate_all_zeroed`]: crate::AllocateAll::allocate_all_zeroed
     #[inline]
-    fn before_alloc_all_zeroed(&self, layout: Layout) {}
+    fn before_allocate_all_zeroed(&self) {}
 
-    /// Called after [`alloc_all_zeroed`] was invoked.
+    /// Called after [`allocate_all_zeroed`] was invoked.
     ///
-    /// [`alloc_all_zeroed`]: crate::AllocAll::alloc_all_zeroed
+    /// [`allocate_all_zeroed`]: crate::AllocateAll::allocate_all_zeroed
     #[inline]
-    fn after_alloc_all_zeroed(&self, layout: Layout, result: Result<NonNull<[u8]>, AllocErr>) {}
+    fn after_allocate_all_zeroed(&self, result: Result<NonNull<[u8]>, AllocError>) {}
 
     /// Called before [`dealloc`] was invoked.
     ///
     /// [`dealloc`]: core::alloc::AllocRef::dealloc
     #[inline]
-    fn before_dealloc(&self, ptr: NonNull<u8>, layout: Layout) {}
+    fn before_deallocate(&self, ptr: NonNull<u8>, layout: Layout) {}
 
     /// Called after [`dealloc`] was invoked.
     ///
     /// [`dealloc`]: core::alloc::AllocRef::dealloc
     #[inline]
-    fn after_dealloc(&self, ptr: NonNull<u8>, layout: Layout) {}
+    fn after_deallocate(&self, ptr: NonNull<u8>, layout: Layout) {}
 
-    /// Called before [`dealloc_all`] was invoked.
+    /// Called before [`deallocate_all`] was invoked.
     ///
-    /// [`dealloc_all`]: crate::AllocAll::dealloc_all
+    /// [`deallocate_all`]: crate::AllocateAll::deallocate_all
     #[inline]
-    fn before_dealloc_all(&self) {}
+    fn before_deallocate_all(&self) {}
 
-    /// Called after [`dealloc_all`] was invoked.
+    /// Called after [`deallocate_all`] was invoked.
     ///
-    /// [`dealloc_all`]: crate::AllocAll::dealloc_all
+    /// [`deallocate_all`]: crate::AllocateAll::deallocate_all
     #[inline]
-    fn after_dealloc_all(&self) {}
+    fn after_deallocate_all(&self) {}
 
     /// Called before [`grow`] was invoked.
     ///
     /// [`grow`]: core::alloc::AllocRef::grow
     #[inline]
-    fn before_grow(&self, ptr: NonNull<u8>, layout: Layout, new_size: usize) {}
+    fn before_grow(&self, ptr: NonNull<u8>, old_layout: Layout, new_layout: Layout) {}
 
     /// Called after [`grow`] was invoked.
     ///
@@ -105,9 +103,9 @@ pub unsafe trait CallbackRef {
     fn after_grow(
         &self,
         ptr: NonNull<u8>,
-        layout: Layout,
-        new_size: usize,
-        result: Result<NonNull<[u8]>, AllocErr>,
+        old_layout: Layout,
+        new_layout: Layout,
+        result: Result<NonNull<[u8]>, AllocError>,
     ) {
     }
 
@@ -115,7 +113,7 @@ pub unsafe trait CallbackRef {
     ///
     /// [`grow_zeroed`]: core::alloc::AllocRef::grow_zeroed
     #[inline]
-    fn before_grow_zeroed(&self, ptr: NonNull<u8>, layout: Layout, new_size: usize) {}
+    fn before_grow_zeroed(&self, ptr: NonNull<u8>, old_layout: Layout, new_layout: Layout) {}
 
     /// Called after [`grow_zeroed`] was invoked.
     ///
@@ -124,47 +122,53 @@ pub unsafe trait CallbackRef {
     fn after_grow_zeroed(
         &self,
         ptr: NonNull<u8>,
-        layout: Layout,
-        new_size: usize,
-        result: Result<NonNull<[u8]>, AllocErr>,
+        old_layout: Layout,
+        new_layout: Layout,
+        result: Result<NonNull<[u8]>, AllocError>,
     ) {
     }
 
     /// Called before [`grow_in_place`] was invoked.
     ///
-    /// [`grow_in_place`]: crate::ReallocInPlace::grow_in_place
+    /// [`grow_in_place`]: crate::ReallocateInPlace::grow_in_place
     #[inline]
-    fn before_grow_in_place(&self, ptr: NonNull<u8>, layout: Layout, new_size: usize) {}
+    fn before_grow_in_place(&self, ptr: NonNull<u8>, old_layout: Layout, new_layout: Layout) {}
 
     /// Called after [`grow_in_place`] was invoked.
     ///
-    /// [`grow_in_place`]: crate::ReallocInPlace::grow_in_place
+    /// [`grow_in_place`]: crate::ReallocateInPlace::grow_in_place
     #[inline]
     fn after_grow_in_place(
         &self,
         ptr: NonNull<u8>,
-        layout: Layout,
-        new_size: usize,
-        result: Result<usize, AllocErr>,
+        old_layout: Layout,
+        new_layout: Layout,
+        result: Result<usize, AllocError>,
     ) {
     }
 
     /// Called before [`grow_in_place_zeroed`] was invoked.
     ///
-    /// [`grow_in_place_zeroed`]: crate::ReallocInPlace::grow_in_place_zeroed
+    /// [`grow_in_place_zeroed`]: crate::ReallocateInPlace::grow_in_place_zeroed
     #[inline]
-    fn before_grow_in_place_zeroed(&self, ptr: NonNull<u8>, layout: Layout, new_size: usize) {}
+    fn before_grow_in_place_zeroed(
+        &self,
+        ptr: NonNull<u8>,
+        old_layout: Layout,
+        new_layout: Layout,
+    ) {
+    }
 
     /// Called after [`grow_in_place_zeroed`] was invoked.
     ///
-    /// [`grow_in_place_zeroed`]: crate::ReallocInPlace::grow_in_place_zeroed
+    /// [`grow_in_place_zeroed`]: crate::ReallocateInPlace::grow_in_place_zeroed
     #[inline]
     fn after_grow_in_place_zeroed(
         &self,
         ptr: NonNull<u8>,
-        layout: Layout,
-        new_size: usize,
-        result: Result<usize, AllocErr>,
+        old_layout: Layout,
+        new_layout: Layout,
+        result: Result<usize, AllocError>,
     ) {
     }
 
@@ -172,7 +176,7 @@ pub unsafe trait CallbackRef {
     ///
     /// [`shrink`]: core::alloc::AllocRef::shrink
     #[inline]
-    fn before_shrink(&self, ptr: NonNull<u8>, layout: Layout, new_size: usize) {}
+    fn before_shrink(&self, ptr: NonNull<u8>, old_layout: Layout, new_layout: Layout) {}
 
     /// Called after [`shrink`] was invoked.
     ///
@@ -181,28 +185,28 @@ pub unsafe trait CallbackRef {
     fn after_shrink(
         &self,
         ptr: NonNull<u8>,
-        layout: Layout,
-        new_size: usize,
-        result: Result<NonNull<[u8]>, AllocErr>,
+        old_layout: Layout,
+        new_layout: Layout,
+        result: Result<NonNull<[u8]>, AllocError>,
     ) {
     }
 
     /// Called before [`shrink_in_place`] was invoked.
     ///
-    /// [`shrink_in_place`]: crate::ReallocInPlace::shrink_in_place
+    /// [`shrink_in_place`]: crate::ReallocateInPlace::shrink_in_place
     #[inline]
-    fn before_shrink_in_place(&self, ptr: NonNull<u8>, layout: Layout, new_size: usize) {}
+    fn before_shrink_in_place(&self, ptr: NonNull<u8>, old_layout: Layout, new_layout: Layout) {}
 
     /// Called after [`shrink_in_place`] was invoked.
     ///
-    /// [`shrink_in_place`]: crate::ReallocInPlace::shrink_in_place
+    /// [`shrink_in_place`]: crate::ReallocateInPlace::shrink_in_place
     #[inline]
     fn after_shrink_in_place(
         &self,
         ptr: NonNull<u8>,
-        layout: Layout,
-        new_size: usize,
-        result: Result<usize, AllocErr>,
+        old_layout: Layout,
+        new_layout: Layout,
+        result: Result<usize, AllocError>,
     ) {
     }
 
@@ -228,171 +232,179 @@ pub unsafe trait CallbackRef {
 }
 
 macro_rules! impl_alloc_stats {
-    ($ty:ty) => {
-        unsafe impl<C: CallbackRef> CallbackRef for $ty {
+    ($(#[$meta:meta])* $ty:ty) => {
+        $(#[$meta])*
+        unsafe impl<C> CallbackRef for $ty where C: CallbackRef + ?Sized {
             #[inline]
-            fn before_alloc(&self, layout: Layout) {
-                (**self).before_alloc(layout)
+            fn before_allocate(&self, layout: Layout) {
+                (**self).before_allocate(layout)
             }
 
             #[inline]
-            fn after_alloc(&self, layout: Layout, result: Result<NonNull<[u8]>, AllocErr>) {
-                (**self).after_alloc(layout, result)
+            fn after_allocate(&self, layout: Layout, result: Result<NonNull<[u8]>, AllocError>) {
+                (**self).after_allocate(layout, result)
             }
 
             #[inline]
-            fn before_alloc_zeroed(&self, layout: Layout) {
-                (**self).before_alloc_zeroed(layout)
+            fn before_allocate_zeroed(&self, layout: Layout) {
+                (**self).before_allocate_zeroed(layout)
             }
 
             #[inline]
-            fn after_alloc_zeroed(&self, layout: Layout, result: Result<NonNull<[u8]>, AllocErr>) {
-                (**self).after_alloc_zeroed(layout, result)
+            fn after_allocate_zeroed(&self, layout: Layout, result: Result<NonNull<[u8]>, AllocError>) {
+                (**self).after_allocate_zeroed(layout, result)
             }
 
             #[inline]
-            fn before_alloc_all(&self, layout: Layout) {
-                (**self).before_alloc_all(layout)
+            fn before_allocate_all(&self) {
+                (**self).before_allocate_all()
             }
 
             #[inline]
-            fn after_alloc_all(&self, layout: Layout, result: Result<NonNull<[u8]>, AllocErr>) {
-                (**self).after_alloc_all(layout, result)
+            fn after_allocate_all(&self, result: Result<NonNull<[u8]>, AllocError>) {
+                (**self).after_allocate_all(result)
             }
 
             #[inline]
-            fn before_alloc_all_zeroed(&self, layout: Layout) {
-                (**self).before_alloc_all_zeroed(layout)
+            fn before_allocate_all_zeroed(&self) {
+                (**self).before_allocate_all_zeroed()
             }
 
             #[inline]
-            fn after_alloc_all_zeroed(
+            fn after_allocate_all_zeroed(
                 &self,
-                layout: Layout,
-                result: Result<NonNull<[u8]>, AllocErr>,
+                result: Result<NonNull<[u8]>, AllocError>,
             ) {
-                (**self).after_alloc_all_zeroed(layout, result)
+                (**self).after_allocate_all_zeroed(result)
             }
 
             #[inline]
-            fn before_dealloc(&self, ptr: NonNull<u8>, layout: Layout) {
-                (**self).before_dealloc(ptr, layout)
+            fn before_deallocate(&self, ptr: NonNull<u8>, layout: Layout) {
+                (**self).before_deallocate(ptr, layout)
             }
 
             #[inline]
-            fn after_dealloc(&self, ptr: NonNull<u8>, layout: Layout) {
-                (**self).after_dealloc(ptr, layout)
+            fn after_deallocate(&self, ptr: NonNull<u8>, layout: Layout) {
+                (**self).after_deallocate(ptr, layout)
             }
 
             #[inline]
-            fn before_dealloc_all(&self) {
-                (**self).before_dealloc_all()
+            fn before_deallocate_all(&self) {
+                (**self).before_deallocate_all()
             }
 
             #[inline]
-            fn after_dealloc_all(&self) {
-                (**self).after_dealloc_all()
+            fn after_deallocate_all(&self) {
+                (**self).after_deallocate_all()
             }
 
             #[inline]
-            fn before_grow(&self, ptr: NonNull<u8>, layout: Layout, new_size: usize) {
-                (**self).before_grow(ptr, layout, new_size)
+            fn before_grow(&self, ptr: NonNull<u8>, old_layout: Layout, new_layout: Layout) {
+                (**self).before_grow(ptr, old_layout, new_layout)
             }
 
             #[inline]
             fn after_grow(
                 &self,
                 ptr: NonNull<u8>,
-                layout: Layout,
-                new_size: usize,
-                result: Result<NonNull<[u8]>, AllocErr>,
+        old_layout: Layout,
+        new_layout: Layout,
+                result: Result<NonNull<[u8]>, AllocError>,
             ) {
-                (**self).after_grow(ptr, layout, new_size, result)
+                (**self).after_grow(ptr, old_layout, new_layout, result)
             }
 
             #[inline]
-            fn before_grow_zeroed(&self, ptr: NonNull<u8>, layout: Layout, new_size: usize) {
-                (**self).before_grow_zeroed(ptr, layout, new_size)
+            fn before_grow_zeroed(&self, ptr: NonNull<u8>,
+        old_layout: Layout,
+        new_layout: Layout,) {
+                (**self).before_grow_zeroed(ptr, old_layout, new_layout)
             }
 
             #[inline]
             fn after_grow_zeroed(
                 &self,
                 ptr: NonNull<u8>,
-                layout: Layout,
-                new_size: usize,
-                result: Result<NonNull<[u8]>, AllocErr>,
+        old_layout: Layout,
+        new_layout: Layout,
+                result: Result<NonNull<[u8]>, AllocError>,
             ) {
-                (**self).after_grow_zeroed(ptr, layout, new_size, result)
+                (**self).after_grow_zeroed(ptr, old_layout, new_layout, result)
             }
 
             #[inline]
-            fn before_grow_in_place(&self, ptr: NonNull<u8>, layout: Layout, new_size: usize) {
-                (**self).before_grow_in_place(ptr, layout, new_size)
+            fn before_grow_in_place(&self, ptr: NonNull<u8>,
+        old_layout: Layout,
+        new_layout: Layout,) {
+                (**self).before_grow_in_place(ptr, old_layout, new_layout)
             }
 
             #[inline]
             fn after_grow_in_place(
                 &self,
                 ptr: NonNull<u8>,
-                layout: Layout,
-                new_size: usize,
-                result: Result<usize, AllocErr>,
+        old_layout: Layout,
+        new_layout: Layout,
+                result: Result<usize, AllocError>,
             ) {
-                (**self).after_grow_in_place(ptr, layout, new_size, result)
+                (**self).after_grow_in_place(ptr, old_layout, new_layout, result)
             }
 
             #[inline]
             fn before_grow_in_place_zeroed(
                 &self,
                 ptr: NonNull<u8>,
-                layout: Layout,
-                new_size: usize,
+        old_layout: Layout,
+        new_layout: Layout,
             ) {
-                (**self).before_grow_in_place_zeroed(ptr, layout, new_size)
+                (**self).before_grow_in_place_zeroed(ptr, old_layout, new_layout)
             }
 
             #[inline]
             fn after_grow_in_place_zeroed(
                 &self,
                 ptr: NonNull<u8>,
-                layout: Layout,
-                new_size: usize,
-                result: Result<usize, AllocErr>,
+        old_layout: Layout,
+        new_layout: Layout,
+                result: Result<usize, AllocError>,
             ) {
-                (**self).after_grow_in_place_zeroed(ptr, layout, new_size, result)
+                (**self).after_grow_in_place_zeroed(ptr, old_layout, new_layout, result)
             }
 
             #[inline]
-            fn before_shrink(&self, ptr: NonNull<u8>, layout: Layout, new_size: usize) {
-                (**self).before_shrink(ptr, layout, new_size)
+            fn before_shrink(&self, ptr: NonNull<u8>,
+        old_layout: Layout,
+        new_layout: Layout,) {
+                (**self).before_shrink(ptr, old_layout, new_layout)
             }
 
             #[inline]
             fn after_shrink(
                 &self,
                 ptr: NonNull<u8>,
-                layout: Layout,
-                new_size: usize,
-                result: Result<NonNull<[u8]>, AllocErr>,
+        old_layout: Layout,
+        new_layout: Layout,
+                result: Result<NonNull<[u8]>, AllocError>,
             ) {
-                (**self).after_shrink(ptr, layout, new_size, result)
+                (**self).after_shrink(ptr, old_layout, new_layout, result)
             }
 
             #[inline]
-            fn before_shrink_in_place(&self, ptr: NonNull<u8>, layout: Layout, new_size: usize) {
-                (**self).before_shrink_in_place(ptr, layout, new_size)
+            fn before_shrink_in_place(&self, ptr: NonNull<u8>,
+        old_layout: Layout,
+        new_layout: Layout,) {
+                (**self).before_shrink_in_place(ptr, old_layout, new_layout)
             }
 
             #[inline]
             fn after_shrink_in_place(
                 &self,
                 ptr: NonNull<u8>,
-                layout: Layout,
-                new_size: usize,
-                result: Result<usize, AllocErr>,
+        old_layout: Layout,
+        new_layout: Layout,
+                result: Result<usize, AllocError>,
             ) {
-                (**self).after_shrink_in_place(ptr, layout, new_size, result)
+                (**self).after_shrink_in_place(ptr, old_layout, new_layout, result)
             }
 
             #[inline]
@@ -410,40 +422,36 @@ macro_rules! impl_alloc_stats {
 
 impl_alloc_stats!(&C);
 #[cfg(any(doc, feature = "alloc"))]
-#[cfg_attr(doc, doc(cfg(feature = "alloc")))]
-impl_alloc_stats!(Box<C>);
+impl_alloc_stats!(#[cfg_attr(doc, doc(cfg(feature = "alloc")))] alloc::boxed::Box<C>);
 #[cfg(any(doc, feature = "alloc"))]
-#[cfg_attr(doc, doc(cfg(feature = "alloc")))]
-impl_alloc_stats!(Rc<C>);
+impl_alloc_stats!(#[cfg_attr(doc, doc(cfg(feature = "alloc")))] alloc::rc::Rc<C>);
 #[cfg(any(doc, feature = "alloc"))]
-#[cfg_attr(doc, doc(cfg(feature = "alloc")))]
-impl_alloc_stats!(Arc<C>);
+impl_alloc_stats!(#[cfg_attr(doc, doc(cfg(feature = "alloc")))] alloc::sync::Arc<C>);
 
 #[cfg(test)]
 mod tests {
     use crate::CallbackRef;
-    use std::{
-        alloc::{AllocErr, Layout},
+    use alloc::{boxed::Box, rc::Rc, sync::Arc};
+    use core::{
+        alloc::{AllocError, Layout},
         cell::Cell,
         ptr::NonNull,
-        rc::Rc,
-        sync::Arc,
     };
 
     #[derive(Default)]
     struct Callback {
-        before_alloc: Cell<u32>,
-        after_alloc: Cell<u32>,
-        before_alloc_zeroed: Cell<u32>,
-        after_alloc_zeroed: Cell<u32>,
-        before_alloc_all: Cell<u32>,
-        after_alloc_all: Cell<u32>,
-        before_alloc_all_zeroed: Cell<u32>,
-        after_alloc_all_zeroed: Cell<u32>,
-        before_dealloc: Cell<u32>,
-        after_dealloc: Cell<u32>,
-        before_dealloc_all: Cell<u32>,
-        after_dealloc_all: Cell<u32>,
+        before_allocate: Cell<u32>,
+        after_allocate: Cell<u32>,
+        before_allocate_zeroed: Cell<u32>,
+        after_allocate_zeroed: Cell<u32>,
+        before_allocate_all: Cell<u32>,
+        after_allocate_all: Cell<u32>,
+        before_allocate_all_zeroed: Cell<u32>,
+        after_allocate_all_zeroed: Cell<u32>,
+        before_deallocate: Cell<u32>,
+        after_deallocate: Cell<u32>,
+        before_deallocate_all: Cell<u32>,
+        after_deallocate_all: Cell<u32>,
         before_grow: Cell<u32>,
         after_grow: Cell<u32>,
         before_grow_zeroed: Cell<u32>,
@@ -461,86 +469,94 @@ mod tests {
     }
 
     unsafe impl CallbackRef for Callback {
-        fn before_alloc(&self, _layout: Layout) {
-            self.before_alloc.set(self.before_alloc.get() + 1)
+        fn before_allocate(&self, _layout: Layout) {
+            self.before_allocate.set(self.before_allocate.get() + 1)
         }
-        fn after_alloc(&self, _layout: Layout, _result: Result<NonNull<[u8]>, AllocErr>) {
-            self.after_alloc.set(self.after_alloc.get() + 1)
+        fn after_allocate(&self, _layout: Layout, _result: Result<NonNull<[u8]>, AllocError>) {
+            self.after_allocate.set(self.after_allocate.get() + 1)
         }
-        fn before_alloc_zeroed(&self, _layout: Layout) {
-            self.before_alloc_zeroed
-                .set(self.before_alloc_zeroed.get() + 1)
+        fn before_allocate_zeroed(&self, _layout: Layout) {
+            self.before_allocate_zeroed
+                .set(self.before_allocate_zeroed.get() + 1)
         }
-        fn after_alloc_zeroed(&self, _layout: Layout, _result: Result<NonNull<[u8]>, AllocErr>) {
-            self.after_alloc_zeroed
-                .set(self.after_alloc_zeroed.get() + 1)
-        }
-        fn before_alloc_all(&self, _layout: Layout) {
-            self.before_alloc_all.set(self.before_alloc_all.get() + 1)
-        }
-        fn after_alloc_all(&self, _layout: Layout, _result: Result<NonNull<[u8]>, AllocErr>) {
-            self.after_alloc_all.set(self.after_alloc_all.get() + 1)
-        }
-        fn before_alloc_all_zeroed(&self, _layout: Layout) {
-            self.before_alloc_all_zeroed
-                .set(self.before_alloc_all_zeroed.get() + 1)
-        }
-        fn after_alloc_all_zeroed(
+        fn after_allocate_zeroed(
             &self,
             _layout: Layout,
-            _result: Result<NonNull<[u8]>, AllocErr>,
+            _result: Result<NonNull<[u8]>, AllocError>,
         ) {
-            self.after_alloc_all_zeroed
-                .set(self.after_alloc_all_zeroed.get() + 1)
+            self.after_allocate_zeroed
+                .set(self.after_allocate_zeroed.get() + 1)
         }
-        fn before_dealloc(&self, _ptr: NonNull<u8>, _layout: Layout) {
-            self.before_dealloc.set(self.before_dealloc.get() + 1)
+        fn before_allocate_all(&self) {
+            self.before_allocate_all
+                .set(self.before_allocate_all.get() + 1)
         }
-        fn after_dealloc(&self, _ptr: NonNull<u8>, _layout: Layout) {
-            self.after_dealloc.set(self.after_dealloc.get() + 1)
+        fn after_allocate_all(&self, _result: Result<NonNull<[u8]>, AllocError>) {
+            self.after_allocate_all
+                .set(self.after_allocate_all.get() + 1)
         }
-        fn before_dealloc_all(&self) {
-            self.before_dealloc_all
-                .set(self.before_dealloc_all.get() + 1)
+        fn before_allocate_all_zeroed(&self) {
+            self.before_allocate_all_zeroed
+                .set(self.before_allocate_all_zeroed.get() + 1)
         }
-        fn after_dealloc_all(&self) {
-            self.after_dealloc_all.set(self.after_dealloc_all.get() + 1)
+        fn after_allocate_all_zeroed(&self, _result: Result<NonNull<[u8]>, AllocError>) {
+            self.after_allocate_all_zeroed
+                .set(self.after_allocate_all_zeroed.get() + 1)
         }
-        fn before_grow(&self, _ptr: NonNull<u8>, _layout: Layout, _new_size: usize) {
+        fn before_deallocate(&self, _ptr: NonNull<u8>, _layout: Layout) {
+            self.before_deallocate.set(self.before_deallocate.get() + 1)
+        }
+        fn after_deallocate(&self, _ptr: NonNull<u8>, _layout: Layout) {
+            self.after_deallocate.set(self.after_deallocate.get() + 1)
+        }
+        fn before_deallocate_all(&self) {
+            self.before_deallocate_all
+                .set(self.before_deallocate_all.get() + 1)
+        }
+        fn after_deallocate_all(&self) {
+            self.after_deallocate_all
+                .set(self.after_deallocate_all.get() + 1)
+        }
+        fn before_grow(&self, _ptr: NonNull<u8>, _old_layout: Layout, _new_layout: Layout) {
             self.before_grow.set(self.before_grow.get() + 1)
         }
         fn after_grow(
             &self,
             _ptr: NonNull<u8>,
-            _layout: Layout,
-            _new_size: usize,
-            _result: Result<NonNull<[u8]>, AllocErr>,
+            _old_layout: Layout,
+            _new_layout: Layout,
+            _result: Result<NonNull<[u8]>, AllocError>,
         ) {
             self.after_grow.set(self.after_grow.get() + 1)
         }
-        fn before_grow_zeroed(&self, _ptr: NonNull<u8>, _layout: Layout, _new_size: usize) {
+        fn before_grow_zeroed(&self, _ptr: NonNull<u8>, _old_layout: Layout, _new_layout: Layout) {
             self.before_grow_zeroed
                 .set(self.before_grow_zeroed.get() + 1)
         }
         fn after_grow_zeroed(
             &self,
             _ptr: NonNull<u8>,
-            _layout: Layout,
-            _new_size: usize,
-            _result: Result<NonNull<[u8]>, AllocErr>,
+            _old_layout: Layout,
+            _new_layout: Layout,
+            _result: Result<NonNull<[u8]>, AllocError>,
         ) {
             self.after_grow_zeroed.set(self.after_grow_zeroed.get() + 1)
         }
-        fn before_grow_in_place(&self, _ptr: NonNull<u8>, _layout: Layout, _new_size: usize) {
+        fn before_grow_in_place(
+            &self,
+            _ptr: NonNull<u8>,
+            _old_layout: Layout,
+            _new_layout: Layout,
+        ) {
             self.before_grow_in_place
                 .set(self.before_grow_in_place.get() + 1)
         }
         fn after_grow_in_place(
             &self,
             _ptr: NonNull<u8>,
-            _layout: Layout,
-            _new_size: usize,
-            _result: Result<usize, AllocErr>,
+            _old_layout: Layout,
+            _new_layout: Layout,
+            _result: Result<usize, AllocError>,
         ) {
             self.after_grow_in_place
                 .set(self.after_grow_in_place.get() + 1)
@@ -548,8 +564,8 @@ mod tests {
         fn before_grow_in_place_zeroed(
             &self,
             _ptr: NonNull<u8>,
-            _layout: Layout,
-            _new_size: usize,
+            _old_layout: Layout,
+            _new_layout: Layout,
         ) {
             self.before_grow_in_place_zeroed
                 .set(self.before_grow_in_place_zeroed.get() + 1)
@@ -557,35 +573,40 @@ mod tests {
         fn after_grow_in_place_zeroed(
             &self,
             _ptr: NonNull<u8>,
-            _layout: Layout,
-            _new_size: usize,
-            _result: Result<usize, AllocErr>,
+            _old_layout: Layout,
+            _new_layout: Layout,
+            _result: Result<usize, AllocError>,
         ) {
             self.after_grow_in_place_zeroed
                 .set(self.after_grow_in_place_zeroed.get() + 1)
         }
-        fn before_shrink(&self, _ptr: NonNull<u8>, _layout: Layout, _new_size: usize) {
+        fn before_shrink(&self, _ptr: NonNull<u8>, _old_layout: Layout, _new_layout: Layout) {
             self.before_shrink.set(self.before_shrink.get() + 1)
         }
         fn after_shrink(
             &self,
             _ptr: NonNull<u8>,
-            _layout: Layout,
-            _new_size: usize,
-            _result: Result<NonNull<[u8]>, AllocErr>,
+            _old_layout: Layout,
+            _new_layout: Layout,
+            _result: Result<NonNull<[u8]>, AllocError>,
         ) {
             self.after_shrink.set(self.after_shrink.get() + 1)
         }
-        fn before_shrink_in_place(&self, _ptr: NonNull<u8>, _layout: Layout, _new_size: usize) {
+        fn before_shrink_in_place(
+            &self,
+            _ptr: NonNull<u8>,
+            _old_layout: Layout,
+            _new_layout: Layout,
+        ) {
             self.before_shrink_in_place
                 .set(self.before_shrink_in_place.get() + 1)
         }
         fn after_shrink_in_place(
             &self,
             _ptr: NonNull<u8>,
-            _layout: Layout,
-            _new_size: usize,
-            _result: Result<usize, AllocErr>,
+            _old_layout: Layout,
+            _new_layout: Layout,
+            _result: Result<usize, AllocError>,
         ) {
             self.after_shrink_in_place
                 .set(self.after_shrink_in_place.get() + 1)
@@ -599,52 +620,101 @@ mod tests {
     }
 
     fn test_callback(callback: impl CallbackRef) {
-        callback.before_alloc(Layout::new::<()>());
-        callback.after_alloc(Layout::new::<()>(), Err(AllocErr));
-        callback.before_alloc_zeroed(Layout::new::<()>());
-        callback.after_alloc_zeroed(Layout::new::<()>(), Err(AllocErr));
-        callback.before_alloc_all(Layout::new::<()>());
-        callback.after_alloc_all(Layout::new::<()>(), Err(AllocErr));
-        callback.before_alloc_all_zeroed(Layout::new::<()>());
-        callback.after_alloc_all_zeroed(Layout::new::<()>(), Err(AllocErr));
-        callback.before_dealloc(NonNull::dangling(), Layout::new::<()>());
-        callback.after_dealloc(NonNull::dangling(), Layout::new::<()>());
-        callback.before_dealloc_all();
-        callback.after_dealloc_all();
-        callback.before_grow(NonNull::dangling(), Layout::new::<()>(), 0);
-        callback.after_grow(NonNull::dangling(), Layout::new::<()>(), 0, Err(AllocErr));
-        callback.before_grow_zeroed(NonNull::dangling(), Layout::new::<()>(), 0);
-        callback.after_grow_zeroed(NonNull::dangling(), Layout::new::<()>(), 0, Err(AllocErr));
-        callback.before_grow_in_place(NonNull::dangling(), Layout::new::<()>(), 0);
-        callback.after_grow_in_place(NonNull::dangling(), Layout::new::<()>(), 0, Err(AllocErr));
-        callback.before_grow_in_place_zeroed(NonNull::dangling(), Layout::new::<()>(), 0);
+        callback.before_allocate(Layout::new::<()>());
+        callback.after_allocate(Layout::new::<()>(), Err(AllocError));
+        callback.before_allocate_zeroed(Layout::new::<()>());
+        callback.after_allocate_zeroed(Layout::new::<()>(), Err(AllocError));
+        callback.before_allocate_all();
+        callback.after_allocate_all(Err(AllocError));
+        callback.before_allocate_all_zeroed();
+        callback.after_allocate_all_zeroed(Err(AllocError));
+        callback.before_deallocate(NonNull::dangling(), Layout::new::<()>());
+        callback.after_deallocate(NonNull::dangling(), Layout::new::<()>());
+        callback.before_deallocate_all();
+        callback.after_deallocate_all();
+        callback.before_grow(
+            NonNull::dangling(),
+            Layout::new::<()>(),
+            Layout::new::<()>(),
+        );
+        callback.after_grow(
+            NonNull::dangling(),
+            Layout::new::<()>(),
+            Layout::new::<()>(),
+            Err(AllocError),
+        );
+        callback.before_grow_zeroed(
+            NonNull::dangling(),
+            Layout::new::<()>(),
+            Layout::new::<()>(),
+        );
+        callback.after_grow_zeroed(
+            NonNull::dangling(),
+            Layout::new::<()>(),
+            Layout::new::<()>(),
+            Err(AllocError),
+        );
+        callback.before_grow_in_place(
+            NonNull::dangling(),
+            Layout::new::<()>(),
+            Layout::new::<()>(),
+        );
+        callback.after_grow_in_place(
+            NonNull::dangling(),
+            Layout::new::<()>(),
+            Layout::new::<()>(),
+            Err(AllocError),
+        );
+        callback.before_grow_in_place_zeroed(
+            NonNull::dangling(),
+            Layout::new::<()>(),
+            Layout::new::<()>(),
+        );
         callback.after_grow_in_place_zeroed(
             NonNull::dangling(),
             Layout::new::<()>(),
-            0,
-            Err(AllocErr),
+            Layout::new::<()>(),
+            Err(AllocError),
         );
-        callback.before_shrink(NonNull::dangling(), Layout::new::<()>(), 0);
-        callback.after_shrink(NonNull::dangling(), Layout::new::<()>(), 0, Err(AllocErr));
-        callback.after_shrink_in_place(NonNull::dangling(), Layout::new::<()>(), 0, Err(AllocErr));
-        callback.before_shrink_in_place(NonNull::dangling(), Layout::new::<()>(), 0);
+        callback.before_shrink(
+            NonNull::dangling(),
+            Layout::new::<()>(),
+            Layout::new::<()>(),
+        );
+        callback.after_shrink(
+            NonNull::dangling(),
+            Layout::new::<()>(),
+            Layout::new::<()>(),
+            Err(AllocError),
+        );
+        callback.after_shrink_in_place(
+            NonNull::dangling(),
+            Layout::new::<()>(),
+            Layout::new::<()>(),
+            Err(AllocError),
+        );
+        callback.before_shrink_in_place(
+            NonNull::dangling(),
+            Layout::new::<()>(),
+            Layout::new::<()>(),
+        );
         callback.before_owns();
         callback.after_owns(false);
     }
 
     fn check_counts(callback: &Callback) {
-        assert_eq!(callback.before_alloc.get(), 1);
-        assert_eq!(callback.after_alloc.get(), 1);
-        assert_eq!(callback.before_alloc_zeroed.get(), 1);
-        assert_eq!(callback.after_alloc_zeroed.get(), 1);
-        assert_eq!(callback.before_alloc_all.get(), 1);
-        assert_eq!(callback.after_alloc_all.get(), 1);
-        assert_eq!(callback.before_alloc_all_zeroed.get(), 1);
-        assert_eq!(callback.after_alloc_all_zeroed.get(), 1);
-        assert_eq!(callback.before_dealloc.get(), 1);
-        assert_eq!(callback.after_dealloc.get(), 1);
-        assert_eq!(callback.before_dealloc_all.get(), 1);
-        assert_eq!(callback.after_dealloc_all.get(), 1);
+        assert_eq!(callback.before_allocate.get(), 1);
+        assert_eq!(callback.after_allocate.get(), 1);
+        assert_eq!(callback.before_allocate_zeroed.get(), 1);
+        assert_eq!(callback.after_allocate_zeroed.get(), 1);
+        assert_eq!(callback.before_allocate_all.get(), 1);
+        assert_eq!(callback.after_allocate_all.get(), 1);
+        assert_eq!(callback.before_allocate_all_zeroed.get(), 1);
+        assert_eq!(callback.after_allocate_all_zeroed.get(), 1);
+        assert_eq!(callback.before_deallocate.get(), 1);
+        assert_eq!(callback.after_deallocate.get(), 1);
+        assert_eq!(callback.before_deallocate_all.get(), 1);
+        assert_eq!(callback.after_deallocate_all.get(), 1);
         assert_eq!(callback.before_grow.get(), 1);
         assert_eq!(callback.after_grow.get(), 1);
         assert_eq!(callback.before_grow_zeroed.get(), 1);

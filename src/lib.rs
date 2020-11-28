@@ -25,13 +25,13 @@ mod helper;
 mod macros;
 
 // mod affix;
-// mod callback_ref;
+mod callback_ref;
 mod chunk;
 // mod fallback;
 mod null;
-// mod proxy;
+mod proxy;
 pub mod region;
-// pub mod stats;
+pub mod stats;
 // mod segregate;
 
 use core::{
@@ -39,7 +39,7 @@ use core::{
     ptr::NonNull,
 };
 
-pub use self::{chunk::Chunk, null::Null};
+pub use self::{callback_ref::CallbackRef, chunk::Chunk, null::Null, proxy::Proxy};
 
 #[cfg(feature = "intrinsics")]
 mod intrinsics {
