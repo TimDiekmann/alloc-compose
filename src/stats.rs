@@ -661,7 +661,6 @@ mod tests {
         Proxy,
         ReallocateInPlace,
     };
-    use alloc::alloc::Global;
     use core::{
         alloc::{AllocRef, Layout},
         mem::MaybeUninit,

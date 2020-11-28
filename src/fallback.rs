@@ -3,7 +3,7 @@ use crate::{
     Owns,
 };
 use core::{
-    alloc::{AllocErr, AllocRef, Layout},
+    alloc::{AllocError, AllocRef, Layout},
     ptr::NonNull,
 };
 
@@ -24,7 +24,7 @@ use core::{
 /// ```rust
 /// #![feature(allocator_api, slice_ptr_get)]
 ///
-/// use alloc_compose::{Fallback, Owns, Region};
+/// use alloc_compose::{region::Region, Fallback, Owns};
 /// use std::{
 ///     alloc::{AllocRef, Layout, System},
 ///     mem::MaybeUninit,
@@ -47,7 +47,7 @@ use core::{
 ///     System.dealloc(big_memory.as_non_null_ptr(), Layout::new::<[u32; 64]>());
 ///     alloc.dealloc(small_memory.as_non_null_ptr(), Layout::new::<u32>());
 /// };
-/// # Ok::<(), core::alloc::AllocErr>(())
+/// # Ok::<(), core::alloc::AllocError>(())
 /// ```
 #[derive(Debug, Copy, Clone)]
 pub struct Fallback<Primary, Secondary> {
@@ -62,21 +62,21 @@ where
     Primary: AllocRef + Owns,
     Secondary: AllocRef,
 {
-    fn alloc(&mut self, layout: Layout) -> Result<NonNull<[u8]>, AllocErr> {
+    fn alloc(&self, layout: Layout) -> Result<NonNull<[u8]>, AllocError> {
         match self.primary.alloc(layout) {
             primary @ Ok(_) => primary,
             Err(_) => self.secondary.alloc(layout),
         }
     }
 
-    fn alloc_zeroed(&mut self, layout: Layout) -> Result<NonNull<[u8]>, AllocErr> {
+    fn alloc_zeroed(&self, layout: Layout) -> Result<NonNull<[u8]>, AllocError> {
         match self.primary.alloc_zeroed(layout) {
             primary @ Ok(_) => primary,
             Err(_) => self.secondary.alloc_zeroed(layout),
         }
     }
 
-    unsafe fn dealloc(&mut self, ptr: NonNull<u8>, layout: Layout) {
+    unsafe fn dealloc(&self, ptr: NonNull<u8>, layout: Layout) {
         if self
             .primary
             .owns(NonNull::slice_from_raw_parts(ptr, layout.size()))
@@ -88,72 +88,72 @@ where
     }
 
     unsafe fn grow(
-        &mut self,
+        &self,
         ptr: NonNull<u8>,
-        layout: Layout,
-        new_size: usize,
-    ) -> Result<NonNull<[u8]>, AllocErr> {
+        old_layout: Layout,
+        new_layout: Layout,
+    ) -> Result<NonNull<[u8]>, AllocError> {
         if self
             .primary
-            .owns(NonNull::slice_from_raw_parts(ptr, layout.size()))
+            .owns(NonNull::slice_from_raw_parts(ptr, old_layout.size()))
         {
-            if let Ok(memory) = self.primary.grow(ptr, layout, new_size) {
+            if let Ok(memory) = self.primary.grow(ptr, old_layout, new_layout) {
                 Ok(memory)
             } else {
                 grow_fallback(
-                    &mut self.primary,
-                    &mut self.secondary,
+                    &self.primary,
+                    &self.secondary,
                     ptr,
-                    layout,
-                    new_size,
+                    old_layout,
+                    new_layout,
                     AllocInit::Uninitialized,
                 )
             }
         } else {
-            self.secondary.grow(ptr, layout, new_size)
+            self.secondary.grow(ptr, old_layout, new_layout)
         }
     }
 
     unsafe fn grow_zeroed(
-        &mut self,
+        &self,
         ptr: NonNull<u8>,
-        layout: Layout,
-        new_size: usize,
-    ) -> Result<NonNull<[u8]>, AllocErr> {
+        old_layout: Layout,
+        new_layout: Layout,
+    ) -> Result<NonNull<[u8]>, AllocError> {
         if self
             .primary
-            .owns(NonNull::slice_from_raw_parts(ptr, layout.size()))
+            .owns(NonNull::slice_from_raw_parts(ptr, old_layout.size()))
         {
-            if let Ok(memory) = self.primary.grow_zeroed(ptr, layout, new_size) {
+            if let Ok(memory) = self.primary.grow_zeroed(ptr, old_layout, new_layout) {
                 Ok(memory)
             } else {
                 grow_fallback(
-                    &mut self.primary,
-                    &mut self.secondary,
+                    &self.primary,
+                    &self.secondary,
                     ptr,
-                    layout,
-                    new_size,
+                    old_layout,
+                    new_layout,
                     AllocInit::Zeroed,
                 )
             }
         } else {
-            self.secondary.grow_zeroed(ptr, layout, new_size)
+            self.secondary.grow_zeroed(ptr, old_layout, new_layout)
         }
     }
 
     unsafe fn shrink(
-        &mut self,
+        &self,
         ptr: NonNull<u8>,
-        layout: Layout,
-        new_size: usize,
-    ) -> Result<NonNull<[u8]>, AllocErr> {
+        old_layout: Layout,
+        new_layout: Layout,
+    ) -> Result<NonNull<[u8]>, AllocError> {
         if self
             .primary
-            .owns(NonNull::slice_from_raw_parts(ptr, layout.size()))
+            .owns(NonNull::slice_from_raw_parts(ptr, old_layout.size()))
         {
-            self.primary.shrink(ptr, layout, new_size)
+            self.primary.shrink(ptr, old_layout, new_layout)
         } else {
-            self.secondary.shrink(ptr, layout, new_size)
+            self.secondary.shrink(ptr, old_layout, new_layout)
         }
     }
 }
@@ -171,18 +171,19 @@ where
 #[cfg(test)]
 mod tests {
     use super::Fallback;
-    use crate::{helper, Owns, Region};
-    use std::{
-        alloc::{AllocRef, Layout, System},
+    use crate::{helper, region::Region, Chunk, Owns};
+    use alloc::alloc::Global;
+    use core::{
+        alloc::{AllocRef, Layout},
         mem::MaybeUninit,
     };
 
     #[test]
     fn alloc() {
         let mut data = [MaybeUninit::new(0); 32];
-        let mut alloc = Fallback {
+        let alloc = Fallback {
             primary: helper::tracker(Region::new(&mut data)),
-            secondary: helper::tracker(System),
+            secondary: helper::tracker(Global),
         };
 
         let small_memory = alloc
@@ -203,35 +204,33 @@ mod tests {
     #[test]
     fn grow() {
         let mut data = [MaybeUninit::new(0); 80];
-        let mut alloc = Fallback {
-            primary: helper::tracker(Region::new(&mut data)),
-            secondary: helper::tracker(System),
+        let alloc = Fallback {
+            primary: helper::tracker(Chunk::<Region, 64>(Region::new(&mut data))),
+            secondary: helper::tracker(Global),
         };
 
         let memory = alloc
             .alloc(Layout::new::<[u8; 32]>())
-            .expect("Could not allocate 32 bytes");
+            .expect("Could not allocate 4 bytes");
         assert!(alloc.primary.owns(memory));
 
         unsafe {
             let memory = alloc
-                .grow(memory.as_non_null_ptr(), Layout::new::<[u8; 32]>(), 64)
+                .grow(
+                    memory.as_non_null_ptr(),
+                    Layout::new::<[u8; 32]>(),
+                    Layout::new::<[u8; 64]>(),
+                )
                 .expect("Could not grow to 64 bytes");
             assert!(alloc.primary.owns(memory));
             assert_eq!(memory.len(), 64);
 
             let memory = alloc
-                .grow(memory.as_non_null_ptr(), Layout::new::<[u8; 64]>(), 80)
-                .expect("Could not grow to 80 bytes");
-            assert!(alloc.primary.owns(memory));
-
-            let memory = alloc
-                .grow(memory.as_non_null_ptr(), Layout::new::<[u8; 80]>(), 96)
-                .expect("Could not grow to 96 bytes");
-            assert!(!alloc.primary.owns(memory));
-
-            let memory = alloc
-                .grow(memory.as_non_null_ptr(), Layout::new::<[u8; 96]>(), 128)
+                .grow(
+                    memory.as_non_null_ptr(),
+                    Layout::new::<[u8; 64]>(),
+                    Layout::new::<[u8; 128]>(),
+                )
                 .expect("Could not grow to 128 bytes");
             assert!(!alloc.primary.owns(memory));
 
@@ -242,9 +241,9 @@ mod tests {
     #[test]
     fn shrink() {
         let mut data = [MaybeUninit::new(0); 80];
-        let mut alloc = Fallback {
-            primary: helper::tracker(Region::new(&mut data)),
-            secondary: helper::tracker(System),
+        let alloc = Fallback {
+            primary: helper::tracker(Chunk::<Region, 64>(Region::new(&mut data))),
+            secondary: helper::tracker(Global),
         };
 
         let memory = alloc
@@ -254,17 +253,29 @@ mod tests {
 
         unsafe {
             let memory = alloc
-                .shrink(memory.as_non_null_ptr(), Layout::new::<[u8; 64]>(), 32)
+                .shrink(
+                    memory.as_non_null_ptr(),
+                    Layout::new::<[u8; 64]>(),
+                    Layout::new::<[u8; 32]>(),
+                )
                 .expect("Could not shrink to 32 bytes");
             assert!(alloc.primary.owns(memory));
 
             let memory = alloc
-                .grow(memory.as_non_null_ptr(), Layout::new::<[u8; 32]>(), 128)
+                .grow(
+                    memory.as_non_null_ptr(),
+                    Layout::new::<[u8; 32]>(),
+                    Layout::new::<[u8; 128]>(),
+                )
                 .expect("Could not grow to 128 bytes");
             assert!(!alloc.primary.owns(memory));
 
             let memory = alloc
-                .shrink(memory.as_non_null_ptr(), Layout::new::<[u8; 128]>(), 96)
+                .shrink(
+                    memory.as_non_null_ptr(),
+                    Layout::new::<[u8; 128]>(),
+                    Layout::new::<[u8; 96]>(),
+                )
                 .expect("Could not shrink to 96 bytes");
             assert!(!alloc.primary.owns(memory));
 
@@ -276,7 +287,7 @@ mod tests {
     fn owns() {
         let mut data_1 = [MaybeUninit::new(0); 32];
         let mut data_2 = [MaybeUninit::new(0); 64];
-        let mut alloc = Fallback {
+        let alloc = Fallback {
             primary: Region::new(&mut data_1),
             secondary: Region::new(&mut data_2),
         };

@@ -34,34 +34,32 @@ impl AllocInit {
 // }
 
 pub(in crate) unsafe fn grow_fallback<A1: AllocRef, A2: AllocRef>(
-    a1: &mut A1,
-    a2: &mut A2,
+    a1: &A1,
+    a2: &A2,
     ptr: NonNull<u8>,
-    layout: Layout,
-    new_size: usize,
+    old_layout: Layout,
+    new_layout: Layout,
     init: AllocInit,
 ) -> Result<NonNull<[u8]>, AllocError> {
-    let new_layout = Layout::from_size_align_unchecked(new_size, layout.align());
     let new_ptr = match init {
         AllocInit::Uninitialized => a2.alloc(new_layout)?,
         AllocInit::Zeroed => a2.alloc_zeroed(new_layout)?,
     };
-    ptr::copy_nonoverlapping(ptr.as_ptr(), new_ptr.as_mut_ptr(), layout.size());
-    a1.dealloc(ptr, layout);
+    ptr::copy_nonoverlapping(ptr.as_ptr(), new_ptr.as_mut_ptr(), old_layout.size());
+    a1.dealloc(ptr, old_layout);
     Ok(new_ptr)
 }
 
 pub(in crate) unsafe fn shrink_fallback<A1: AllocRef, A2: AllocRef>(
-    a1: &mut A1,
-    a2: &mut A2,
+    a1: &A1,
+    a2: &A2,
     ptr: NonNull<u8>,
-    layout: Layout,
-    new_size: usize,
+    old_layout: Layout,
+    new_layout: Layout,
 ) -> Result<NonNull<[u8]>, AllocError> {
-    let new_layout = Layout::from_size_align_unchecked(new_size, layout.align());
     let new_ptr = a2.alloc(new_layout)?;
-    ptr::copy_nonoverlapping(ptr.as_ptr(), new_ptr.as_mut_ptr(), new_size);
-    a1.dealloc(ptr, layout);
+    ptr::copy_nonoverlapping(ptr.as_ptr(), new_ptr.as_mut_ptr(), new_layout.size());
+    a1.dealloc(ptr, old_layout);
     Ok(new_ptr)
 }
 
@@ -91,6 +89,7 @@ mod tests {
     }
 
     impl Tracker {
+        #[track_caller]
         fn assert_fit_memory(&self, ptr: NonNull<u8>, layout: Layout, name: &str) {
             let map = self.map.borrow();
             let (size, old_layout) = map.get(&ptr).expect(
@@ -117,12 +116,12 @@ mod tests {
                 )
             } else {
                 assert!(
-                    layout.size() >= *size && layout.size() <= old_layout.size(),
+                    layout.size() <= *size && layout.size() >= old_layout.size(),
                     "`{0}` must fit that block of memory. The provided `{0}.size()` must fall in \
                      the range `min ..= max`. Expected size between `{1} ..= {2}`, got {3}",
                     name,
-                    size,
                     old_layout.size(),
+                    size,
                     layout.size()
                 )
             }

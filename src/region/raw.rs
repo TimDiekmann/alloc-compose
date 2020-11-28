@@ -309,27 +309,27 @@ macro_rules! impl_raw_region {
 
             unsafe fn grow(
                 &self,
-                ptr: NonNull<u8>,
-                old_layout: Layout,
-                new_layout: Layout,
+                _ptr: NonNull<u8>,
+                _old_layout: Layout,
+                _new_layout: Layout,
             ) -> Result<NonNull<[u8]>, AllocError> {
                 Err(AllocError)
             }
 
             unsafe fn grow_zeroed(
                 &self,
-                ptr: NonNull<u8>,
-                old_layout: Layout,
-                new_layout: Layout,
+                _ptr: NonNull<u8>,
+                _old_layout: Layout,
+                _new_layout: Layout,
             ) -> Result<NonNull<[u8]>, AllocError> {
                 Err(AllocError)
             }
 
             unsafe fn shrink(
                 &self,
-                ptr: NonNull<u8>,
-                old_layout: Layout,
-                new_layout: Layout,
+                _ptr: NonNull<u8>,
+                _old_layout: Layout,
+                _new_layout: Layout,
             ) -> Result<NonNull<[u8]>, AllocError> {
                 Err(AllocError)
             }
