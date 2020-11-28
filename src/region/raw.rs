@@ -306,6 +306,33 @@ macro_rules! impl_raw_region {
 
             #[inline]
             unsafe fn dealloc(&self, _ptr: NonNull<u8>, _layout: Layout) {}
+
+            unsafe fn grow(
+                &self,
+                ptr: NonNull<u8>,
+                old_layout: Layout,
+                new_layout: Layout,
+            ) -> Result<NonNull<[u8]>, AllocError> {
+                Err(AllocError)
+            }
+
+            unsafe fn grow_zeroed(
+                &self,
+                ptr: NonNull<u8>,
+                old_layout: Layout,
+                new_layout: Layout,
+            ) -> Result<NonNull<[u8]>, AllocError> {
+                Err(AllocError)
+            }
+
+            unsafe fn shrink(
+                &self,
+                ptr: NonNull<u8>,
+                old_layout: Layout,
+                new_layout: Layout,
+            ) -> Result<NonNull<[u8]>, AllocError> {
+                Err(AllocError)
+            }
         }
 
         unsafe impl AllocateAll for $ty {

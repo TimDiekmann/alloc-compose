@@ -11,11 +11,6 @@ pub enum AllocInit {
 
 impl AllocInit {
     #[inline]
-    pub unsafe fn init(self, ptr: NonNull<[u8]>) {
-        self.init_offset(ptr, 0)
-    }
-
-    #[inline]
     pub unsafe fn init_offset(self, ptr: NonNull<[u8]>, offset: usize) {
         debug_assert!(
             offset <= ptr.len(),
@@ -32,11 +27,11 @@ impl AllocInit {
     }
 }
 
-#[derive(Copy, Clone, PartialEq, Eq)]
-pub enum ReallocPlacement {
-    MayMove,
-    InPlace,
-}
+// #[derive(Copy, Clone, PartialEq, Eq)]
+// pub enum ReallocPlacement {
+//     MayMove,
+//     InPlace,
+// }
 
 pub(in crate) unsafe fn grow_fallback<A1: AllocRef, A2: AllocRef>(
     a1: &mut A1,

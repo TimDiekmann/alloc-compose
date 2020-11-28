@@ -649,171 +649,225 @@ macro_rules! impl_filtered_callback_ref {
 impl_filtered_callback_ref!(FilteredCounter);
 impl_filtered_callback_ref!(FilteredAtomicCounter);
 
-// #[cfg(test)]
-// mod tests {
-//     use super::{AtomicCounter, Counter, FilteredAtomicCounter, FilteredCounter};
-//     use crate::{helper, CallbackRef, Owns, Proxy, ReallocateInPlace, region::Region};
-//     use std::{
-//         alloc::{AllocRef, Layout},
-//         mem::MaybeUninit,
-//     };
+#[cfg(test)]
+mod tests {
+    use super::{AtomicCounter, Counter, FilteredAtomicCounter, FilteredCounter};
+    use crate::{
+        helper::tracker,
+        region::Region,
+        CallbackRef,
+        Chunk,
+        Owns,
+        Proxy,
+        ReallocateInPlace,
+    };
+    use alloc::alloc::Global;
+    use core::{
+        alloc::{AllocRef, Layout},
+        mem::MaybeUninit,
+        ptr::NonNull,
+    };
 
-//     #[allow(clippy::too_many_lines)]
-//     fn run_suite(callbacks: &impl CallbackRef) {
-//         let mut region = [MaybeUninit::new(0); 32];
-//         let mut alloc = Proxy {
-//             alloc: Region::new(&mut region),
-//             callbacks,
-//         };
+    #[allow(clippy::too_many_lines)]
+    fn run_suite(callbacks: &impl CallbackRef) {
+        let mut region = [MaybeUninit::new(0); 64];
+        let region = tracker(Proxy {
+            alloc: Chunk::<Region, 2>(Region::new(&mut region)),
+            callbacks,
+        });
 
-//         assert!(alloc.alloc(Layout::new::<[u8; 64]>()).is_err());
-//         assert!(alloc.alloc_zeroed(Layout::new::<[u8; 64]>()).is_err());
+        assert!(region.alloc(Layout::new::<[u8; 256]>()).is_err());
+        assert!(region.alloc_zeroed(Layout::new::<[u8; 256]>()).is_err());
+        assert!(!region.owns(NonNull::slice_from_raw_parts(NonNull::dangling(), 0)));
 
-//         unsafe {
-//             let memory = alloc.alloc(Layout::new::<[u8; 4]>()).unwrap();
-//             let memory_tmp = alloc.alloc_zeroed(Layout::new::<[u8; 4]>()).unwrap();
-//             assert!(
-//                 alloc
-//                     .shrink_in_place(memory.as_non_null_ptr(), Layout::new::<[u8; 4]>(), 2,)
-//                     .is_err()
-//             );
-//             alloc.dealloc(memory_tmp.as_non_null_ptr(), Layout::new::<[u8; 4]>());
+        unsafe {
+            let memory = region.alloc(Layout::new::<[u8; 4]>()).unwrap();
+            let memory_tmp = region.alloc_zeroed(Layout::new::<[u8; 4]>()).unwrap();
+            assert!(
+                region
+                    .shrink_in_place(
+                        memory.as_non_null_ptr(),
+                        Layout::new::<[u8; 4]>(),
+                        Layout::new::<[u8; 2]>(),
+                    )
+                    .is_err()
+            );
+            region.dealloc(memory_tmp.as_non_null_ptr(), Layout::new::<[u8; 4]>());
 
-//             assert!(
-//                 alloc
-//                     .grow_zeroed(memory.as_non_null_ptr(), Layout::new::<[u8; 4]>(), Layout::new::<[u8; 80]>())
-//                     .is_err()
-//             );
-//             assert!(
-//                 alloc
-//                     .grow_in_place_zeroed(memory.as_non_null_ptr(), Layout::new::<[u8; 4]>(), Layout::new::<[u8; 80]>())
-//                     .is_err()
-//             );
-//             assert!(
-//                 alloc
-//                     .grow(memory.as_non_null_ptr(), Layout::new::<[u8; 4]>(), Layout::new::<[u8; 80]>())
-//                     .is_err()
-//             );
-//             assert!(
-//                 alloc
-//                     .grow_in_place(memory.as_non_null_ptr(), Layout::new::<[u8; 4]>(), Layout::new::<[u8; 80]>())
-//                     .is_err()
-//             );
-//             let memory = alloc
-//                 .grow_zeroed(memory.as_non_null_ptr(), Layout::new::<[u8; 4]>(), Layout::new::<[u8; 8]>())
-//                 .unwrap();
-//             let memory = alloc
-//                 .grow(memory.as_non_null_ptr(), Layout::new::<[u8; 8]>(), Layout::new::<[u8; 16]>())
-//                 .unwrap();
-//             let memory = alloc
-//                 .shrink(memory.as_non_null_ptr(), Layout::new::<[u8; 16]>(), Layout::new::<[u8; 4]>())
-//                 .unwrap();
+            assert!(
+                region
+                    .grow_zeroed(
+                        memory.as_non_null_ptr(),
+                        Layout::new::<[u8; 4]>(),
+                        Layout::new::<[u8; 80]>()
+                    )
+                    .is_err()
+            );
+            assert!(
+                region
+                    .grow_in_place_zeroed(
+                        memory.as_non_null_ptr(),
+                        Layout::new::<[u8; 4]>(),
+                        Layout::new::<[u8; 80]>()
+                    )
+                    .is_err()
+            );
+            assert!(
+                region
+                    .grow(
+                        memory.as_non_null_ptr(),
+                        Layout::new::<[u8; 4]>(),
+                        Layout::new::<[u8; 80]>()
+                    )
+                    .is_err()
+            );
+            assert!(
+                region
+                    .grow_in_place(
+                        memory.as_non_null_ptr(),
+                        Layout::new::<[u8; 4]>(),
+                        Layout::new::<[u8; 80]>()
+                    )
+                    .is_err()
+            );
+            let memory = region
+                .grow_zeroed(
+                    memory.as_non_null_ptr(),
+                    Layout::new::<[u8; 4]>(),
+                    Layout::new::<[u8; 4]>(),
+                )
+                .unwrap();
+            let memory = region
+                .grow(
+                    memory.as_non_null_ptr(),
+                    Layout::new::<[u8; 4]>(),
+                    Layout::new::<[u8; 4]>(),
+                )
+                .unwrap();
+            let memory = region
+                .shrink(
+                    memory.as_non_null_ptr(),
+                    Layout::new::<[u8; 4]>(),
+                    Layout::new::<[u8; 4]>(),
+                )
+                .unwrap();
 
-//             alloc
-//                 .grow_in_place_zeroed(memory.as_non_null_ptr(), Layout::new::<[u8; 4]>(), Layout::new::<[u8; 4]>())
-//                 .unwrap();
-//             alloc
-//                 .grow_in_place(memory.as_non_null_ptr(), Layout::new::<[u8; 4]>(), Layout::new::<[u8; 4]>())
-//                 .unwrap();
-//             alloc
-//                 .shrink_in_place(memory.as_non_null_ptr(), Layout::new::<[u8; 4]>(), Layout::new::<[u8; 4]>())
-//                 .unwrap();
+            region
+                .grow_in_place_zeroed(
+                    memory.as_non_null_ptr(),
+                    Layout::new::<[u8; 4]>(),
+                    Layout::new::<[u8; 4]>(),
+                )
+                .unwrap();
+            region
+                .grow_in_place(
+                    memory.as_non_null_ptr(),
+                    Layout::new::<[u8; 4]>(),
+                    Layout::new::<[u8; 4]>(),
+                )
+                .unwrap();
+            region
+                .shrink_in_place(
+                    memory.as_non_null_ptr(),
+                    Layout::new::<[u8; 4]>(),
+                    Layout::new::<[u8; 4]>(),
+                )
+                .unwrap();
 
-//             assert!(alloc.owns(memory));
-//             alloc.dealloc(memory.as_non_null_ptr(), Layout::new::<[u8; 4]>());
-//             assert!(!alloc.owns(memory));
-//         }
-//     }
+            assert!(region.owns(memory));
+            region.dealloc(memory.as_non_null_ptr(), Layout::new::<[u8; 4]>());
+        }
+    }
 
-//     #[test]
-//     #[rustfmt::skip]
-//     fn counter() {
-//         let counter = Counter::default();
-//         run_suite(counter.by_ref());
+    #[test]
+    #[rustfmt::skip]
+    fn counter() {
+        let counter = Counter::default();
+        run_suite(counter.by_ref());
 
-//         assert_eq!(counter.num_allocs(), 4);
-//         assert_eq!(counter.num_grows(), 8);
-//         assert_eq!(counter.num_shrinks(), 3);
-//         assert_eq!(counter.num_owns(), 2);
-//         assert_eq!(counter.num_deallocs(), 2);
+        assert_eq!(counter.num_allocs(), 4);
+        assert_eq!(counter.num_grows(), 8);
+        assert_eq!(counter.num_shrinks(), 3);
+        assert_eq!(counter.num_owns(), 2);
+        assert_eq!(counter.num_deallocs(), 2);
 
-//         let atomic_counter = AtomicCounter::default();
-//         run_suite(atomic_counter.by_ref());
+        let atomic_counter = AtomicCounter::default();
+        run_suite(atomic_counter.by_ref());
 
-//         assert_eq!(atomic_counter.num_allocs(), 4);
-//         assert_eq!(atomic_counter.num_grows(), 8);
-//         assert_eq!(atomic_counter.num_shrinks(), 3);
-//         assert_eq!(atomic_counter.num_owns(), 2);
-//         assert_eq!(atomic_counter.num_deallocs(), 2);
+        assert_eq!(atomic_counter.num_allocs(), 4);
+        assert_eq!(atomic_counter.num_grows(), 8);
+        assert_eq!(atomic_counter.num_shrinks(), 3);
+        assert_eq!(atomic_counter.num_owns(), 2);
+        assert_eq!(atomic_counter.num_deallocs(), 2);
 
-//         assert_eq!(counter, atomic_counter);
-//         assert_eq!(atomic_counter, counter);
-//         assert_eq!(atomic_counter, atomic_counter);
-//     }
+        assert_eq!(counter, atomic_counter);
+        assert_eq!(atomic_counter, counter);
+        assert_eq!(atomic_counter, atomic_counter);
+    }
 
-//     #[test]
-//     #[rustfmt::skip]
-//     #[allow(clippy::cognitive_complexity)]
-//     fn filtered_counter() {
-//         use super::AllocInitFilter::*;
-//         use super::ReallocPlacementFilter::*;
+    #[test]
+    #[rustfmt::skip]
+    #[allow(clippy::cognitive_complexity)]
+    fn filtered_counter() {
+        use super::AllocInitFilter::*;
+        use super::ReallocPlacementFilter::*;
 
-//         let counter = FilteredCounter::default();
-//         run_suite(counter.by_ref());
+        let counter = FilteredCounter::default();
+        run_suite(counter.by_ref());
 
-//         assert_eq!(counter.num_allocates_filter(Uninitialized, false), 1);
-//         assert_eq!(counter.num_allocates_filter(Zeroed, false), 1);
-//         assert_eq!(counter.num_allocates_filter(Uninitialized, true), 1);
-//         assert_eq!(counter.num_allocates_filter(Zeroed, true), 1);
-//         assert_eq!(counter.num_allocates(), 4);
-//         assert_eq!(counter.num_grows_filter(MayMove, Uninitialized, false), 1);
-//         assert_eq!(counter.num_grows_filter(MayMove, Uninitialized, true), 1);
-//         assert_eq!(counter.num_grows_filter(MayMove, Zeroed, false), 1);
-//         assert_eq!(counter.num_grows_filter(MayMove, Zeroed, true), 1);
-//         assert_eq!(counter.num_grows_filter(InPlace, Uninitialized, false), 1);
-//         assert_eq!(counter.num_grows_filter(InPlace, Uninitialized, true), 1);
-//         assert_eq!(counter.num_grows_filter(InPlace, Zeroed, false), 1);
-//         assert_eq!(counter.num_grows_filter(InPlace, Zeroed, true), 1);
-//         assert_eq!(counter.num_grows(), 8);
-//         assert_eq!(counter.num_shrinks_filter(MayMove, false), 0);
-//         assert_eq!(counter.num_shrinks_filter(MayMove, true), 1);
-//         assert_eq!(counter.num_shrinks_filter(InPlace, false), 1);
-//         assert_eq!(counter.num_shrinks_filter(InPlace, true), 1);
-//         assert_eq!(counter.num_shrinks(), 3);
-//         assert_eq!(counter.num_owns_filter(true), 1);
-//         assert_eq!(counter.num_owns_filter(false), 1);
-//         assert_eq!(counter.num_owns(), 2);
-//         assert_eq!(counter.num_deallocates(), 2);
+        assert_eq!(counter.num_allocates_filter(Uninitialized, false), 1);
+        assert_eq!(counter.num_allocates_filter(Zeroed, false), 1);
+        assert_eq!(counter.num_allocates_filter(Uninitialized, true), 1);
+        assert_eq!(counter.num_allocates_filter(Zeroed, true), 1);
+        assert_eq!(counter.num_allocates(), 4);
+        assert_eq!(counter.num_grows_filter(MayMove, Uninitialized, false), 1);
+        assert_eq!(counter.num_grows_filter(MayMove, Uninitialized, true), 1);
+        assert_eq!(counter.num_grows_filter(MayMove, Zeroed, false), 1);
+        assert_eq!(counter.num_grows_filter(MayMove, Zeroed, true), 1);
+        assert_eq!(counter.num_grows_filter(InPlace, Uninitialized, false), 1);
+        assert_eq!(counter.num_grows_filter(InPlace, Uninitialized, true), 1);
+        assert_eq!(counter.num_grows_filter(InPlace, Zeroed, false), 1);
+        assert_eq!(counter.num_grows_filter(InPlace, Zeroed, true), 1);
+        assert_eq!(counter.num_grows(), 8);
+        assert_eq!(counter.num_shrinks_filter(MayMove, false), 0);
+        assert_eq!(counter.num_shrinks_filter(MayMove, true), 1);
+        assert_eq!(counter.num_shrinks_filter(InPlace, false), 1);
+        assert_eq!(counter.num_shrinks_filter(InPlace, true), 1);
+        assert_eq!(counter.num_shrinks(), 3);
+        assert_eq!(counter.num_owns_filter(true), 1);
+        assert_eq!(counter.num_owns_filter(false), 1);
+        assert_eq!(counter.num_owns(), 2);
+        assert_eq!(counter.num_deallocates(), 2);
 
-//         let atomic_counter = FilteredAtomicCounter::default();
-//         run_suite(atomic_counter.by_ref());
+        let atomic_counter = FilteredAtomicCounter::default();
+        run_suite(atomic_counter.by_ref());
 
-//         assert_eq!(atomic_counter.num_allocates_filter(Uninitialized, false), 1);
-//         assert_eq!(atomic_counter.num_allocates_filter(Zeroed, false), 1);
-//         assert_eq!(atomic_counter.num_allocates_filter(Uninitialized, true), 1);
-//         assert_eq!(atomic_counter.num_allocates_filter(Zeroed, true), 1);
-//         assert_eq!(atomic_counter.num_allocates(), 4);
-//         assert_eq!(atomic_counter.num_grows_filter(MayMove, Uninitialized, false), 1);
-//         assert_eq!(atomic_counter.num_grows_filter(MayMove, Uninitialized, true), 1);
-//         assert_eq!(atomic_counter.num_grows_filter(MayMove, Zeroed, false), 1);
-//         assert_eq!(atomic_counter.num_grows_filter(MayMove, Zeroed, true), 1);
-//         assert_eq!(atomic_counter.num_grows_filter(InPlace, Uninitialized, false), 1);
-//         assert_eq!(atomic_counter.num_grows_filter(InPlace, Uninitialized, true), 1);
-//         assert_eq!(atomic_counter.num_grows_filter(InPlace, Zeroed, false), 1);
-//         assert_eq!(atomic_counter.num_grows_filter(InPlace, Zeroed, true), 1);
-//         assert_eq!(atomic_counter.num_grows(), 8);
-//         assert_eq!(atomic_counter.num_shrinks_filter(MayMove, false), 0);
-//         assert_eq!(atomic_counter.num_shrinks_filter(MayMove, true), 1);
-//         assert_eq!(atomic_counter.num_shrinks_filter(InPlace, false), 1);
-//         assert_eq!(atomic_counter.num_shrinks_filter(InPlace, true), 1);
-//         assert_eq!(atomic_counter.num_shrinks(), 3);
-//         assert_eq!(atomic_counter.num_owns_filter(true), 1);
-//         assert_eq!(atomic_counter.num_owns_filter(false), 1);
-//         assert_eq!(atomic_counter.num_owns(), 2);
-//         assert_eq!(atomic_counter.num_deallocates(), 2);
+        assert_eq!(atomic_counter.num_allocates_filter(Uninitialized, false), 1);
+        assert_eq!(atomic_counter.num_allocates_filter(Zeroed, false), 1);
+        assert_eq!(atomic_counter.num_allocates_filter(Uninitialized, true), 1);
+        assert_eq!(atomic_counter.num_allocates_filter(Zeroed, true), 1);
+        assert_eq!(atomic_counter.num_allocates(), 4);
+        assert_eq!(atomic_counter.num_grows_filter(MayMove, Uninitialized, false), 1);
+        assert_eq!(atomic_counter.num_grows_filter(MayMove, Uninitialized, true), 1);
+        assert_eq!(atomic_counter.num_grows_filter(MayMove, Zeroed, false), 1);
+        assert_eq!(atomic_counter.num_grows_filter(MayMove, Zeroed, true), 1);
+        assert_eq!(atomic_counter.num_grows_filter(InPlace, Uninitialized, false), 1);
+        assert_eq!(atomic_counter.num_grows_filter(InPlace, Uninitialized, true), 1);
+        assert_eq!(atomic_counter.num_grows_filter(InPlace, Zeroed, false), 1);
+        assert_eq!(atomic_counter.num_grows_filter(InPlace, Zeroed, true), 1);
+        assert_eq!(atomic_counter.num_grows(), 8);
+        assert_eq!(atomic_counter.num_shrinks_filter(MayMove, false), 0);
+        assert_eq!(atomic_counter.num_shrinks_filter(MayMove, true), 1);
+        assert_eq!(atomic_counter.num_shrinks_filter(InPlace, false), 1);
+        assert_eq!(atomic_counter.num_shrinks_filter(InPlace, true), 1);
+        assert_eq!(atomic_counter.num_shrinks(), 3);
+        assert_eq!(atomic_counter.num_owns_filter(true), 1);
+        assert_eq!(atomic_counter.num_owns_filter(false), 1);
+        assert_eq!(atomic_counter.num_owns(), 2);
+        assert_eq!(atomic_counter.num_deallocates(), 2);
 
-//         assert_eq!(counter, atomic_counter);
-//         assert_eq!(atomic_counter, counter);
-//         assert_eq!(atomic_counter, atomic_counter);
-//     }
-// }
+        assert_eq!(counter, atomic_counter);
+        assert_eq!(atomic_counter, counter);
+        assert_eq!(atomic_counter, atomic_counter);
+    }
+}
