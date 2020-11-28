@@ -691,27 +691,27 @@
 
             <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">grow</span>(
                 <span class="kw-2">&amp;</span><span class="self">self</span>,
-                <span class="ident">ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-                <span class="ident">old_layout</span>: <span class="ident">Layout</span>,
-                <span class="ident">new_layout</span>: <span class="ident">Layout</span>,
+                <span class="ident">_ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
+                <span class="ident">_old_layout</span>: <span class="ident">Layout</span>,
+                <span class="ident">_new_layout</span>: <span class="ident">Layout</span>,
             ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NonNull</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>, <span class="ident">AllocError</span><span class="op">&gt;</span> {
                 <span class="prelude-val">Err</span>(<span class="ident">AllocError</span>)
             }
 
             <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">grow_zeroed</span>(
                 <span class="kw-2">&amp;</span><span class="self">self</span>,
-                <span class="ident">ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-                <span class="ident">old_layout</span>: <span class="ident">Layout</span>,
-                <span class="ident">new_layout</span>: <span class="ident">Layout</span>,
+                <span class="ident">_ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
+                <span class="ident">_old_layout</span>: <span class="ident">Layout</span>,
+                <span class="ident">_new_layout</span>: <span class="ident">Layout</span>,
             ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NonNull</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>, <span class="ident">AllocError</span><span class="op">&gt;</span> {
                 <span class="prelude-val">Err</span>(<span class="ident">AllocError</span>)
             }
 
             <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">shrink</span>(
                 <span class="kw-2">&amp;</span><span class="self">self</span>,
-                <span class="ident">ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-                <span class="ident">old_layout</span>: <span class="ident">Layout</span>,
-                <span class="ident">new_layout</span>: <span class="ident">Layout</span>,
+                <span class="ident">_ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
+                <span class="ident">_old_layout</span>: <span class="ident">Layout</span>,
+                <span class="ident">_new_layout</span>: <span class="ident">Layout</span>,
             ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NonNull</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>, <span class="ident">AllocError</span><span class="op">&gt;</span> {
                 <span class="prelude-val">Err</span>(<span class="ident">AllocError</span>)
             }
