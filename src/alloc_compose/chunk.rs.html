@@ -381,8 +381,6 @@
 <span id="378">378</span>
 <span id="379">379</span>
 <span id="380">380</span>
-<span id="381">381</span>
-<span id="382">382</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">helper</span>::<span class="ident">AllocInit</span>, <span class="ident">Owns</span>, <span class="ident">ReallocateInPlace</span>};
 <span class="kw">use</span> <span class="ident">core</span>::{
@@ -617,9 +615,7 @@
     <span class="kw">use</span> <span class="kw">super</span>::<span class="ident">Chunk</span>;
     <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">helper</span>::<span class="ident">tracker</span>, <span class="ident">ReallocateInPlace</span>};
     <span class="kw">use</span> <span class="ident">alloc</span>::<span class="ident">alloc</span>::<span class="ident">Global</span>;
-    <span class="kw">use</span> <span class="ident">core</span>::{
-        <span class="ident">alloc</span>::{<span class="ident">AllocRef</span>, <span class="ident">Layout</span>},
-    };
+    <span class="kw">use</span> <span class="ident">core</span>::<span class="ident">alloc</span>::{<span class="ident">AllocRef</span>, <span class="ident">Layout</span>};
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">alloc</span>() {
