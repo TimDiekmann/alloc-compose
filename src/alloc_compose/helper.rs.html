@@ -395,11 +395,6 @@
 <span id="392">392</span>
 <span id="393">393</span>
 <span id="394">394</span>
-<span id="395">395</span>
-<span id="396">396</span>
-<span id="397">397</span>
-<span id="398">398</span>
-<span id="399">399</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">core</span>::{
     <span class="ident">alloc</span>::{<span class="ident">AllocError</span>, <span class="ident">AllocRef</span>, <span class="ident">Layout</span>},
@@ -413,11 +408,6 @@
 }
 
 <span class="kw">impl</span> <span class="ident">AllocInit</span> {
-    <span class="attribute">#[<span class="ident">inline</span>]</span>
-    <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">init</span>(<span class="self">self</span>, <span class="ident">ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>) {
-        <span class="self">self</span>.<span class="ident">init_offset</span>(<span class="ident">ptr</span>, <span class="number">0</span>)
-    }
-
     <span class="attribute">#[<span class="ident">inline</span>]</span>
     <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">init_offset</span>(<span class="self">self</span>, <span class="ident">ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>, <span class="ident">offset</span>: <span class="ident">usize</span>) {
         <span class="macro">debug_assert</span><span class="macro">!</span>(
@@ -435,11 +425,11 @@
     }
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">ReallocPlacement</span> {
-    <span class="ident">MayMove</span>,
-    <span class="ident">InPlace</span>,
-}
+<span class="comment">// #[derive(Copy, Clone, PartialEq, Eq)]</span>
+<span class="comment">// pub enum ReallocPlacement {</span>
+<span class="comment">//     MayMove,</span>
+<span class="comment">//     InPlace,</span>
+<span class="comment">// }</span>
 
 <span class="kw">pub</span>(<span class="kw">in</span> <span class="kw">crate</span>) <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">grow_fallback</span><span class="op">&lt;</span><span class="ident">A1</span>: <span class="ident">AllocRef</span>, <span class="ident">A2</span>: <span class="ident">AllocRef</span><span class="op">&gt;</span>(
     <span class="ident">a1</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">A1</span>,

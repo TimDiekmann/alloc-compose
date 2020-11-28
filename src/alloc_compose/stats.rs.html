@@ -820,6 +820,61 @@
 <span id="817">817</span>
 <span id="818">818</span>
 <span id="819">819</span>
+<span id="820">820</span>
+<span id="821">821</span>
+<span id="822">822</span>
+<span id="823">823</span>
+<span id="824">824</span>
+<span id="825">825</span>
+<span id="826">826</span>
+<span id="827">827</span>
+<span id="828">828</span>
+<span id="829">829</span>
+<span id="830">830</span>
+<span id="831">831</span>
+<span id="832">832</span>
+<span id="833">833</span>
+<span id="834">834</span>
+<span id="835">835</span>
+<span id="836">836</span>
+<span id="837">837</span>
+<span id="838">838</span>
+<span id="839">839</span>
+<span id="840">840</span>
+<span id="841">841</span>
+<span id="842">842</span>
+<span id="843">843</span>
+<span id="844">844</span>
+<span id="845">845</span>
+<span id="846">846</span>
+<span id="847">847</span>
+<span id="848">848</span>
+<span id="849">849</span>
+<span id="850">850</span>
+<span id="851">851</span>
+<span id="852">852</span>
+<span id="853">853</span>
+<span id="854">854</span>
+<span id="855">855</span>
+<span id="856">856</span>
+<span id="857">857</span>
+<span id="858">858</span>
+<span id="859">859</span>
+<span id="860">860</span>
+<span id="861">861</span>
+<span id="862">862</span>
+<span id="863">863</span>
+<span id="864">864</span>
+<span id="865">865</span>
+<span id="866">866</span>
+<span id="867">867</span>
+<span id="868">868</span>
+<span id="869">869</span>
+<span id="870">870</span>
+<span id="871">871</span>
+<span id="872">872</span>
+<span id="873">873</span>
+<span id="874">874</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Structures to collect allocator statistics.</span>
 <span class="doccomment">//!</span>
@@ -1472,173 +1527,228 @@
 <span class="macro">impl_filtered_callback_ref</span><span class="macro">!</span>(<span class="ident">FilteredCounter</span>);
 <span class="macro">impl_filtered_callback_ref</span><span class="macro">!</span>(<span class="ident">FilteredAtomicCounter</span>);
 
-<span class="comment">// #[cfg(test)]</span>
-<span class="comment">// mod tests {</span>
-<span class="comment">//     use super::{AtomicCounter, Counter, FilteredAtomicCounter, FilteredCounter};</span>
-<span class="comment">//     use crate::{helper, CallbackRef, Owns, Proxy, ReallocateInPlace, region::Region};</span>
-<span class="comment">//     use std::{</span>
-<span class="comment">//         alloc::{AllocRef, Layout},</span>
-<span class="comment">//         mem::MaybeUninit,</span>
-<span class="comment">//     };</span>
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
+<span class="kw">mod</span> <span class="ident">tests</span> {
+    <span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">AtomicCounter</span>, <span class="ident">Counter</span>, <span class="ident">FilteredAtomicCounter</span>, <span class="ident">FilteredCounter</span>};
+    <span class="kw">use</span> <span class="kw">crate</span>::{
+        <span class="ident">helper</span>::<span class="ident">tracker</span>,
+        <span class="ident">region</span>::<span class="ident">Region</span>,
+        <span class="ident">CallbackRef</span>,
+        <span class="ident">Chunk</span>,
+        <span class="ident">Owns</span>,
+        <span class="ident">Proxy</span>,
+        <span class="ident">ReallocateInPlace</span>,
+    };
+    <span class="kw">use</span> <span class="ident">alloc</span>::<span class="ident">alloc</span>::<span class="ident">Global</span>;
+    <span class="kw">use</span> <span class="ident">core</span>::{
 
-<span class="comment">//     #[allow(clippy::too_many_lines)]</span>
-<span class="comment">//     fn run_suite(callbacks: &amp;impl CallbackRef) {</span>
-<span class="comment">//         let mut region = [MaybeUninit::new(0); 32];</span>
-<span class="comment">//         let mut alloc = Proxy {</span>
-<span class="comment">//             alloc: Region::new(&amp;mut region),</span>
-<span class="comment">//             callbacks,</span>
-<span class="comment">//         };</span>
+        <span class="ident">alloc</span>::{<span class="ident">AllocRef</span>, <span class="ident">Layout</span>},
+        <span class="ident">mem</span>::<span class="ident">MaybeUninit</span>,
+        <span class="ident">ptr</span>::<span class="ident">NonNull</span>,
+    };
 
-<span class="comment">//         assert!(alloc.alloc(Layout::new::&lt;[u8; 64]&gt;()).is_err());</span>
-<span class="comment">//         assert!(alloc.alloc_zeroed(Layout::new::&lt;[u8; 64]&gt;()).is_err());</span>
+    <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy</span>::<span class="ident">too_many_lines</span>)]</span>
+    <span class="kw">fn</span> <span class="ident">run_suite</span>(<span class="ident">callbacks</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">CallbackRef</span>) {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">region</span> <span class="op">=</span> [<span class="ident">MaybeUninit</span>::<span class="ident">new</span>(<span class="number">0</span>); <span class="number">64</span>];
+        <span class="kw">let</span> <span class="ident">region</span> <span class="op">=</span> <span class="ident">tracker</span>(<span class="ident">Proxy</span> {
+            <span class="ident">alloc</span>: <span class="ident">Chunk</span>::<span class="op">&lt;</span><span class="ident">Region</span>, <span class="number">2</span><span class="op">&gt;</span>(<span class="ident">Region</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">region</span>)),
+            <span class="ident">callbacks</span>,
+        });
 
-<span class="comment">//         unsafe {</span>
-<span class="comment">//             let memory = alloc.alloc(Layout::new::&lt;[u8; 4]&gt;()).unwrap();</span>
-<span class="comment">//             let memory_tmp = alloc.alloc_zeroed(Layout::new::&lt;[u8; 4]&gt;()).unwrap();</span>
-<span class="comment">//             assert!(</span>
-<span class="comment">//                 alloc</span>
-<span class="comment">//                     .shrink_in_place(memory.as_non_null_ptr(), Layout::new::&lt;[u8; 4]&gt;(), 2,)</span>
-<span class="comment">//                     .is_err()</span>
-<span class="comment">//             );</span>
-<span class="comment">//             alloc.dealloc(memory_tmp.as_non_null_ptr(), Layout::new::&lt;[u8; 4]&gt;());</span>
+        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">region</span>.<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">256</span>]<span class="op">&gt;</span>()).<span class="ident">is_err</span>());
+        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">region</span>.<span class="ident">alloc_zeroed</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">256</span>]<span class="op">&gt;</span>()).<span class="ident">is_err</span>());
+        <span class="macro">assert</span><span class="macro">!</span>(<span class="op">!</span><span class="ident">region</span>.<span class="ident">owns</span>(<span class="ident">NonNull</span>::<span class="ident">slice_from_raw_parts</span>(<span class="ident">NonNull</span>::<span class="ident">dangling</span>(), <span class="number">0</span>)));
 
-<span class="comment">//             assert!(</span>
-<span class="comment">//                 alloc</span>
-<span class="comment">//                     .grow_zeroed(memory.as_non_null_ptr(), Layout::new::&lt;[u8; 4]&gt;(), Layout::new::&lt;[u8; 80]&gt;())</span>
-<span class="comment">//                     .is_err()</span>
-<span class="comment">//             );</span>
-<span class="comment">//             assert!(</span>
-<span class="comment">//                 alloc</span>
-<span class="comment">//                     .grow_in_place_zeroed(memory.as_non_null_ptr(), Layout::new::&lt;[u8; 4]&gt;(), Layout::new::&lt;[u8; 80]&gt;())</span>
-<span class="comment">//                     .is_err()</span>
-<span class="comment">//             );</span>
-<span class="comment">//             assert!(</span>
-<span class="comment">//                 alloc</span>
-<span class="comment">//                     .grow(memory.as_non_null_ptr(), Layout::new::&lt;[u8; 4]&gt;(), Layout::new::&lt;[u8; 80]&gt;())</span>
-<span class="comment">//                     .is_err()</span>
-<span class="comment">//             );</span>
-<span class="comment">//             assert!(</span>
-<span class="comment">//                 alloc</span>
-<span class="comment">//                     .grow_in_place(memory.as_non_null_ptr(), Layout::new::&lt;[u8; 4]&gt;(), Layout::new::&lt;[u8; 80]&gt;())</span>
-<span class="comment">//                     .is_err()</span>
-<span class="comment">//             );</span>
-<span class="comment">//             let memory = alloc</span>
-<span class="comment">//                 .grow_zeroed(memory.as_non_null_ptr(), Layout::new::&lt;[u8; 4]&gt;(), Layout::new::&lt;[u8; 8]&gt;())</span>
-<span class="comment">//                 .unwrap();</span>
-<span class="comment">//             let memory = alloc</span>
-<span class="comment">//                 .grow(memory.as_non_null_ptr(), Layout::new::&lt;[u8; 8]&gt;(), Layout::new::&lt;[u8; 16]&gt;())</span>
-<span class="comment">//                 .unwrap();</span>
-<span class="comment">//             let memory = alloc</span>
-<span class="comment">//                 .shrink(memory.as_non_null_ptr(), Layout::new::&lt;[u8; 16]&gt;(), Layout::new::&lt;[u8; 4]&gt;())</span>
-<span class="comment">//                 .unwrap();</span>
+        <span class="kw">unsafe</span> {
+            <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">region</span>.<span class="ident">alloc</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>()).<span class="ident">unwrap</span>();
+            <span class="kw">let</span> <span class="ident">memory_tmp</span> <span class="op">=</span> <span class="ident">region</span>.<span class="ident">alloc_zeroed</span>(<span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>()).<span class="ident">unwrap</span>();
+            <span class="macro">assert</span><span class="macro">!</span>(
+                <span class="ident">region</span>
+                    .<span class="ident">shrink_in_place</span>(
+                        <span class="ident">memory</span>.<span class="ident">as_non_null_ptr</span>(),
+                        <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>(),
+                        <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">2</span>]<span class="op">&gt;</span>(),
+                    )
+                    .<span class="ident">is_err</span>()
+            );
+            <span class="ident">region</span>.<span class="ident">dealloc</span>(<span class="ident">memory_tmp</span>.<span class="ident">as_non_null_ptr</span>(), <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>());
 
-<span class="comment">//             alloc</span>
-<span class="comment">//                 .grow_in_place_zeroed(memory.as_non_null_ptr(), Layout::new::&lt;[u8; 4]&gt;(), Layout::new::&lt;[u8; 4]&gt;())</span>
-<span class="comment">//                 .unwrap();</span>
-<span class="comment">//             alloc</span>
-<span class="comment">//                 .grow_in_place(memory.as_non_null_ptr(), Layout::new::&lt;[u8; 4]&gt;(), Layout::new::&lt;[u8; 4]&gt;())</span>
-<span class="comment">//                 .unwrap();</span>
-<span class="comment">//             alloc</span>
-<span class="comment">//                 .shrink_in_place(memory.as_non_null_ptr(), Layout::new::&lt;[u8; 4]&gt;(), Layout::new::&lt;[u8; 4]&gt;())</span>
-<span class="comment">//                 .unwrap();</span>
+            <span class="macro">assert</span><span class="macro">!</span>(
+                <span class="ident">region</span>
+                    .<span class="ident">grow_zeroed</span>(
+                        <span class="ident">memory</span>.<span class="ident">as_non_null_ptr</span>(),
+                        <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>(),
+                        <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">80</span>]<span class="op">&gt;</span>()
+                    )
+                    .<span class="ident">is_err</span>()
+            );
+            <span class="macro">assert</span><span class="macro">!</span>(
+                <span class="ident">region</span>
+                    .<span class="ident">grow_in_place_zeroed</span>(
+                        <span class="ident">memory</span>.<span class="ident">as_non_null_ptr</span>(),
+                        <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>(),
+                        <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">80</span>]<span class="op">&gt;</span>()
+                    )
+                    .<span class="ident">is_err</span>()
+            );
+            <span class="macro">assert</span><span class="macro">!</span>(
+                <span class="ident">region</span>
+                    .<span class="ident">grow</span>(
+                        <span class="ident">memory</span>.<span class="ident">as_non_null_ptr</span>(),
+                        <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>(),
+                        <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">80</span>]<span class="op">&gt;</span>()
+                    )
+                    .<span class="ident">is_err</span>()
+            );
+            <span class="macro">assert</span><span class="macro">!</span>(
+                <span class="ident">region</span>
+                    .<span class="ident">grow_in_place</span>(
+                        <span class="ident">memory</span>.<span class="ident">as_non_null_ptr</span>(),
+                        <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>(),
+                        <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">80</span>]<span class="op">&gt;</span>()
+                    )
+                    .<span class="ident">is_err</span>()
+            );
+            <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">region</span>
+                .<span class="ident">grow_zeroed</span>(
+                    <span class="ident">memory</span>.<span class="ident">as_non_null_ptr</span>(),
+                    <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>(),
+                    <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>(),
+                )
+                .<span class="ident">unwrap</span>();
+            <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">region</span>
+                .<span class="ident">grow</span>(
+                    <span class="ident">memory</span>.<span class="ident">as_non_null_ptr</span>(),
+                    <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>(),
+                    <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>(),
+                )
+                .<span class="ident">unwrap</span>();
+            <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">region</span>
+                .<span class="ident">shrink</span>(
+                    <span class="ident">memory</span>.<span class="ident">as_non_null_ptr</span>(),
+                    <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>(),
+                    <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>(),
+                )
+                .<span class="ident">unwrap</span>();
 
-<span class="comment">//             assert!(alloc.owns(memory));</span>
-<span class="comment">//             alloc.dealloc(memory.as_non_null_ptr(), Layout::new::&lt;[u8; 4]&gt;());</span>
-<span class="comment">//             assert!(!alloc.owns(memory));</span>
-<span class="comment">//         }</span>
-<span class="comment">//     }</span>
+            <span class="ident">region</span>
+                .<span class="ident">grow_in_place_zeroed</span>(
+                    <span class="ident">memory</span>.<span class="ident">as_non_null_ptr</span>(),
+                    <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>(),
+                    <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>(),
+                )
+                .<span class="ident">unwrap</span>();
+            <span class="ident">region</span>
+                .<span class="ident">grow_in_place</span>(
+                    <span class="ident">memory</span>.<span class="ident">as_non_null_ptr</span>(),
+                    <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>(),
+                    <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>(),
+                )
+                .<span class="ident">unwrap</span>();
+            <span class="ident">region</span>
+                .<span class="ident">shrink_in_place</span>(
+                    <span class="ident">memory</span>.<span class="ident">as_non_null_ptr</span>(),
+                    <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>(),
+                    <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>(),
+                )
+                .<span class="ident">unwrap</span>();
 
-<span class="comment">//     #[test]</span>
-<span class="comment">//     #[rustfmt::skip]</span>
-<span class="comment">//     fn counter() {</span>
-<span class="comment">//         let counter = Counter::default();</span>
-<span class="comment">//         run_suite(counter.by_ref());</span>
+            <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">region</span>.<span class="ident">owns</span>(<span class="ident">memory</span>));
+            <span class="ident">region</span>.<span class="ident">dealloc</span>(<span class="ident">memory</span>.<span class="ident">as_non_null_ptr</span>(), <span class="ident">Layout</span>::<span class="ident">new</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">4</span>]<span class="op">&gt;</span>());
+        }
+    }
 
-<span class="comment">//         assert_eq!(counter.num_allocs(), 4);</span>
-<span class="comment">//         assert_eq!(counter.num_grows(), 8);</span>
-<span class="comment">//         assert_eq!(counter.num_shrinks(), 3);</span>
-<span class="comment">//         assert_eq!(counter.num_owns(), 2);</span>
-<span class="comment">//         assert_eq!(counter.num_deallocs(), 2);</span>
+    <span class="attribute">#[<span class="ident">test</span>]</span>
+    <span class="attribute">#[<span class="ident">rustfmt</span>::<span class="ident">skip</span>]</span>
+    <span class="kw">fn</span> <span class="ident">counter</span>() {
+        <span class="kw">let</span> <span class="ident">counter</span> <span class="op">=</span> <span class="ident">Counter</span>::<span class="ident">default</span>();
+        <span class="ident">run_suite</span>(<span class="ident">counter</span>.<span class="ident">by_ref</span>());
 
-<span class="comment">//         let atomic_counter = AtomicCounter::default();</span>
-<span class="comment">//         run_suite(atomic_counter.by_ref());</span>
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_allocs</span>(), <span class="number">4</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_grows</span>(), <span class="number">8</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_shrinks</span>(), <span class="number">3</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_owns</span>(), <span class="number">2</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_deallocs</span>(), <span class="number">2</span>);
 
-<span class="comment">//         assert_eq!(atomic_counter.num_allocs(), 4);</span>
-<span class="comment">//         assert_eq!(atomic_counter.num_grows(), 8);</span>
-<span class="comment">//         assert_eq!(atomic_counter.num_shrinks(), 3);</span>
-<span class="comment">//         assert_eq!(atomic_counter.num_owns(), 2);</span>
-<span class="comment">//         assert_eq!(atomic_counter.num_deallocs(), 2);</span>
+        <span class="kw">let</span> <span class="ident">atomic_counter</span> <span class="op">=</span> <span class="ident">AtomicCounter</span>::<span class="ident">default</span>();
+        <span class="ident">run_suite</span>(<span class="ident">atomic_counter</span>.<span class="ident">by_ref</span>());
 
-<span class="comment">//         assert_eq!(counter, atomic_counter);</span>
-<span class="comment">//         assert_eq!(atomic_counter, counter);</span>
-<span class="comment">//         assert_eq!(atomic_counter, atomic_counter);</span>
-<span class="comment">//     }</span>
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_allocs</span>(), <span class="number">4</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_grows</span>(), <span class="number">8</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_shrinks</span>(), <span class="number">3</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_owns</span>(), <span class="number">2</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_deallocs</span>(), <span class="number">2</span>);
 
-<span class="comment">//     #[test]</span>
-<span class="comment">//     #[rustfmt::skip]</span>
-<span class="comment">//     #[allow(clippy::cognitive_complexity)]</span>
-<span class="comment">//     fn filtered_counter() {</span>
-<span class="comment">//         use super::AllocInitFilter::*;</span>
-<span class="comment">//         use super::ReallocPlacementFilter::*;</span>
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>, <span class="ident">atomic_counter</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>, <span class="ident">counter</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>, <span class="ident">atomic_counter</span>);
+    }
 
-<span class="comment">//         let counter = FilteredCounter::default();</span>
-<span class="comment">//         run_suite(counter.by_ref());</span>
+    <span class="attribute">#[<span class="ident">test</span>]</span>
+    <span class="attribute">#[<span class="ident">rustfmt</span>::<span class="ident">skip</span>]</span>
+    <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy</span>::<span class="ident">cognitive_complexity</span>)]</span>
+    <span class="kw">fn</span> <span class="ident">filtered_counter</span>() {
+        <span class="kw">use</span> <span class="kw">super</span>::<span class="ident">AllocInitFilter</span>::<span class="kw-2">*</span>;
+        <span class="kw">use</span> <span class="kw">super</span>::<span class="ident">ReallocPlacementFilter</span>::<span class="kw-2">*</span>;
 
-<span class="comment">//         assert_eq!(counter.num_allocates_filter(Uninitialized, false), 1);</span>
-<span class="comment">//         assert_eq!(counter.num_allocates_filter(Zeroed, false), 1);</span>
-<span class="comment">//         assert_eq!(counter.num_allocates_filter(Uninitialized, true), 1);</span>
-<span class="comment">//         assert_eq!(counter.num_allocates_filter(Zeroed, true), 1);</span>
-<span class="comment">//         assert_eq!(counter.num_allocates(), 4);</span>
-<span class="comment">//         assert_eq!(counter.num_grows_filter(MayMove, Uninitialized, false), 1);</span>
-<span class="comment">//         assert_eq!(counter.num_grows_filter(MayMove, Uninitialized, true), 1);</span>
-<span class="comment">//         assert_eq!(counter.num_grows_filter(MayMove, Zeroed, false), 1);</span>
-<span class="comment">//         assert_eq!(counter.num_grows_filter(MayMove, Zeroed, true), 1);</span>
-<span class="comment">//         assert_eq!(counter.num_grows_filter(InPlace, Uninitialized, false), 1);</span>
-<span class="comment">//         assert_eq!(counter.num_grows_filter(InPlace, Uninitialized, true), 1);</span>
-<span class="comment">//         assert_eq!(counter.num_grows_filter(InPlace, Zeroed, false), 1);</span>
-<span class="comment">//         assert_eq!(counter.num_grows_filter(InPlace, Zeroed, true), 1);</span>
-<span class="comment">//         assert_eq!(counter.num_grows(), 8);</span>
-<span class="comment">//         assert_eq!(counter.num_shrinks_filter(MayMove, false), 0);</span>
-<span class="comment">//         assert_eq!(counter.num_shrinks_filter(MayMove, true), 1);</span>
-<span class="comment">//         assert_eq!(counter.num_shrinks_filter(InPlace, false), 1);</span>
-<span class="comment">//         assert_eq!(counter.num_shrinks_filter(InPlace, true), 1);</span>
-<span class="comment">//         assert_eq!(counter.num_shrinks(), 3);</span>
-<span class="comment">//         assert_eq!(counter.num_owns_filter(true), 1);</span>
-<span class="comment">//         assert_eq!(counter.num_owns_filter(false), 1);</span>
-<span class="comment">//         assert_eq!(counter.num_owns(), 2);</span>
-<span class="comment">//         assert_eq!(counter.num_deallocates(), 2);</span>
+        <span class="kw">let</span> <span class="ident">counter</span> <span class="op">=</span> <span class="ident">FilteredCounter</span>::<span class="ident">default</span>();
+        <span class="ident">run_suite</span>(<span class="ident">counter</span>.<span class="ident">by_ref</span>());
 
-<span class="comment">//         let atomic_counter = FilteredAtomicCounter::default();</span>
-<span class="comment">//         run_suite(atomic_counter.by_ref());</span>
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_allocates_filter</span>(<span class="ident">Uninitialized</span>, <span class="bool-val">false</span>), <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_allocates_filter</span>(<span class="ident">Zeroed</span>, <span class="bool-val">false</span>), <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_allocates_filter</span>(<span class="ident">Uninitialized</span>, <span class="bool-val">true</span>), <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_allocates_filter</span>(<span class="ident">Zeroed</span>, <span class="bool-val">true</span>), <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_allocates</span>(), <span class="number">4</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_grows_filter</span>(<span class="ident">MayMove</span>, <span class="ident">Uninitialized</span>, <span class="bool-val">false</span>), <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_grows_filter</span>(<span class="ident">MayMove</span>, <span class="ident">Uninitialized</span>, <span class="bool-val">true</span>), <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_grows_filter</span>(<span class="ident">MayMove</span>, <span class="ident">Zeroed</span>, <span class="bool-val">false</span>), <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_grows_filter</span>(<span class="ident">MayMove</span>, <span class="ident">Zeroed</span>, <span class="bool-val">true</span>), <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_grows_filter</span>(<span class="ident">InPlace</span>, <span class="ident">Uninitialized</span>, <span class="bool-val">false</span>), <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_grows_filter</span>(<span class="ident">InPlace</span>, <span class="ident">Uninitialized</span>, <span class="bool-val">true</span>), <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_grows_filter</span>(<span class="ident">InPlace</span>, <span class="ident">Zeroed</span>, <span class="bool-val">false</span>), <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_grows_filter</span>(<span class="ident">InPlace</span>, <span class="ident">Zeroed</span>, <span class="bool-val">true</span>), <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_grows</span>(), <span class="number">8</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_shrinks_filter</span>(<span class="ident">MayMove</span>, <span class="bool-val">false</span>), <span class="number">0</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_shrinks_filter</span>(<span class="ident">MayMove</span>, <span class="bool-val">true</span>), <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_shrinks_filter</span>(<span class="ident">InPlace</span>, <span class="bool-val">false</span>), <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_shrinks_filter</span>(<span class="ident">InPlace</span>, <span class="bool-val">true</span>), <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_shrinks</span>(), <span class="number">3</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_owns_filter</span>(<span class="bool-val">true</span>), <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_owns_filter</span>(<span class="bool-val">false</span>), <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_owns</span>(), <span class="number">2</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>.<span class="ident">num_deallocates</span>(), <span class="number">2</span>);
 
-<span class="comment">//         assert_eq!(atomic_counter.num_allocates_filter(Uninitialized, false), 1);</span>
-<span class="comment">//         assert_eq!(atomic_counter.num_allocates_filter(Zeroed, false), 1);</span>
-<span class="comment">//         assert_eq!(atomic_counter.num_allocates_filter(Uninitialized, true), 1);</span>
-<span class="comment">//         assert_eq!(atomic_counter.num_allocates_filter(Zeroed, true), 1);</span>
-<span class="comment">//         assert_eq!(atomic_counter.num_allocates(), 4);</span>
-<span class="comment">//         assert_eq!(atomic_counter.num_grows_filter(MayMove, Uninitialized, false), 1);</span>
-<span class="comment">//         assert_eq!(atomic_counter.num_grows_filter(MayMove, Uninitialized, true), 1);</span>
-<span class="comment">//         assert_eq!(atomic_counter.num_grows_filter(MayMove, Zeroed, false), 1);</span>
-<span class="comment">//         assert_eq!(atomic_counter.num_grows_filter(MayMove, Zeroed, true), 1);</span>
-<span class="comment">//         assert_eq!(atomic_counter.num_grows_filter(InPlace, Uninitialized, false), 1);</span>
-<span class="comment">//         assert_eq!(atomic_counter.num_grows_filter(InPlace, Uninitialized, true), 1);</span>
-<span class="comment">//         assert_eq!(atomic_counter.num_grows_filter(InPlace, Zeroed, false), 1);</span>
-<span class="comment">//         assert_eq!(atomic_counter.num_grows_filter(InPlace, Zeroed, true), 1);</span>
-<span class="comment">//         assert_eq!(atomic_counter.num_grows(), 8);</span>
-<span class="comment">//         assert_eq!(atomic_counter.num_shrinks_filter(MayMove, false), 0);</span>
-<span class="comment">//         assert_eq!(atomic_counter.num_shrinks_filter(MayMove, true), 1);</span>
-<span class="comment">//         assert_eq!(atomic_counter.num_shrinks_filter(InPlace, false), 1);</span>
-<span class="comment">//         assert_eq!(atomic_counter.num_shrinks_filter(InPlace, true), 1);</span>
-<span class="comment">//         assert_eq!(atomic_counter.num_shrinks(), 3);</span>
-<span class="comment">//         assert_eq!(atomic_counter.num_owns_filter(true), 1);</span>
-<span class="comment">//         assert_eq!(atomic_counter.num_owns_filter(false), 1);</span>
-<span class="comment">//         assert_eq!(atomic_counter.num_owns(), 2);</span>
-<span class="comment">//         assert_eq!(atomic_counter.num_deallocates(), 2);</span>
+        <span class="kw">let</span> <span class="ident">atomic_counter</span> <span class="op">=</span> <span class="ident">FilteredAtomicCounter</span>::<span class="ident">default</span>();
+        <span class="ident">run_suite</span>(<span class="ident">atomic_counter</span>.<span class="ident">by_ref</span>());
 
-<span class="comment">//         assert_eq!(counter, atomic_counter);</span>
-<span class="comment">//         assert_eq!(atomic_counter, counter);</span>
-<span class="comment">//         assert_eq!(atomic_counter, atomic_counter);</span>
-<span class="comment">//     }</span>
-<span class="comment">// }</span>
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_allocates_filter</span>(<span class="ident">Uninitialized</span>, <span class="bool-val">false</span>), <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_allocates_filter</span>(<span class="ident">Zeroed</span>, <span class="bool-val">false</span>), <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_allocates_filter</span>(<span class="ident">Uninitialized</span>, <span class="bool-val">true</span>), <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_allocates_filter</span>(<span class="ident">Zeroed</span>, <span class="bool-val">true</span>), <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_allocates</span>(), <span class="number">4</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_grows_filter</span>(<span class="ident">MayMove</span>, <span class="ident">Uninitialized</span>, <span class="bool-val">false</span>), <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_grows_filter</span>(<span class="ident">MayMove</span>, <span class="ident">Uninitialized</span>, <span class="bool-val">true</span>), <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_grows_filter</span>(<span class="ident">MayMove</span>, <span class="ident">Zeroed</span>, <span class="bool-val">false</span>), <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_grows_filter</span>(<span class="ident">MayMove</span>, <span class="ident">Zeroed</span>, <span class="bool-val">true</span>), <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_grows_filter</span>(<span class="ident">InPlace</span>, <span class="ident">Uninitialized</span>, <span class="bool-val">false</span>), <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_grows_filter</span>(<span class="ident">InPlace</span>, <span class="ident">Uninitialized</span>, <span class="bool-val">true</span>), <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_grows_filter</span>(<span class="ident">InPlace</span>, <span class="ident">Zeroed</span>, <span class="bool-val">false</span>), <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_grows_filter</span>(<span class="ident">InPlace</span>, <span class="ident">Zeroed</span>, <span class="bool-val">true</span>), <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_grows</span>(), <span class="number">8</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_shrinks_filter</span>(<span class="ident">MayMove</span>, <span class="bool-val">false</span>), <span class="number">0</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_shrinks_filter</span>(<span class="ident">MayMove</span>, <span class="bool-val">true</span>), <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_shrinks_filter</span>(<span class="ident">InPlace</span>, <span class="bool-val">false</span>), <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_shrinks_filter</span>(<span class="ident">InPlace</span>, <span class="bool-val">true</span>), <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_shrinks</span>(), <span class="number">3</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_owns_filter</span>(<span class="bool-val">true</span>), <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_owns_filter</span>(<span class="bool-val">false</span>), <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_owns</span>(), <span class="number">2</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>.<span class="ident">num_deallocates</span>(), <span class="number">2</span>);
+
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">counter</span>, <span class="ident">atomic_counter</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>, <span class="ident">counter</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">atomic_counter</span>, <span class="ident">atomic_counter</span>);
+    }
+}
 </pre></div>
 </section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "alloc_compose";</script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
